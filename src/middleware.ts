@@ -2,11 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { updateSession } from "@/lib/supabase/middleware";
+import type { Database } from "@/types/database.types";
 
 export async function middleware(request: NextRequest) {
   const { response } = await updateSession(request);
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -43,11 +44,11 @@ export async function middleware(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, banned")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (profile?.role !== "admin" || profile.banned) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       const redirectResponse = NextResponse.redirect(url);
