@@ -11,3 +11,6 @@
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase CLI
+/supabase/.temp
