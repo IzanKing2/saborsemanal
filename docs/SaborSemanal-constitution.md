@@ -139,3 +139,34 @@ Seguiremos la metodología **SDD: Feature-by-Feature** de forma secuencial. No a
 *   **🛒 Hito 4: El Motor de la Lista de la Compra (Consolidación)**
     *   Algoritmo que lee las recetas del menú semanal, extrae sus ingredientes, los agrupa por `ingrediente_id`, suma sus cantidades (siempre que coincidan las unidades) y los separa por secciones utilizando `categorias_ingredientes`.
     *   Función de tachar/comprar elementos.
+
+---
+
+## 6. Enmiendas del esquema y estado del roadmap - 2026-07-30
+
+La fuente de verdad ejecutable del esquema son las migraciones versionadas en
+`supabase/migrations/`. El bloque SQL de la sección 3 representa únicamente el
+modelo inicial.
+
+Cambios aprobados desde el modelo inicial:
+
+- `recetas` incorpora moderación, actualización e integridad adicional.
+- `receta_ingredientes` usa PK UUID y admite una fuente maestra o un nombre
+  personalizado. Los personalizados solo pueden usarse en recetas privadas.
+- Las imágenes se almacenan en un bucket privado y se sirven con URL firmada.
+- `menus_semanales` identifica una semana por su lunes de inicio.
+- Cada menú admite una sola receta por combinación de día y tipo de comida.
+- Las escrituras complejas se realizan mediante RPC transaccionales y RLS.
+
+Estado:
+
+- Hito 1: completado.
+- Hito 2: completado.
+- Hito 3: completado.
+- Hito 4: especificado y pendiente de implementación.
+
+Para el Hito 4, los ingredientes maestros se consolidarán por
+`(ingrediente_id, unidad)` y los personalizados por
+`(nombre_normalizado, unidad)`. Cada aparición de una receta en un slot del menú
+aportará una vez sus cantidades. El ajuste por número de comensales queda fuera
+del alcance inicial.
