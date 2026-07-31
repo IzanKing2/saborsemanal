@@ -164,9 +164,7 @@ export async function saveRecipeAction(
 
   return {
     ok: true,
-    message: shouldPublish
-      ? "Receta enviada a revisión."
-      : "Borrador guardado.",
+    message: shouldPublish ? "Receta publicada." : "Borrador guardado.",
     recipeId: data,
   };
 }

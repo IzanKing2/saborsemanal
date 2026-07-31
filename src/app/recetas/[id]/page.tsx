@@ -129,7 +129,7 @@ export default async function RecipeDetailPage({
           </div>
           <div className="p-6 sm:p-10">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-700">
-              Receta aprobada
+              Receta pública
             </p>
             <h1 className="mt-3 text-4xl font-black tracking-tight text-stone-950">
               {recipe.titulo}

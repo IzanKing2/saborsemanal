@@ -310,7 +310,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
-                Catálogo aprobado
+                Catálogo público
               </p>
               <h2 className="mt-1 text-2xl font-bold" id="results-heading">
                 {totalCount} {totalCount === 1 ? "receta" : "recetas"}

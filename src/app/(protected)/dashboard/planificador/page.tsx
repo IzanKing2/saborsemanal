@@ -31,7 +31,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const [recipesResult, menuResult] = await Promise.all([
     supabase
       .from("recetas")
-      .select("id, titulo, creador_id, publica, aprobada")
+      .select("id, titulo, creador_id, publica")
       .order("titulo"),
     supabase
       .from("menus_semanales")
@@ -62,9 +62,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
     etiqueta:
       recipe.creador_id === user.id
         ? recipe.publica
-          ? recipe.aprobada
-            ? "Tu receta publicada"
-            : "Tu receta pendiente"
+          ? "Tu receta publicada"
           : "Tu borrador"
         : "Catálogo",
   }));

@@ -423,10 +423,6 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
-      moderate_recipe: {
-        Args: { p_decision: string; p_id: string }
-        Returns: string
-      }
       regenerate_shopping_list: {
         Args: { p_week: string }
         Returns: Database["public"]["Tables"]["shopping_list_items"]["Row"][]

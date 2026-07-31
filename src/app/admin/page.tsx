@@ -40,17 +40,17 @@ export default function AdminPage() {
             href="/admin/recetas"
           >
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">
-              Control editorial
+              Recetario
             </span>
             <h2 className="mt-3 text-2xl font-bold text-stone-900">
-              Moderación de recetas
+              Todas las recetas
             </h2>
             <p className="mt-2 text-sm leading-6 text-stone-600">
-              Revisa las propuestas de la comunidad antes de publicarlas en el
-              catálogo.
+              Consulta las recetas de la aplicación y elimina cualquier
+              contenido si es necesario.
             </p>
             <span className="mt-6 inline-block text-sm font-bold text-emerald-700 group-hover:underline">
-              Revisar pendientes →
+              Ver recetario →
             </span>
           </Link>
         </div>

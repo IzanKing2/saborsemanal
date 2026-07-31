@@ -6,10 +6,8 @@ import { DeleteRecipeForm } from "@/components/recipes/delete-recipe-form";
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { createClient } from "@/lib/supabase/server";
 
-function recipeStatus(publica: boolean, aprobada: boolean) {
+function recipeStatus(publica: boolean) {
   if (!publica) return { label: "Borrador", className: "bg-stone-200 text-stone-700" };
-  if (!aprobada)
-    return { label: "Pendiente", className: "bg-amber-100 text-amber-800" };
   return { label: "Publicada", className: "bg-emerald-100 text-emerald-800" };
 }
 
@@ -24,7 +22,7 @@ export default async function RecipesDashboardPage() {
   const { data, error } = await supabase
     .from("recetas")
     .select(
-      "id, titulo, descripcion, imagen_url, publica, aprobada, tiempo_preparacion, porciones, updated_at",
+      "id, titulo, descripcion, imagen_url, publica, tiempo_preparacion, porciones, updated_at",
     )
     .eq("creador_id", user.id)
     .order("updated_at", { ascending: false });
@@ -72,7 +70,7 @@ export default async function RecipesDashboardPage() {
         {recipes.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {recipes.map((recipe) => {
-              const status = recipeStatus(recipe.publica, recipe.aprobada);
+              const status = recipeStatus(recipe.publica);
               return (
                 <article
                   className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"

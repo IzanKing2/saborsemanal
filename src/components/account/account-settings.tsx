@@ -273,7 +273,7 @@ export function AccountSettings({
 
         <form className="space-y-4 rounded-3xl border border-red-200 bg-red-50 p-6" onSubmit={deleteAccount}>
           <div><p className="text-xs font-black uppercase tracking-[0.2em] text-red-700">Zona peligrosa</p><h2 className="mt-2 text-xl font-black text-red-950">Eliminar cuenta</h2></div>
-          <p className="text-sm leading-6 text-red-800">Se borrarán datos privados e imágenes. Las recetas públicas aprobadas permanecerán como anónimas.</p>
+          <p className="text-sm leading-6 text-red-800">Se borrarán datos privados e imágenes. Las recetas públicas permanecerán como anónimas.</p>
           <div><label className="text-sm font-bold text-red-950" htmlFor="delete-password">Contraseña</label><input className="mt-2 w-full rounded-xl border border-red-300 bg-white px-4 py-3" id="delete-password" onChange={(event) => setDeletePassword(event.target.value)} required type="password" value={deletePassword} /></div>
           <div><label className="text-sm font-bold text-red-950" htmlFor="delete-confirmation">Escribe ELIMINAR</label><input className="mt-2 w-full rounded-xl border border-red-300 bg-white px-4 py-3" id="delete-confirmation" onChange={(event) => setDeleteConfirmation(event.target.value)} required value={deleteConfirmation} /></div>
           <button className="rounded-xl bg-red-700 px-5 py-3 font-bold text-white hover:bg-red-800 disabled:opacity-50" disabled={deleting || deleteConfirmation !== "ELIMINAR"} type="submit">{deleting ? "Eliminando..." : "Eliminar mi cuenta"}</button>
