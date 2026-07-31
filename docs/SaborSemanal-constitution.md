@@ -166,6 +166,7 @@ Estado:
 - Hito 2: completado.
 - Hito 3: completado.
 - Hito 4: completado.
+- Hito 5: completado.
 
 Para el Hito 4, los ingredientes maestros se consolidarán por
 `(ingrediente_id, unidad)` y los personalizados por
@@ -177,3 +178,8 @@ La migración `202607300015_shopping_list.sql` implementa la consolidación
 transaccional, revoca las escrituras directas y expone únicamente las RPC de
 regeneración y marcado de compra. Los invitados conservan menú y checks por
 semana exclusivamente en `LocalStorage`.
+
+El Hito 5 añade identidad de autor sanitizada, perfil y preferencias propias,
+avatares privados, recuperación completa y eliminación de cuenta. Las tablas de
+perfil son de solo lectura para PostgREST; toda mutación se limita mediante RPC
+con campos permitidos explícitamente.
