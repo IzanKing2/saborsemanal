@@ -122,7 +122,7 @@ export default async function RecipeDetailPage({
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
-      <SiteHeader tone="light" />
+      <SiteHeader />
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-6 sm:px-6 lg:px-8">
         <Link
           className="text-sm font-bold text-emerald-800 hover:underline"

@@ -23,7 +23,7 @@ export function DashboardHeader({
   isAdmin,
 }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-emerald-900 bg-emerald-950 text-white shadow-lg shadow-emerald-950/10">
+    <header className="sticky top-0 z-40 border-b border-emerald-900 bg-emerald-950/85 text-white shadow-lg shadow-emerald-950/10 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:flex-nowrap sm:px-6 lg:px-8">
         <Link className="shrink-0 text-lg font-black tracking-tight" href="/">
           Sabor<span className="text-amber-300">Semanal</span>

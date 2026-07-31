@@ -17,7 +17,7 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
       <nav className="hidden min-w-0 items-center gap-3 text-sm font-bold md:flex">
         {adminLinks.map(([label, href]) => (
           <Link
-            className="shrink-0 text-stone-300 hover:text-white"
+            className="shrink-0 text-emerald-100 hover:text-white"
             href={href}
             key={href}
           >
@@ -26,7 +26,7 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
         ))}
         <form action={logout}>
           <button
-            className="rounded-lg border border-stone-700 px-3 py-2"
+            className="rounded-lg border border-emerald-700 px-3 py-2"
             type="submit"
           >
             Salir
@@ -38,7 +38,7 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
         <button
           aria-expanded={open}
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
-          className="rounded-lg border border-stone-700 p-2 text-stone-200 hover:bg-stone-900 hover:text-white"
+          className="rounded-lg border border-emerald-700 p-2 text-emerald-100 hover:bg-emerald-900 hover:text-white"
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
@@ -67,11 +67,11 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
               onClick={() => setOpen(false)}
               role="presentation"
             />
-            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-stone-700 bg-stone-950 text-sm font-bold shadow-xl">
+            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl">
               <nav className="flex flex-col">
                 {adminLinks.map(([label, href]) => (
                   <Link
-                    className="px-4 py-3 text-stone-300 hover:bg-stone-900 hover:text-white"
+                    className="px-4 py-3 text-emerald-100 hover:bg-emerald-900 hover:text-white"
                     href={href}
                     key={href}
                     onClick={() => setOpen(false)}
@@ -81,7 +81,7 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
                 ))}
                 <form action={logout}>
                   <button
-                    className="w-full border-t border-stone-800 px-4 py-3 text-left text-stone-300 hover:bg-stone-900 hover:text-white"
+                    className="w-full border-t border-emerald-800 px-4 py-3 text-left text-emerald-100 hover:bg-emerald-900 hover:text-white"
                     type="submit"
                   >
                     Salir
