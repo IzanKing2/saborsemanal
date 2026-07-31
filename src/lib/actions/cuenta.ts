@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { isUuid } from "@/lib/recipes";
-import { verifyRecoveryToken } from "@/lib/recovery-token";
+import { createRecoveryToken, verifyRecoveryToken } from "@/lib/recovery-token";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -167,6 +167,56 @@ export async function deleteAccountAction(
   }
 }
 
+export async function exchangeRecoveryTokenAction(
+  token_hash: string,
+): Promise<AccountActionResult> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: "recovery",
+    });
+    if (error || !data.user?.id || !data.user.email) {
+      return {
+        ok: false,
+        message: "El enlace ha caducado o no es válido. Solicita uno nuevo.",
+      };
+    }
+
+    await supabase.auth.signOut();
+
+    const cookieStore = await cookies();
+    for (const cookie of cookieStore.getAll()) {
+      if (cookie.name.startsWith("sb-")) {
+        cookieStore.set(cookie.name, "", {
+          httpOnly: true,
+          path: "/",
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 0,
+        });
+      }
+    }
+    cookieStore.set(
+      "saborsemanal-recovery",
+      createRecoveryToken(data.user.id, data.user.email),
+      {
+        httpOnly: true,
+        maxAge: 600,
+        path: "/reset-password",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      },
+    );
+    return { ok: true, message: "" };
+  } catch {
+    return {
+      ok: false,
+      message: "El enlace ha caducado o no es válido. Solicita uno nuevo.",
+    };
+  }
+}
+
 export async function resetPasswordAction(
   password: string,
 ): Promise<AccountActionResult> {
@@ -185,13 +235,13 @@ export async function resetPasswordAction(
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("saborsemanal-recovery")?.value;
-    const userId = token ? verifyRecoveryToken(token) : null;
-    if (!userId) {
+    const recovery = token ? verifyRecoveryToken(token) : null;
+    if (!recovery) {
       return { ok: false, message: "El enlace ha caducado. Solicita uno nuevo." };
     }
 
     const admin = createAdminClient();
-    const { error } = await admin.auth.admin.updateUserById(userId, {
+    const { error } = await admin.auth.admin.updateUserById(recovery.userId, {
       password,
     });
     if (error) {
