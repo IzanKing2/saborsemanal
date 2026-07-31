@@ -40,6 +40,8 @@ const inputClass =
   "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20";
 const primaryButtonClass =
   "rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButtonClass =
+  "rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100";
 
 function ActionMessage({ state }: { state: CatalogActionState }) {
   if (!state.message) return null;
@@ -132,45 +134,82 @@ function NameRow({ catalog, item }: { catalog: NameCatalog; item: NamedItem }) {
     deleteAction,
     initialState,
   );
+  const [editing, setEditing] = useState(false);
   const inputId = `${catalog}-${item.id}`;
 
-  return (
-    <li className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-      <form action={updateFormAction}>
-        <input name="id" type="hidden" value={item.id} />
-        <label className="sr-only" htmlFor={inputId}>
-          Editar {item.nombre}
-        </label>
-        <div className="flex gap-2">
-          <input
-            className={inputClass}
-            defaultValue={item.nombre}
-            id={inputId}
-            maxLength={100}
-            minLength={2}
-            name="nombre"
-            required
-          />
-          <SubmitButton>Guardar</SubmitButton>
-        </div>
-      </form>
-      <ActionMessage state={updateState} />
+  useEffect(() => {
+    if (updateState.ok) setEditing(false);
+  }, [updateState]);
 
-      <form
-        action={deleteFormAction}
-        className="mt-2"
-        onSubmit={(event) => {
-          const impact = item.usageCount
-            ? ` Afectará a ${item.usageCount} asociación${item.usageCount === 1 ? "" : "es"}.`
-            : "";
-          if (!window.confirm(`¿Eliminar “${item.nombre}”?${impact}`)) {
-            event.preventDefault();
-          }
-        }}
-      >
-        <input name="id" type="hidden" value={item.id} />
-        <DeleteButton>Eliminar</DeleteButton>
-      </form>
+  return (
+    <li className="rounded-xl border border-stone-200 bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="min-w-0 truncate text-sm font-semibold text-stone-900">
+            {item.nombre}
+          </span>
+          {item.usageCount ? (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">
+              {item.usageCount} uso{item.usageCount === 1 ? "" : "s"}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            className="text-xs font-bold text-emerald-700 hover:underline"
+            onClick={() => setEditing((value) => !value)}
+            type="button"
+          >
+            {editing ? "Cerrar" : "Editar"}
+          </button>
+          <form
+            action={deleteFormAction}
+            onSubmit={(event) => {
+              const impact = item.usageCount
+                ? ` Afectará a ${item.usageCount} asociación${item.usageCount === 1 ? "" : "es"}.`
+                : "";
+              if (!window.confirm(`¿Eliminar “${item.nombre}”?${impact}`)) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <input name="id" type="hidden" value={item.id} />
+            <DeleteButton>Eliminar</DeleteButton>
+          </form>
+        </div>
+      </div>
+
+      {editing && (
+        <div className="mt-3 border-t border-stone-100 pt-3">
+          <form action={updateFormAction}>
+            <input name="id" type="hidden" value={item.id} />
+            <label className="sr-only" htmlFor={inputId}>
+              Editar {item.nombre}
+            </label>
+            <div className="flex gap-2">
+              <input
+                className={inputClass}
+                defaultValue={item.nombre}
+                id={inputId}
+                maxLength={100}
+                minLength={2}
+                name="nombre"
+                required
+              />
+              <SubmitButton>Guardar</SubmitButton>
+              <button
+                className={secondaryButtonClass}
+                onClick={() => setEditing(false)}
+                type="button"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+          <ActionMessage state={updateState} />
+        </div>
+      )}
+
       <ActionMessage state={deleteState} />
     </li>
   );
@@ -222,10 +261,12 @@ function IngredientForm({
   categories,
   allergens,
   ingredient,
+  variant = "card",
 }: {
   categories: NamedItem[];
   allergens: NamedItem[];
   ingredient?: IngredientItem;
+  variant?: "card" | "plain";
 }) {
   const [saveState, saveFormAction] = useActionState(
     saveIngredientAction,
@@ -244,7 +285,13 @@ function IngredientForm({
   }, [ingredient, saveState]);
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <div
+      className={
+        variant === "card"
+          ? "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+          : undefined
+      }
+    >
       <form action={saveFormAction} ref={formRef}>
         {ingredient && <input name="id" type="hidden" value={ingredient.id} />}
 
@@ -352,18 +399,50 @@ function IngredientForm({
   );
 }
 
+function CategoryChip({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+        active
+          ? "border-emerald-700 bg-emerald-700 text-white"
+          : "border-stone-300 bg-white text-stone-600 hover:border-emerald-600 hover:text-emerald-700"
+      }`}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
 export function CatalogManager({
   categories,
   allergens,
   ingredients,
 }: CatalogManagerProps) {
   const [query, setQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase("es"));
-  const filteredIngredients = deferredQuery
-    ? ingredients.filter((ingredient) =>
-        ingredient.nombre.toLocaleLowerCase("es").includes(deferredQuery),
-      )
-    : ingredients;
+
+  const categoryNames = new Map(categories.map((category) => [category.id, category.nombre]));
+  const allergenNames = new Map(allergens.map((allergen) => [allergen.id, allergen.nombre]));
+
+  const filteredIngredients = ingredients.filter((ingredient) => {
+    const matchesQuery =
+      !deferredQuery ||
+      ingredient.nombre.toLocaleLowerCase("es").includes(deferredQuery);
+    const matchesCategory =
+      filterCategory === "all" || ingredient.categoriaId === filterCategory;
+    return matchesQuery && matchesCategory;
+  });
 
   return (
     <div className="space-y-8">
@@ -410,23 +489,79 @@ export function CatalogManager({
           </div>
         </div>
 
-        <div className="rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/60 p-4 sm:p-6">
-          <h3 className="mb-4 text-lg font-bold text-emerald-950">
-            Añadir ingrediente
-          </h3>
-          <IngredientForm categories={categories} allergens={allergens} />
+        <div className="mb-6">
+          <span className="sr-only" id="category-filter-label">
+            Filtrar por categoría
+          </span>
+          <div
+            aria-labelledby="category-filter-label"
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+          >
+            <CategoryChip
+              active={filterCategory === "all"}
+              onClick={() => setFilterCategory("all")}
+            >
+              Todas
+            </CategoryChip>
+            {categories.map((category) => (
+              <CategoryChip
+                active={filterCategory === category.id}
+                key={category.id}
+                onClick={() => setFilterCategory(category.id)}
+              >
+                {category.nombre}
+              </CategoryChip>
+            ))}
+          </div>
         </div>
+
+        <details className="group rounded-3xl border border-emerald-300 bg-emerald-50/60 p-4 sm:p-6">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden">
+            <span className="text-lg font-bold text-emerald-950">
+              Añadir ingrediente
+            </span>
+            <span className="shrink-0 text-xs font-medium text-emerald-700 group-open:hidden">
+              Abrir formulario
+            </span>
+          </summary>
+          <div className="mt-4">
+            <IngredientForm categories={categories} allergens={allergens} />
+          </div>
+        </details>
 
         <div className="mt-6 space-y-3">
           {filteredIngredients.length > 0 ? (
             filteredIngredients.map((ingredient) => (
               <details
-                className="group rounded-2xl border border-stone-200 bg-stone-50 open:bg-white open:shadow-sm"
+                className="group rounded-2xl border border-stone-200 bg-white open:shadow-sm"
                 key={ingredient.id}
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-semibold text-stone-900 marker:hidden">
-                  <span>{ingredient.nombre}</span>
-                  <span className="text-xs font-medium text-stone-500 group-open:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden">
+                  <span className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="truncate font-semibold text-stone-900">
+                      {ingredient.nombre}
+                    </span>
+                    {ingredient.categoriaId &&
+                      categoryNames.get(ingredient.categoriaId) && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                          {categoryNames.get(ingredient.categoriaId)}
+                        </span>
+                      )}
+                    {ingredient.alergenoIds.map((allergenId) => {
+                      const allergenName = allergenNames.get(allergenId);
+                      if (!allergenName) return null;
+                      return (
+                        <span
+                          className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800"
+                          key={allergenId}
+                        >
+                          {allergenName}
+                        </span>
+                      );
+                    })}
+                  </span>
+                  <span className="shrink-0 text-xs font-medium text-stone-500 group-open:hidden">
                     Editar
                   </span>
                 </summary>
@@ -435,6 +570,7 @@ export function CatalogManager({
                     allergens={allergens}
                     categories={categories}
                     ingredient={ingredient}
+                    variant="plain"
                   />
                 </div>
               </details>
@@ -443,7 +579,7 @@ export function CatalogManager({
             <p className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500">
               {ingredients.length === 0
                 ? "Todavía no hay ingredientes en la lista maestra."
-                : "No hay ingredientes que coincidan con la búsqueda."}
+                : "No hay ingredientes que coincidan con la búsqueda o el filtro."}
             </p>
           )}
         </div>

@@ -26,7 +26,7 @@ export default async function RecipeAdminPage({
   const { data: recipes, error: recipesError, count } = await supabase
     .from("recetas")
     .select(
-      "id, titulo, descripcion, publica, tiempo_preparacion, porciones, created_at, profiles(email)",
+      "id, titulo, descripcion, publica, tiempo_preparacion, porciones, created_at, autor:profiles!recetas_creador_id_fkey(email)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -80,7 +80,7 @@ export default async function RecipeAdminPage({
                       {recipe.publica ? "Publicada" : "Borrador"}
                     </span>
                     <span className="text-xs font-semibold text-stone-500">
-                      {recipe.profiles?.email ?? "Autor desconocido"}
+                      {recipe.autor?.email ?? "Autor desconocido"}
                     </span>
                   </div>
                   <h2 className="mt-2 truncate text-lg font-bold text-stone-950">
