@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
+import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
+import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { getProfileAvatarUrls } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
@@ -179,6 +181,23 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
     imageUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
     author: authorsByRecipe.get(recipe.id) ?? null,
   }));
+
+  const favoriteIds = new Set<string>();
+  if (user) {
+    const { data: favoriteRows, error: favoritesError } = await supabase
+      .from("favoritos")
+      .select("receta_id")
+      .in(
+        "receta_id",
+        recipeRows.map((recipe) => recipe.id),
+      );
+    if (favoritesError) {
+      throw new Error(
+        `No se pudieron cargar tus favoritas: ${favoritesError.message}`,
+      );
+    }
+    (favoriteRows ?? []).forEach((row) => favoriteIds.add(row.receta_id));
+  }
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
@@ -381,8 +400,19 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                       </div>
                     </div>
                   </Link>
-                  <div className="px-5 pb-5">
-                    <AddToMenuButton guest={!user} recipeId={recipe.id} />
+                  <div className="flex flex-wrap items-center gap-3 px-5 pb-5">
+                    <AddToMenuButton
+                      guest={!user}
+                      recipeId={recipe.id}
+                      recipeTitle={recipe.titulo}
+                    />
+                    {user && (
+                      <FavoriteButton
+                        initial={favoriteIds.has(recipe.id)}
+                        recipeId={recipe.id}
+                      />
+                    )}
+                    <AddToShoppingButton guest={!user} recipeId={recipe.id} />
                   </div>
                 </article>
               ))}

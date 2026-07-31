@@ -1,21 +1,19 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
 
+import { RecipeSlotModal } from "@/components/recipes/recipe-slot-modal";
 import { LocalShoppingList } from "@/components/shopping/shopping-list";
-import {
-  addMenuRecipeAction,
-  removeMenuRecipeAction,
-  saveMenuSlotAction,
-} from "@/lib/actions/planificador";
+import { saveMenuSlotAction } from "@/lib/actions/planificador";
 import type { ShoppingRecipeIngredient } from "@/lib/shopping-list";
-import { formatShoppingQuantity } from "@/lib/shopping-list";
 import {
   MEAL_TYPES,
   WEEK_DAYS,
   addDays,
   addWeeks,
+  getCurrentMonday,
   menuSlotKey,
   type MealType,
   type WeekDay,
@@ -25,6 +23,7 @@ export type PlannerRecipe = {
   id: string;
   titulo: string;
   etiqueta?: string;
+  imagenUrl?: string | null;
   ingredientes?: ShoppingRecipeIngredient[];
 };
 
@@ -37,11 +36,6 @@ type WeeklyPlannerProps = {
   initialPool: string[];
   mode: "cloud" | "local";
   basePath: string;
-};
-
-type DraftAssignment = {
-  day: WeekDay;
-  meal: MealType;
 };
 
 const MAX_SUGGESTIONS = 12;
@@ -65,13 +59,12 @@ export function WeeklyPlanner({
   const [slots, setSlots] = useState(initialSlots);
   const [pool, setPool] = useState<string[]>(initialPool);
   const [query, setQuery] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, DraftAssignment>>({});
+  const [addingRecipeId, setAddingRecipeId] = useState<string | null>(null);
   const [localReady, setLocalReady] = useState(mode !== "local");
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
-  const [details, setDetails] = useState<Set<string>>(new Set());
   const slotsKey = `saborsemanal:menu:${week}`;
   const poolKey = `saborsemanal:menu:pool:${week}`;
 
@@ -198,78 +191,6 @@ export function WeeklyPlanner({
     );
   }
 
-  function addRecipe(recipeId: string) {
-    if (isRecipeInMenu(recipeId)) return;
-
-    const nextPool = [...pool, recipeId];
-    const previousPool = pool;
-    setPool(nextPool);
-    setMessage(null);
-
-    if (mode === "local") {
-      persistLocal(slots, nextPool);
-      return;
-    }
-
-    setPending((current) => new Set(current).add(`pool:${recipeId}`));
-    startTransition(async () => {
-      try {
-        const result = await addMenuRecipeAction({ week, recipeId });
-        if (!result.ok) setPool(previousPool);
-        setMessage({ ok: result.ok, text: result.message });
-      } catch {
-        setPool(previousPool);
-        setMessage({ ok: false, text: "No se pudo añadir la receta." });
-      } finally {
-        setPending((current) => {
-          const next = new Set(current);
-          next.delete(`pool:${recipeId}`);
-          return next;
-        });
-      }
-    });
-  }
-
-  function removeRecipe(recipeId: string) {
-    const nextSlots = { ...slots };
-    for (const [key, value] of Object.entries(nextSlots)) {
-      if (value === recipeId) delete nextSlots[key];
-    }
-    const nextPool = pool.filter((id) => id !== recipeId);
-    const previousSlots = slots;
-    const previousPool = pool;
-    setSlots(nextSlots);
-    setPool(nextPool);
-    setMessage(null);
-
-    if (mode === "local") {
-      persistLocal(nextSlots, nextPool);
-      return;
-    }
-
-    setPending((current) => new Set(current).add(`pool:${recipeId}`));
-    startTransition(async () => {
-      try {
-        const result = await removeMenuRecipeAction({ week, recipeId });
-        if (!result.ok) {
-          setSlots(previousSlots);
-          setPool(previousPool);
-        }
-        setMessage({ ok: result.ok, text: result.message });
-      } catch {
-        setSlots(previousSlots);
-        setPool(previousPool);
-        setMessage({ ok: false, text: "No se pudo retirar la receta." });
-      } finally {
-        setPending((current) => {
-          const next = new Set(current);
-          next.delete(`pool:${recipeId}`);
-          return next;
-        });
-      }
-    });
-  }
-
   function setSlot(
     day: WeekDay,
     meal: MealType,
@@ -332,24 +253,6 @@ export function WeeklyPlanner({
     });
   }
 
-  function assignDraft(recipeId: string) {
-    const draft = drafts[recipeId] ?? { day: "Lunes", meal: "Almuerzo" };
-    if (!isRecipeInMenu(recipeId)) {
-      addRecipe(recipeId);
-      return;
-    }
-    setSlot(draft.day, draft.meal, recipeId, true);
-  }
-
-  function toggleDetails(recipeId: string) {
-    setDetails((current) => {
-      const next = new Set(current);
-      if (next.has(recipeId)) next.delete(recipeId);
-      else next.add(recipeId);
-      return next;
-    });
-  }
-
   const suggestions = recipes
     .filter((recipe) => {
       const normalizedQuery = query.trim().toLocaleLowerCase("es");
@@ -359,6 +262,16 @@ export function WeeklyPlanner({
       );
     })
     .slice(0, MAX_SUGGESTIONS);
+
+  const isCurrentWeek = getCurrentMonday() === week;
+  const todayIndex = isCurrentWeek ? (new Date().getUTCDay() + 6) % 7 : -1;
+
+  function confirmAdd(day: WeekDay, meal: MealType) {
+    if (!addingRecipeId) return;
+    const recipeId = addingRecipeId;
+    setAddingRecipeId(null);
+    setSlot(day, meal, recipeId, false);
+  }
 
   return (
     <div>
@@ -454,30 +367,43 @@ export function WeeklyPlanner({
                   className="flex items-center justify-between gap-3 py-3"
                   key={recipe.id}
                 >
-                  <span className="min-w-0">
-                    <Link
-                      className="block truncate font-semibold text-stone-900 hover:text-emerald-800 hover:underline"
-                      href={`/recetas/${recipe.id}`}
-                    >
-                      {recipe.titulo}
-                    </Link>
-                    {recipe.etiqueta && (
-                      <span className="text-xs font-semibold text-emerald-700">
-                        {recipe.etiqueta}
-                      </span>
-                    )}
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="relative block size-12 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+                      {recipe.imagenUrl ? (
+                        <Image
+                          alt=""
+                          className="object-cover"
+                          fill
+                          sizes="48px"
+                          src={recipe.imagenUrl}
+                        />
+                      ) : (
+                        <span className="flex h-full items-center justify-center text-[10px] font-bold text-stone-400">
+                          Sin foto
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <Link
+                        className="block truncate font-semibold text-stone-900 hover:text-emerald-800 hover:underline"
+                        href={`/recetas/${recipe.id}`}
+                      >
+                        {recipe.titulo}
+                      </Link>
+                      {recipe.etiqueta && (
+                        <span className="text-xs font-semibold text-emerald-700">
+                          {recipe.etiqueta}
+                        </span>
+                      )}
+                    </span>
                   </span>
                   <button
-                    className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={added || pending.has(`pool:${recipe.id}`)}
-                    onClick={() => addRecipe(recipe.id)}
+                    className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={added}
+                    onClick={() => setAddingRecipeId(recipe.id)}
                     type="button"
                   >
-                    {pending.has(`pool:${recipe.id}`)
-                      ? "Añadiendo..."
-                      : added
-                        ? "En el menú"
-                        : "Añadir"}
+                    {added ? "En el menú" : "Añadir"}
                   </button>
                 </li>
               );
@@ -495,223 +421,118 @@ export function WeeklyPlanner({
       </section>
 
       <section
-        className="mb-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
-        aria-labelledby="pool-heading"
+        aria-label="Calendario semanal"
+        className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm"
       >
-        <header className="bg-amber-800 px-5 py-3 text-white">
-          <h2 className="text-lg font-bold" id="pool-heading">
-            2 · Sin asignar ({pool.length})
-          </h2>
-        </header>
-        {pool.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-stone-500">
-            Añade recetas arriba y quedarán aquí hasta que las coloques en un
-            día y una comida.
-          </p>
-        ) : (
-          <ul className="divide-y divide-stone-100">
-            {pool.map((recipeId) => {
-              const recipe = recipesById.get(recipeId);
-              const draft = drafts[recipeId] ?? { day: "Lunes", meal: "Almuerzo" };
-              return (
-                <li
-                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
-                  key={recipeId}
+        <div className="grid min-w-[950px] grid-cols-7 divide-x divide-stone-200">
+          {WEEK_DAYS.map((day, dayIndex) => {
+            const isToday = dayIndex === todayIndex;
+            return (
+              <section className="min-w-0" key={day}>
+                <header
+                  className={`px-3 py-3 text-center ${
+                    isToday
+                      ? "bg-amber-300 text-emerald-950"
+                      : "bg-emerald-950 text-white"
+                  }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    {recipe ? (
-                      <Link
-                        className="block truncate font-semibold text-stone-900 hover:text-emerald-800 hover:underline"
-                        href={`/recetas/${recipe.id}`}
-                      >
-                        {recipe.titulo}
-                      </Link>
-                    ) : (
-                      <span className="block truncate font-semibold text-stone-900">
-                        Receta no disponible
-                      </span>
-                    )}
-                    <button
-                      className="mt-1 text-xs font-bold text-emerald-700 hover:underline"
-                      onClick={() => toggleDetails(recipeId)}
-                      type="button"
-                    >
-                      {details.has(recipeId) ? "Ocultar detalles" : "Ver detalles"}
-                    </button>
-                    {details.has(recipeId) && (
-                      <ul className="mt-2 space-y-1 text-sm text-stone-600">
-                        {(recipe?.ingredientes ?? []).map(
-                          (ingredient, index) => (
-                            <li
-                              className="flex justify-between gap-3"
-                              key={`${ingredient.ingredienteId ?? index}-${index}`}
-                            >
-                              <span>{ingredient.nombre}</span>
-                              <span className="shrink-0 font-semibold">
-                                {formatShoppingQuantity(ingredient.cantidad)}{" "}
-                                {ingredient.unidad}
-                              </span>
-                            </li>
-                          ),
-                        )}
-                        {(recipe?.ingredientes?.length ?? 0) === 0 && (
-                          <li className="text-xs italic text-stone-400">
-                            Sin ingredientes detallados.
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      aria-label="Día"
-                      className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-emerald-700"
-                      onChange={(event) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [recipeId]: {
-                            ...draft,
-                            day: event.target.value as WeekDay,
-                          },
-                        }))
-                      }
-                      value={draft.day}
-                    >
-                      {WEEK_DAYS.map((day) => (
-                        <option key={day} value={day}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      aria-label="Comida"
-                      className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-emerald-700"
-                      onChange={(event) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [recipeId]: {
-                            ...draft,
-                            meal: event.target.value as MealType,
-                          },
-                        }))
-                      }
-                      value={draft.meal}
-                    >
-                      {MEAL_TYPES.map((meal) => (
-                        <option key={meal} value={meal}>
+                  <p className="text-sm font-black">{day}</p>
+                  <p
+                    className={`mt-0.5 text-xs font-semibold ${
+                      isToday ? "text-emerald-800" : "text-emerald-200"
+                    }`}
+                  >
+                    {formatDay(week, dayIndex)}
+                  </p>
+                </header>
+                <div className="space-y-4 p-3">
+                  {MEAL_TYPES.map((meal) => {
+                    const key = menuSlotKey(day, meal);
+                    const selectId = `slot-${dayIndex}-${meal}`;
+                    const selectedRecipeId = slots[key];
+                    const selectedRecipeIsUnavailable =
+                      Boolean(selectedRecipeId) &&
+                      !recipes.some((recipe) => recipe.id === selectedRecipeId);
+                    return (
+                      <div key={meal}>
+                        <label
+                          className="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-500"
+                          htmlFor={selectId}
+                        >
                           {meal}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={pending.has(`slot:${menuSlotKey(draft.day, draft.meal)}`)}
-                      onClick={() => assignDraft(recipeId)}
-                      type="button"
-                    >
-                      Colocar
-                    </button>
-                    <button
-                      className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={pending.has(`pool:${recipeId}`)}
-                      onClick={() => removeRecipe(recipeId)}
-                      type="button"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                        </label>
+                        <select
+                          className="w-full rounded-xl border border-stone-300 bg-white px-2 py-2 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 disabled:opacity-50"
+                          disabled={pending.has(`slot:${key}`)}
+                          id={selectId}
+                          onChange={(event) =>
+                            setSlot(
+                              day,
+                              meal,
+                              event.target.value,
+                              pool.includes(event.target.value),
+                            )
+                          }
+                          value={slots[key] ?? ""}
+                        >
+                          <option value="">Sin receta</option>
+                          {selectedRecipeIsUnavailable && (
+                            <option value={selectedRecipeId}>
+                              Receta no disponible
+                            </option>
+                          )}
+                          {selectedRecipeId && !selectedRecipeIsUnavailable && (
+                            <option value={selectedRecipeId}>
+                              {recipesById.get(selectedRecipeId)?.titulo ?? ""}
+                            </option>
+                          )}
+                          {pool
+                            .filter((recipeId) => recipeId !== selectedRecipeId)
+                            .map((recipeId) => (
+                              <option key={recipeId} value={recipeId}>
+                                {recipesById.get(recipeId)?.titulo ?? "Receta"}
+                              </option>
+                            ))}
+                        </select>
+                        {pending.has(`slot:${key}`) && (
+                          <p className="mt-2 text-xs text-stone-500" role="status">
+                            Guardando...
+                          </p>
+                        )}
+                        {selectedRecipeId && !selectedRecipeIsUnavailable && (
+                          <Link
+                            className="mt-1 inline-block text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
+                            href={`/recetas/${selectedRecipeId}`}
+                          >
+                            Ver detalles
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </section>
-
-      <div className="space-y-4">
-        {WEEK_DAYS.map((day, dayIndex) => (
-          <section
-            className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
-            key={day}
-          >
-            <header className="flex items-baseline justify-between bg-emerald-950 px-5 py-3 text-white">
-              <h2 className="text-lg font-bold">{day}</h2>
-              <span className="text-xs font-semibold text-emerald-200">
-                {formatDay(week, dayIndex)}
-              </span>
-            </header>
-            <div className="grid divide-y divide-stone-100 md:grid-cols-4 md:divide-x md:divide-y-0">
-              {MEAL_TYPES.map((meal) => {
-                const key = menuSlotKey(day, meal);
-                const selectId = `slot-${dayIndex}-${meal}`;
-                const selectedRecipeId = slots[key];
-                const selectedRecipeIsUnavailable =
-                  Boolean(selectedRecipeId) &&
-                  !recipes.some((recipe) => recipe.id === selectedRecipeId);
-                return (
-                  <div className="p-4" key={meal}>
-                    <label
-                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500"
-                      htmlFor={selectId}
-                    >
-                      {meal}
-                    </label>
-                    <select
-                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 disabled:opacity-50"
-                      disabled={pending.has(`slot:${key}`)}
-                      id={selectId}
-                      onChange={(event) =>
-                        setSlot(
-                          day,
-                          meal,
-                          event.target.value,
-                          pool.includes(event.target.value),
-                        )
-                      }
-                      value={slots[key] ?? ""}
-                    >
-                      <option value="">Sin receta</option>
-                      {selectedRecipeIsUnavailable && (
-                        <option value={selectedRecipeId}>
-                          Receta no disponible
-                        </option>
-                      )}
-                      {selectedRecipeId && !selectedRecipeIsUnavailable && (
-                        <option value={selectedRecipeId}>
-                          {recipesById.get(selectedRecipeId)?.titulo ?? ""}
-                        </option>
-                      )}
-                      {pool
-                        .filter((recipeId) => recipeId !== selectedRecipeId)
-                        .map((recipeId) => (
-                          <option key={recipeId} value={recipeId}>
-                            {recipesById.get(recipeId)?.titulo ?? "Receta"}
-                          </option>
-                        ))}
-                    </select>
-                    {pending.has(`slot:${key}`) && (
-                      <p className="mt-2 text-xs text-stone-500" role="status">
-                        Guardando...
-                      </p>
-                    )}
-                    {selectedRecipeId && !selectedRecipeIsUnavailable && (
-                      <Link
-                        className="mt-2 inline-block text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
-                        href={`/recetas/${selectedRecipeId}`}
-                      >
-                        Ver detalles
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
 
       {mode === "local" && localReady && (
         <LocalShoppingList pool={pool} recipes={recipes} slots={slots} week={week} />
       )}
+
+      {addingRecipeId &&
+        (() => {
+          const recipe = recipesById.get(addingRecipeId);
+          return (
+            <RecipeSlotModal
+              imageUrl={recipe?.imagenUrl}
+              onCancel={() => setAddingRecipeId(null)}
+              onConfirm={confirmAdd}
+              recipeTitle={recipe?.titulo ?? "Receta"}
+            />
+          );
+        })()}
     </div>
   );
 }

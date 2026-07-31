@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { getRecipeImageUrl } from "@/lib/recipe-images";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
+import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
+import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
@@ -103,6 +105,21 @@ export default async function RecipeDetailPage({
     preferredAllergens.has(allergen.id),
   );
 
+  let favorited = false;
+  if (user) {
+    const { data: favoriteRows, error: favoritesError } = await supabase
+      .from("favoritos")
+      .select("receta_id")
+      .eq("user_id", user.id)
+      .eq("receta_id", recipe.id);
+    if (favoritesError) {
+      throw new Error(
+        `No se pudo cargar tu favorita: ${favoritesError.message}`,
+      );
+    }
+    favorited = (favoriteRows ?? []).length > 0;
+  }
+
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
       <SiteHeader tone="light" />
@@ -114,7 +131,15 @@ export default async function RecipeDetailPage({
           ← Volver a recetas
         </Link>
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <AddToMenuButton guest={!user} recipeId={recipe.id} />
+          <AddToMenuButton
+            guest={!user}
+            recipeId={recipe.id}
+            recipeTitle={recipe.titulo}
+          />
+          <AddToShoppingButton guest={!user} recipeId={recipe.id} />
+          {user && (
+            <FavoriteButton initial={favorited} recipeId={recipe.id} />
+          )}
           {user && <CopyRecipeButton id={recipe.id} />}
         </div>
       </div>

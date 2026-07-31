@@ -394,6 +394,87 @@ export type Database = {
           },
         ]
       }
+      shopping_list_extra: {
+        Row: {
+          cantidad: number
+          comprado: boolean
+          created_at: string
+          id: string
+          ingrediente_id: string | null
+          nombre_personalizado: string | null
+          unidad: string
+          usuario_id: string
+        }
+        Insert: {
+          cantidad: number
+          comprado?: boolean
+          created_at?: string
+          id?: string
+          ingrediente_id?: string | null
+          nombre_personalizado?: string | null
+          unidad: string
+          usuario_id: string
+        }
+        Update: {
+          cantidad?: number
+          comprado?: boolean
+          created_at?: string
+          id?: string
+          ingrediente_id?: string | null
+          nombre_personalizado?: string | null
+          unidad?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_extra_ingrediente_id_fkey"
+            columns: ["ingrediente_id"]
+            isOneToOne: false
+            referencedRelation: "ingredientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_extra_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favoritos: {
+        Row: {
+          created_at: string
+          receta_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          receta_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          receta_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favoritos_receta_id_fkey"
+            columns: ["receta_id"]
+            isOneToOne: false
+            referencedRelation: "recetas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -409,6 +490,10 @@ export type Database = {
           p_week: string
         }
         Returns: string
+      }
+      add_recipe_to_shopping_list: {
+        Args: { p_receta_id: string }
+        Returns: Database["public"]["Tables"]["shopping_list_extra"]["Row"][]
       }
       count_public_recipes: {
         Args: {
@@ -453,6 +538,10 @@ export type Database = {
         }
         Returns: string
       }
+      remove_extra_item: {
+        Args: { p_item_id: string }
+        Returns: string
+      }
       save_menu_slot: {
         Args: {
           p_day: string
@@ -495,9 +584,17 @@ export type Database = {
           total_count: number
         }[]
       }
+      set_extra_item_purchased: {
+        Args: { p_item_id: string; p_purchased: boolean }
+        Returns: string
+      }
       set_shopping_item_purchased: {
         Args: { p_item_id: string; p_purchased: boolean }
         Returns: string
+      }
+      toggle_favorite: {
+        Args: { p_receta_id: string }
+        Returns: boolean
       }
       storage_recipe_is_public: {
         Args: { object_name: string }

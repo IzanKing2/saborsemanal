@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { CloudShoppingList } from "@/components/shopping/shopping-list";
+import {
+  CloudShoppingList,
+  ExtraShoppingList,
+} from "@/components/shopping/shopping-list";
 import type { ShoppingListItem } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/server";
 import { addWeeks, parseMonday } from "@/lib/week";
@@ -77,6 +80,36 @@ export default async function ShoppingListPage({
     comprado: item.comprado,
   }));
 
+  const { data: extraRows, error: extraError } = await supabase
+    .from("shopping_list_extra")
+    .select(
+      `
+        id,
+        ingrediente_id,
+        nombre_personalizado,
+        cantidad,
+        unidad,
+        comprado,
+        ingredientes (
+          nombre,
+          categorias_ingredientes (nombre)
+        )
+      `,
+    )
+    .order("created_at");
+  if (extraError) {
+    throw new Error(`No se pudo cargar tu lista: ${extraError.message}`);
+  }
+
+  const extraItems: ShoppingListItem[] = (extraRows ?? []).map((item) => ({
+    id: item.id,
+    nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+    categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+    cantidad: Number(item.cantidad),
+    unidad: item.unidad,
+    comprado: item.comprado,
+  }));
+
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
       <header className="bg-emerald-950 text-white">
@@ -119,6 +152,7 @@ export default async function ShoppingListPage({
           </Link>
         </nav>
         <CloudShoppingList initialItems={items} key={week} week={week} />
+        <ExtraShoppingList initialItems={extraItems} />
       </div>
     </main>
   );

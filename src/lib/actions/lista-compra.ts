@@ -84,3 +84,107 @@ export async function setShoppingItemPurchasedAction(
     return { ok: false, message: "No se pudo guardar el cambio." };
   }
 }
+
+export async function addRecipeToShoppingListAction(
+  recipeId: string,
+): Promise<ShoppingListActionResult> {
+  if (!isUuid(recipeId)) {
+    return { ok: false, message: "La receta indicada no es válida." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("add_recipe_to_shopping_list", {
+      p_receta_id: recipeId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "No tienes permiso para añadir esta receta."
+            : "No se pudo añadir la receta a la lista.",
+      };
+    }
+
+    revalidatePath("/dashboard/lista-compra");
+    return { ok: true, message: "Receta añadida a tu lista." };
+  } catch {
+    return { ok: false, message: "No se pudo añadir la receta a la lista." };
+  }
+}
+
+export async function setExtraItemPurchasedAction(
+  itemId: string,
+  purchased: boolean,
+): Promise<ShoppingListActionResult> {
+  if (!isUuid(itemId) || typeof purchased !== "boolean") {
+    return { ok: false, message: "El cambio indicado no es válido." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("set_extra_item_purchased", {
+      p_item_id: itemId,
+      p_purchased: purchased,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "No tienes permiso para modificar este elemento."
+            : "No se pudo guardar el cambio.",
+      };
+    }
+
+    revalidatePath("/dashboard/lista-compra");
+    return { ok: true, message: "Lista actualizada." };
+  } catch {
+    return { ok: false, message: "No se pudo guardar el cambio." };
+  }
+}
+
+export async function removeExtraItemAction(
+  itemId: string,
+): Promise<ShoppingListActionResult> {
+  if (!isUuid(itemId)) {
+    return { ok: false, message: "El elemento indicado no es válido." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("remove_extra_item", {
+      p_item_id: itemId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "No tienes permiso para modificar este elemento."
+            : "No se pudo retirar el elemento.",
+      };
+    }
+
+    revalidatePath("/dashboard/lista-compra");
+    return { ok: true, message: "Elemento retirado de tu lista." };
+  } catch {
+    return { ok: false, message: "No se pudo retirar el elemento." };
+  }
+}

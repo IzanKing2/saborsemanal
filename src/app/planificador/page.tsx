@@ -6,6 +6,7 @@ import {
   type PlannerRecipe,
 } from "@/components/planner/weekly-planner";
 import { SiteHeader } from "@/components/navigation/site-header";
+import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { createClient } from "@/lib/supabase/server";
 import { parseMonday } from "@/lib/week";
 
@@ -31,6 +32,7 @@ export default async function GuestPlannerPage({
       `
         id,
         titulo,
+        imagen_url,
         receta_ingredientes (
           cantidad,
           unidad,
@@ -51,9 +53,15 @@ export default async function GuestPlannerPage({
     throw new Error(`No se pudieron cargar las recetas: ${error.message}`);
   }
 
+  const imageUrls = await getRecipeImageUrls(
+    supabase,
+    (data ?? []).map((recipe) => recipe.imagen_url),
+  );
+
   const recipes: PlannerRecipe[] = (data ?? []).map((recipe) => ({
     id: recipe.id,
     titulo: recipe.titulo,
+    imagenUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
     ingredientes: recipe.receta_ingredientes.map((item) => ({
       ingredienteId: item.ingrediente_id,
       nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",

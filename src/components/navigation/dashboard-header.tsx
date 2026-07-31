@@ -14,6 +14,7 @@ const dashboardLinks = [
   ["Mis recetas", "/dashboard/recetas"],
   ["Planificador", "/dashboard/planificador"],
   ["Lista de compra", "/dashboard/lista-compra"],
+  ["Favoritas", "/dashboard/favoritas"],
   ["Mi cuenta", "/dashboard/cuenta"],
 ] as const;
 

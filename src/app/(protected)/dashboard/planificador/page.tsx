@@ -7,6 +7,7 @@ import {
   type PlannerSlots,
 } from "@/components/planner/weekly-planner";
 import { createClient } from "@/lib/supabase/server";
+import { getRecipeImageUrls } from "@/lib/recipe-images";
 import {
   isMealType,
   isWeekDay,
@@ -36,6 +37,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
       .select(
         `id,
         titulo,
+        imagen_url,
         creador_id,
         publica,
         receta_ingredientes (
@@ -63,6 +65,11 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
     throw new Error(`No se pudo cargar el planificador: ${queryError.message}`);
   }
 
+  const imageUrls = await getRecipeImageUrls(
+    supabase,
+    (recipesResult.data ?? []).map((recipe) => recipe.imagen_url),
+  );
+
   const { data: menuRows, error: menuRowsError } = menuResult.data
     ? await supabase
         .from("menu_recetas")
@@ -76,6 +83,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const recipes: PlannerRecipe[] = (recipesResult.data ?? []).map((recipe) => ({
     id: recipe.id,
     titulo: recipe.titulo,
+    imagenUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
     etiqueta:
       recipe.creador_id === user.id
         ? recipe.publica
