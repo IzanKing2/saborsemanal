@@ -21,15 +21,21 @@ export default async function RecipeDetailPage({
   if (!isUuid(id)) notFound();
 
   const supabase = await createClient();
-  const { data: recipe, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const query = supabase
     .from("recetas")
     .select(
       "id, titulo, descripcion, instrucciones, imagen_url, tiempo_preparacion, porciones",
     )
-    .eq("id", id)
-    .eq("publica", true)
-    .eq("aprobada", true)
-    .maybeSingle();
+    .eq("id", id);
+  const filteredQuery = user
+    ? query.or(
+        `and(publica.eq.true,aprobada.eq.true),and(creador_id.eq."${user.id}")`,
+      )
+    : query.eq("publica", true).eq("aprobada", true);
+  const { data: recipe, error } = await filteredQuery.maybeSingle();
 
   if (error) throw new Error(`No se pudo cargar la receta: ${error.message}`);
   if (!recipe) notFound();
@@ -65,10 +71,9 @@ export default async function RecipeDetailPage({
         .map((link) => [link.alergenos!.id, link.alergenos!]),
     ).values(),
   ].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  const [imageUrl, authorResult, userResult] = await Promise.all([
+  const [imageUrl, authorResult] = await Promise.all([
     getRecipeImageUrl(supabase, recipe.imagen_url),
     supabase.rpc("get_public_recipe_authors", { p_recipe_ids: [recipe.id] }),
-    supabase.auth.getUser(),
   ]);
   if (authorResult.error) {
     throw new Error(
@@ -80,7 +85,6 @@ export default async function RecipeDetailPage({
     supabase,
     author?.avatar_path ?? null,
   );
-  const user = userResult.data.user;
   const { data: preferenceRows, error: preferencesError } = user
     ? await supabase
         .from("profile_allergens")
@@ -109,12 +113,10 @@ export default async function RecipeDetailPage({
         >
           ← Volver a recetas
         </Link>
-        {user && (
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <AddToMenuButton recipeId={recipe.id} />
-            <CopyRecipeButton id={recipe.id} />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <AddToMenuButton guest={!user} recipeId={recipe.id} />
+          {user && <CopyRecipeButton id={recipe.id} />}
+        </div>
       </div>
 
       <article className="mx-auto max-w-6xl overflow-hidden border-y border-stone-200 bg-white shadow-sm sm:rounded-3xl sm:border">

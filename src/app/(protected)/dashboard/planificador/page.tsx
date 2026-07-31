@@ -33,7 +33,22 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const [recipesResult, menuResult] = await Promise.all([
     supabase
       .from("recetas")
-      .select("id, titulo, creador_id, publica")
+      .select(
+        `id,
+        titulo,
+        creador_id,
+        publica,
+        receta_ingredientes (
+          cantidad,
+          unidad,
+          ingrediente_id,
+          nombre_personalizado,
+          ingredientes (
+            nombre,
+            categorias_ingredientes (nombre)
+          )
+        )`,
+      )
       .order("titulo"),
     supabase
       .from("menus_semanales")
@@ -67,6 +82,14 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
           ? "Tu receta publicada"
           : "Tu borrador"
         : "Catálogo",
+    ingredientes: recipe.receta_ingredientes.map((item) => ({
+      ingredienteId: item.ingrediente_id,
+      nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+      categoria:
+        item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+      cantidad: Number(item.cantidad),
+      unidad: item.unidad,
+    })),
   }));
   const slots: PlannerSlots = {};
   const pool: string[] = [];

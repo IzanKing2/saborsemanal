@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 
 import { addMenuRecipeAction } from "@/lib/actions/planificador";
 import { getCurrentMonday } from "@/lib/week";
 
-export function AddToMenuButton({ recipeId }: { recipeId: string }) {
+export function AddToMenuButton({
+  recipeId,
+  guest = false,
+}: {
+  recipeId: string;
+  guest?: boolean;
+}) {
+  const router = useRouter();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(
     null,
   );
@@ -15,6 +23,36 @@ export function AddToMenuButton({ recipeId }: { recipeId: string }) {
 
   function handleAdd() {
     if (pending || state?.ok) return;
+
+    if (guest) {
+      setPending(true);
+      try {
+        const key = `saborsemanal:menu:pool:${week}`;
+        let pool: string[] = [];
+        try {
+          const raw = window.localStorage.getItem(key);
+          if (raw) {
+            const parsed: unknown = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              pool = parsed.filter(
+                (recipeId): recipeId is string => typeof recipeId === "string",
+              );
+            }
+          }
+        } catch {
+          // Ignore unreadable storage and start with an empty pool.
+        }
+        if (!pool.includes(recipeId)) pool = [...pool, recipeId];
+        window.localStorage.setItem(key, JSON.stringify(pool));
+      } catch {
+        setState({ ok: false, message: "El navegador no pudo guardar la receta." });
+        setPending(false);
+        return;
+      }
+      router.push(`/planificador?week=${week}`);
+      return;
+    }
+
     setPending(true);
     startTransition(async () => {
       const result = await addMenuRecipeAction({ week, recipeId });

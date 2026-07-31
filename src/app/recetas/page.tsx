@@ -381,11 +381,9 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                       </div>
                     </div>
                   </Link>
-                  {user && (
-                    <div className="px-5 pb-5">
-                      <AddToMenuButton recipeId={recipe.id} />
-                    </div>
-                  )}
+                  <div className="px-5 pb-5">
+                    <AddToMenuButton guest={!user} recipeId={recipe.id} />
+                  </div>
                 </article>
               ))}
             </div>

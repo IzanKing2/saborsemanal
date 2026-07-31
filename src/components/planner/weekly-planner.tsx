@@ -10,6 +10,7 @@ import {
   saveMenuSlotAction,
 } from "@/lib/actions/planificador";
 import type { ShoppingRecipeIngredient } from "@/lib/shopping-list";
+import { formatShoppingQuantity } from "@/lib/shopping-list";
 import {
   MEAL_TYPES,
   WEEK_DAYS,
@@ -70,6 +71,7 @@ export function WeeklyPlanner({
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
+  const [details, setDetails] = useState<Set<string>>(new Set());
   const slotsKey = `saborsemanal:menu:${week}`;
   const poolKey = `saborsemanal:menu:pool:${week}`;
 
@@ -339,6 +341,15 @@ export function WeeklyPlanner({
     setSlot(draft.day, draft.meal, recipeId, true);
   }
 
+  function toggleDetails(recipeId: string) {
+    setDetails((current) => {
+      const next = new Set(current);
+      if (next.has(recipeId)) next.delete(recipeId);
+      else next.add(recipeId);
+      return next;
+    });
+  }
+
   const suggestions = recipes
     .filter((recipe) => {
       const normalizedQuery = query.trim().toLocaleLowerCase("es");
@@ -444,9 +455,12 @@ export function WeeklyPlanner({
                   key={recipe.id}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold text-stone-900">
+                    <Link
+                      className="block truncate font-semibold text-stone-900 hover:text-emerald-800 hover:underline"
+                      href={`/recetas/${recipe.id}`}
+                    >
                       {recipe.titulo}
-                    </span>
+                    </Link>
                     {recipe.etiqueta && (
                       <span className="text-xs font-semibold text-emerald-700">
                         {recipe.etiqueta}
@@ -504,9 +518,50 @@ export function WeeklyPlanner({
                   className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
                   key={recipeId}
                 >
-                  <span className="min-w-0 flex-1 truncate font-semibold text-stone-900">
-                    {recipe?.titulo ?? "Receta no disponible"}
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    {recipe ? (
+                      <Link
+                        className="block truncate font-semibold text-stone-900 hover:text-emerald-800 hover:underline"
+                        href={`/recetas/${recipe.id}`}
+                      >
+                        {recipe.titulo}
+                      </Link>
+                    ) : (
+                      <span className="block truncate font-semibold text-stone-900">
+                        Receta no disponible
+                      </span>
+                    )}
+                    <button
+                      className="mt-1 text-xs font-bold text-emerald-700 hover:underline"
+                      onClick={() => toggleDetails(recipeId)}
+                      type="button"
+                    >
+                      {details.has(recipeId) ? "Ocultar detalles" : "Ver detalles"}
+                    </button>
+                    {details.has(recipeId) && (
+                      <ul className="mt-2 space-y-1 text-sm text-stone-600">
+                        {(recipe?.ingredientes ?? []).map(
+                          (ingredient, index) => (
+                            <li
+                              className="flex justify-between gap-3"
+                              key={`${ingredient.ingredienteId ?? index}-${index}`}
+                            >
+                              <span>{ingredient.nombre}</span>
+                              <span className="shrink-0 font-semibold">
+                                {formatShoppingQuantity(ingredient.cantidad)}{" "}
+                                {ingredient.unidad}
+                              </span>
+                            </li>
+                          ),
+                        )}
+                        {(recipe?.ingredientes?.length ?? 0) === 0 && (
+                          <li className="text-xs italic text-stone-400">
+                            Sin ingredientes detallados.
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
                       aria-label="Día"
@@ -637,6 +692,14 @@ export function WeeklyPlanner({
                       <p className="mt-2 text-xs text-stone-500" role="status">
                         Guardando...
                       </p>
+                    )}
+                    {selectedRecipeId && !selectedRecipeIsUnavailable && (
+                      <Link
+                        className="mt-2 inline-block text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
+                        href={`/recetas/${selectedRecipeId}`}
+                      >
+                        Ver detalles
+                      </Link>
                     )}
                   </div>
                 );
