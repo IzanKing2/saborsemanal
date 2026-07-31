@@ -8,7 +8,33 @@ type RecipeAdminPageProps = {
   searchParams: Promise<{ page?: string | string[] }>;
 };
 
-const pageSize = 25;
+const pageSize = 10;
+
+type PaginationItem = number | "…";
+
+function paginationItems(
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] {
+  const items: PaginationItem[] = [];
+  const push = (value: PaginationItem) => {
+    if (items[items.length - 1] !== value) items.push(value);
+  };
+
+  if (totalPages <= 7) {
+    for (let page = 1; page <= totalPages; page += 1) push(page);
+    return items;
+  }
+
+  push(1);
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  if (start > 2) push("…");
+  for (let page = start; page <= end; page += 1) push(page);
+  if (end < totalPages - 1) push("…");
+  push(totalPages);
+  return items;
+}
 
 export default async function RecipeAdminPage({
   searchParams,
@@ -107,11 +133,11 @@ export default async function RecipeAdminPage({
             {totalPages > 1 && (
               <nav
                 aria-label="Paginación de recetas"
-                className="flex justify-center gap-3 pt-4"
+                className="flex flex-wrap items-center justify-center gap-2 pt-4"
               >
                 {currentPage > 1 && (
                   <Link
-                    className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-bold"
+                    className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50"
                     href={
                       currentPage === 2
                         ? "/admin/recetas"
@@ -120,6 +146,31 @@ export default async function RecipeAdminPage({
                   >
                     Anterior
                   </Link>
+                )}
+                {paginationItems(currentPage, totalPages).map((item, index) =>
+                  item === "…" ? (
+                    <span
+                      className="px-2 py-2 text-sm text-stone-400"
+                      key={`ellipsis-${index}`}
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <Link
+                      aria-current={item === currentPage ? "page" : undefined}
+                      className={
+                        item === currentPage
+                          ? "rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white"
+                          : "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50"
+                      }
+                      href={
+                        item === 1 ? "/admin/recetas" : `/admin/recetas?page=${item}`
+                      }
+                      key={item}
+                    >
+                      {item}
+                    </Link>
+                  ),
                 )}
                 {currentPage < totalPages && (
                   <Link

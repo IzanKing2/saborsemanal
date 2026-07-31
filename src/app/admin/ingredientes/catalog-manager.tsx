@@ -229,31 +229,47 @@ function NameCatalogPanel({
       : "Permiten excluir recetas según necesidades alimentarias.";
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <details className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 marker:hidden">
         <div>
           <h2 className="text-xl font-bold text-stone-900">{title}</h2>
           <p className="mt-1 text-sm leading-6 text-stone-600">{description}</p>
         </div>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-          {items.length}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
+            {items.length}
+          </span>
+          <svg
+            aria-hidden="true"
+            className="size-5 text-stone-400 transition group-open:rotate-180"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </div>
+      </summary>
+
+      <div className="mt-5">
+        <CreateNameForm catalog={catalog} />
+
+        {items.length > 0 ? (
+          <ul className="mt-5 space-y-2">
+            {items.map((item) => (
+              <NameRow catalog={catalog} item={item} key={item.id} />
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-5 rounded-xl bg-stone-50 p-4 text-sm text-stone-500">
+            Todavía no hay registros.
+          </p>
+        )}
       </div>
-
-      <CreateNameForm catalog={catalog} />
-
-      {items.length > 0 ? (
-        <ul className="mt-5 space-y-2">
-          {items.map((item) => (
-            <NameRow catalog={catalog} item={item} key={item.id} />
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-5 rounded-xl bg-stone-50 p-4 text-sm text-stone-500">
-          Todavía no hay registros.
-        </p>
-      )}
-    </section>
+    </details>
   );
 }
 
