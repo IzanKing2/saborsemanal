@@ -3,14 +3,22 @@ import { redirect } from "next/navigation";
 
 import { AdminDeleteRecipeForm } from "@/components/recipes/admin-delete-recipe-form";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
 
 type RecipeAdminPageProps = {
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+type SearchAdminArgs =
+  Database["public"]["Functions"]["search_admin_recetas"]["Args"];
 
 const pageSize = 10;
 
 type PaginationItem = number | "…";
+
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
 
 function paginationItems(
   currentPage: number,
@@ -36,33 +44,79 @@ function paginationItems(
   return items;
 }
 
+function recetasUrl({
+  q,
+  estado,
+  aprobacion,
+  page,
+}: {
+  q: string;
+  estado: string;
+  aprobacion: string;
+  page: number;
+}) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (estado) params.set("estado", estado);
+  if (aprobacion) params.set("aprobacion", aprobacion);
+  if (page > 1) params.set("page", String(page));
+  const search = params.toString();
+  return search ? `/admin/recetas?${search}` : "/admin/recetas";
+}
+
+const selectClass =
+  "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20";
+
 export default async function RecipeAdminPage({
   searchParams,
 }: RecipeAdminPageProps) {
   const params = await searchParams;
-  const pageValue = Array.isArray(params.page) ? params.page[0] : params.page;
-  const parsedPage = Number(pageValue);
-  const currentPage =
-    Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const from = (currentPage - 1) * pageSize;
+  const query = firstValue(params.q).trim().slice(0, 120);
+  const rawEstado = firstValue(params.estado);
+  const estado =
+    rawEstado === "publicadas" || rawEstado === "borradores"
+      ? rawEstado
+      : "";
+  const rawAprobacion = firstValue(params.aprobacion);
+  const aprobacion =
+    rawAprobacion === "aprobadas" || rawAprobacion === "pendientes"
+      ? rawAprobacion
+      : "";
+  const parsedPage = Number(firstValue(params.page));
+  const requestedPage =
+    Number.isInteger(parsedPage) && parsedPage > 0
+      ? Math.min(parsedPage, 1_000_000)
+      : 1;
+
   const supabase = await createClient();
   const { data: isAdmin } = await supabase.rpc("is_admin");
   if (!isAdmin) redirect("/dashboard");
 
-  const { data: recipes, error: recipesError, count } = await supabase
-    .from("recetas")
-    .select(
-      "id, titulo, descripcion, publica, tiempo_preparacion, porciones, created_at, autor:profiles!recetas_creador_id_fkey(email)",
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false })
-    .range(from, from + pageSize - 1);
+  const args: SearchAdminArgs = {
+    p_limit: pageSize,
+    p_offset: (requestedPage - 1) * pageSize,
+  };
+  if (query) args.p_query = query;
+  if (estado === "publicadas") args.p_publica = true;
+  else if (estado === "borradores") args.p_publica = false;
+  if (aprobacion === "aprobadas") args.p_aprobada = true;
+  else if (aprobacion === "pendientes") args.p_aprobada = false;
 
-  if (recipesError) {
-    throw new Error(`No se pudieron cargar las recetas: ${recipesError.message}`);
+  const { data, error } = await supabase.rpc("search_admin_recetas", args);
+  if (error) {
+    throw new Error(`No se pudieron cargar las recetas: ${error.message}`);
   }
 
-  const totalPages = Math.max(1, Math.ceil((count ?? 0) / pageSize));
+  const rows = data ?? [];
+  const totalCount = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  if (totalCount > 0 && requestedPage > totalPages) {
+    redirect(
+      recetasUrl({ q: query, estado, aprobacion, page: totalPages }),
+    );
+  }
+  const currentPage = requestedPage;
+  const hasFilters = Boolean(query || estado || aprobacion);
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
@@ -81,15 +135,101 @@ export default async function RecipeAdminPage({
             Recetario global
           </h1>
           <p className="mt-3 max-w-2xl text-emerald-100">
-            Consulta y elimina cualquier receta de la aplicación.
+            Busca, filtra y elimina cualquier receta de la aplicación.
           </p>
         </div>
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        {(recipes ?? []).length > 0 ? (
+        <form
+          className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+          role="search"
+        >
+          <div className="grid items-end gap-4 lg:grid-cols-[1fr_auto_auto_auto]">
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium text-stone-700"
+                htmlFor="admin-recipe-query"
+              >
+                Buscar
+              </label>
+              <input
+                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
+                defaultValue={query}
+                id="admin-recipe-query"
+                maxLength={120}
+                name="q"
+                placeholder="Título o descripción"
+                type="search"
+              />
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium text-stone-700"
+                htmlFor="admin-recipe-estado"
+              >
+                Estado
+              </label>
+              <select
+                className={selectClass}
+                defaultValue={estado}
+                id="admin-recipe-estado"
+                name="estado"
+              >
+                <option value="">Todas</option>
+                <option value="publicadas">Publicadas</option>
+                <option value="borradores">Borradores</option>
+              </select>
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium text-stone-700"
+                htmlFor="admin-recipe-aprobacion"
+              >
+                Aprobación
+              </label>
+              <select
+                className={selectClass}
+                defaultValue={aprobacion}
+                id="admin-recipe-aprobacion"
+                name="aprobacion"
+              >
+                <option value="">Todas</option>
+                <option value="aprobadas">Aprobadas</option>
+                <option value="pendientes">Pendientes</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-800"
+                type="submit"
+              >
+                Filtrar
+              </button>
+              <Link
+                className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-100"
+                href="/admin/recetas"
+              >
+                Limpiar
+              </Link>
+            </div>
+          </div>
+        </form>
+
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <p className="text-sm text-stone-600">
+            {totalCount} {totalCount === 1 ? "receta" : "recetas"} encontradas
+          </p>
+          {totalPages > 1 && (
+            <p className="text-sm text-stone-500">
+              Página {currentPage} de {totalPages}
+            </p>
+          )}
+        </div>
+
+        {rows.length > 0 ? (
           <div className="space-y-4">
-            {(recipes ?? []).map((recipe) => (
+            {rows.map((recipe) => (
               <article
                 className="flex flex-col justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center"
                 key={recipe.id}
@@ -105,8 +245,17 @@ export default async function RecipeAdminPage({
                     >
                       {recipe.publica ? "Publicada" : "Borrador"}
                     </span>
+                    <span
+                      className={
+                        recipe.aprobada
+                          ? "inline-flex rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800"
+                          : "inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800"
+                      }
+                    >
+                      {recipe.aprobada ? "Aprobada" : "Pendiente"}
+                    </span>
                     <span className="text-xs font-semibold text-stone-500">
-                      {recipe.autor?.email ?? "Autor desconocido"}
+                      {recipe.autor_email ?? "Autor desconocido"}
                     </span>
                   </div>
                   <h2 className="mt-2 truncate text-lg font-bold text-stone-950">
@@ -119,7 +268,9 @@ export default async function RecipeAdminPage({
                     <span>{recipe.tiempo_preparacion} min</span>
                     <span>{recipe.porciones} porciones</span>
                     <span>
-                      {new Date(recipe.created_at ?? new Date()).toLocaleDateString("es-ES", {
+                      {new Date(
+                        recipe.created_at ?? new Date(),
+                      ).toLocaleDateString("es-ES", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -138,11 +289,12 @@ export default async function RecipeAdminPage({
                 {currentPage > 1 && (
                   <Link
                     className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50"
-                    href={
-                      currentPage === 2
-                        ? "/admin/recetas"
-                        : `/admin/recetas?page=${currentPage - 1}`
-                    }
+                    href={recetasUrl({
+                      q: query,
+                      estado,
+                      aprobacion,
+                      page: currentPage - 1,
+                    })}
                   >
                     Anterior
                   </Link>
@@ -163,9 +315,12 @@ export default async function RecipeAdminPage({
                           ? "rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white"
                           : "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50"
                       }
-                      href={
-                        item === 1 ? "/admin/recetas" : `/admin/recetas?page=${item}`
-                      }
+                      href={recetasUrl({
+                        q: query,
+                        estado,
+                        aprobacion,
+                        page: item,
+                      })}
                       key={item}
                     >
                       {item}
@@ -175,7 +330,12 @@ export default async function RecipeAdminPage({
                 {currentPage < totalPages && (
                   <Link
                     className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white"
-                    href={`/admin/recetas?page=${currentPage + 1}`}
+                    href={recetasUrl({
+                      q: query,
+                      estado,
+                      aprobacion,
+                      page: currentPage + 1,
+                    })}
                   >
                     Siguiente
                   </Link>
@@ -185,12 +345,25 @@ export default async function RecipeAdminPage({
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-emerald-300 bg-white px-6 py-16 text-center">
-            <h2 className="text-2xl font-bold text-stone-950">
-              Aún no hay recetas
-            </h2>
-            <p className="mt-2 text-stone-600">
-              Cuando alguien cree una receta, aparecerá aquí.
-            </p>
+            {hasFilters ? (
+              <>
+                <h2 className="text-2xl font-bold text-stone-950">
+                  Sin resultados
+                </h2>
+                <p className="mt-2 text-stone-600">
+                  Ninguna receta coincide con la búsqueda o los filtros.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-stone-950">
+                  Aún no hay recetas
+                </h2>
+                <p className="mt-2 text-stone-600">
+                  Cuando alguien cree una receta, aparecerá aquí.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

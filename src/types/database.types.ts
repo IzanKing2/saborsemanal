@@ -565,6 +565,27 @@ export type Database = {
         }
         Returns: string
       }
+      search_admin_recetas: {
+        Args: {
+          p_aprobada?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_publica?: boolean
+          p_query?: string
+        }
+        Returns: {
+          aprobada: boolean
+          autor_email: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          porciones: number
+          publica: boolean
+          tiempo_preparacion: number
+          titulo: string
+          total_count: number
+        }[]
+      }
       search_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
