@@ -6,10 +6,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: supabaseUrl
       ? [
-          new URL(
-            "/storage/v1/object/**",
-            supabaseUrl,
-          ),
+          {
+            protocol: "https",
+            hostname: new URL(supabaseUrl).hostname,
+            port: "",
+            pathname: "/storage/v1/object/**",
+          },
         ]
       : [],
   },
