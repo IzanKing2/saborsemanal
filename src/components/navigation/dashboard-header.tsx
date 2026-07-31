@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
+import { DashboardNav } from "@/components/navigation/dashboard-nav";
 import { RecipeSearch } from "@/components/navigation/recipe-search";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 
@@ -31,13 +32,13 @@ export function DashboardHeader({
         <Link className="shrink-0 text-lg font-black tracking-tight" href="/">
           Sabor<span className="text-amber-300">Semanal</span>
         </Link>
-        <div className="order-3 flex w-full flex-col gap-3 border-t border-emerald-900 pt-3 sm:order-2 sm:w-auto sm:flex-1 sm:flex-row sm:items-center sm:border-0 sm:pt-0">
-          <div className="hidden sm:block sm:flex-1">
+        <div className="hidden flex-1 items-center gap-4 sm:order-2 sm:flex">
+          <div className="flex-1">
             <RecipeSearch tone="dark" />
           </div>
           <nav
             aria-label="Panel de usuario"
-            className="flex w-full gap-1 overflow-x-auto text-sm font-bold sm:w-auto"
+            className="flex items-center gap-1 text-sm font-bold"
           >
             {dashboardLinks.map(([label, href]) => (
               <Link
@@ -82,7 +83,8 @@ export function DashboardHeader({
               {displayName}
             </span>
           </Link>
-          <form action={logoutAction}>
+          <DashboardNav isAdmin={isAdmin} logout={logoutAction} />
+          <form action={logoutAction} className="hidden sm:block">
             <button
               className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-100 hover:border-emerald-500 hover:text-white"
               type="submit"
