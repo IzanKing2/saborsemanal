@@ -15,17 +15,20 @@ export function CustomCursor() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const finePointer = window.matchMedia("(pointer: fine)").matches;
+    const canHover = window.matchMedia("(hover: hover)").matches;
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (!finePointer || reducedMotion) return;
+    if (!canHover) return;
 
     setEnabled(true);
+    document.documentElement.classList.add("custom-cursor-active");
 
     const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const dot = { x: mouse.x, y: mouse.y };
     const ring = { x: mouse.x, y: mouse.y };
+    const dotFactor = reducedMotion ? 1 : 0.7;
+    const ringFactor = reducedMotion ? 1 : 0.22;
     let frame = 0;
 
     function onMove(event: MouseEvent) {
@@ -52,10 +55,10 @@ export function CustomCursor() {
     }
 
     function tick() {
-      dot.x += (mouse.x - dot.x) * 0.7;
-      dot.y += (mouse.y - dot.y) * 0.7;
-      ring.x += (mouse.x - ring.x) * 0.22;
-      ring.y += (mouse.y - ring.y) * 0.22;
+      dot.x += (mouse.x - dot.x) * dotFactor;
+      dot.y += (mouse.y - dot.y) * dotFactor;
+      ring.x += (mouse.x - ring.x) * ringFactor;
+      ring.y += (mouse.y - ring.y) * ringFactor;
 
       if (dotWrapRef.current) {
         dotWrapRef.current.style.transform = `translate3d(${dot.x}px, ${dot.y}px, 0) translate(-50%, -50%)`;
@@ -76,6 +79,7 @@ export function CustomCursor() {
 
     return () => {
       cancelAnimationFrame(frame);
+      document.documentElement.classList.remove("custom-cursor-active");
       window.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);
       document.removeEventListener("mouseout", onOut);
