@@ -44,21 +44,105 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-        {[
-          ["01", "Recetas verificadas", "Cada publicación pasa por una revisión antes de llegar al catálogo."],
-          ["02", "Filtros útiles", "Busca por tiempo y excluye platos según sus alérgenos asociados."],
-          ["03", "Tu propia cocina", "Guarda borradores y escribe ingredientes propios cuando lo necesites."],
-        ].map(([number, title, description]) => (
-          <article
-            className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"
-            key={number}
-          >
-            <span className="text-xs font-black text-amber-700">{number}</span>
-            <h2 className="mt-3 text-xl font-bold">{title}</h2>
-            <p className="mt-2 text-sm leading-6 text-stone-600">{description}</p>
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700">
+            Así de fácil
+          </p>
+          <h2 className="mt-3 text-3xl font-black text-stone-950 sm:text-4xl">
+            Cómo funciona
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-stone-600">
+            Tres pasos para pasar de «¿qué cocino esta semana?» a la mesa
+            puesta.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <article className="flex flex-col rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <span className="flex size-10 items-center justify-center rounded-full bg-emerald-950 font-black text-amber-300">
+              1
+            </span>
+            <h3 className="mt-4 text-xl font-bold text-stone-950">
+              Encuentra tu plato
+            </h3>
+            <p className="mt-2 flex-1 text-sm leading-6 text-stone-600">
+              Busca en el catálogo, filtra por tiempo máximo y descarta los
+              alérgenos que quieras evitar. Guarda tus favoritas con un corazón.
+            </p>
+            <Link
+              className="mt-5 inline-block text-sm font-bold text-emerald-800 hover:underline"
+              href="/recetas"
+            >
+              Explorar recetas →
+            </Link>
           </article>
-        ))}
+
+          <article className="flex flex-col rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <span className="flex size-10 items-center justify-center rounded-full bg-emerald-950 font-black text-amber-300">
+              2
+            </span>
+            <h3 className="mt-4 text-xl font-bold text-stone-950">
+              Planifica tu semana
+            </h3>
+            <p className="mt-2 flex-1 text-sm leading-6 text-stone-600">
+              Añade recetas al calendario del planificador desde cualquier ficha
+              y organiza cada día y cada comida de la semana.
+            </p>
+            <Link
+              className="mt-5 inline-block text-sm font-bold text-emerald-800 hover:underline"
+              href={user ? "/dashboard/planificador" : "/planificador"}
+            >
+              Planificar mi semana →
+            </Link>
+          </article>
+
+          <article className="flex flex-col rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <span className="flex size-10 items-center justify-center rounded-full bg-emerald-950 font-black text-amber-300">
+              3
+            </span>
+            <h3 className="mt-4 text-xl font-bold text-stone-950">
+              Haz la compra
+            </h3>
+            <p className="mt-2 flex-1 text-sm leading-6 text-stone-600">
+              Añade recetas a tu lista con un clic y marca lo que ya tienes en
+              casa desde el carrito de la parte superior.
+            </p>
+            <Link
+              className="mt-5 inline-block text-sm font-bold text-emerald-800 hover:underline"
+              href={user ? "/dashboard/lista-compra" : "/planificador"}
+            >
+              {user ? "Abrir lista de la compra →" : "Empezar a planificar →"}
+            </Link>
+          </article>
+        </div>
+
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 rounded-2xl bg-emerald-950 px-6 py-6 text-white sm:flex-row sm:px-8">
+          <div>
+            <p className="text-lg font-bold">
+              ¿Ya tienes cuenta? Retoma tu planificación.
+            </p>
+            <p className="mt-1 text-sm text-emerald-100">
+              Tus recetas, favoritas y listas se sincronizan entre dispositivos.
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-3">
+            <Link
+              className="rounded-lg bg-amber-300 px-5 py-2.5 text-sm font-bold text-emerald-950 hover:bg-amber-200"
+              href={user ? "/dashboard" : "/register"}
+            >
+              {user ? "Ir a mi panel" : "Crear cuenta"}
+            </Link>
+            {!user && (
+              <Link
+                className="rounded-lg border border-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900"
+                href="/login"
+              >
+                Entrar
+              </Link>
+            )}
+          </div>
+        </div>
       </section>
     </main>
   );

@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
+import { RecipeSearch } from "@/components/navigation/recipe-search";
+import { ShoppingCart } from "@/components/shopping/shopping-cart";
 
 type DashboardHeaderProps = {
   displayName: string;
@@ -29,29 +31,35 @@ export function DashboardHeader({
         <Link className="shrink-0 text-lg font-black tracking-tight" href="/">
           Sabor<span className="text-amber-300">Semanal</span>
         </Link>
-        <nav
-          aria-label="Panel de usuario"
-          className="order-3 flex w-full gap-1 overflow-x-auto border-t border-emerald-900 pt-3 text-sm font-bold sm:order-2 sm:w-auto sm:flex-1 sm:border-0 sm:pt-0"
-        >
-          {dashboardLinks.map(([label, href]) => (
-            <Link
-              className="shrink-0 rounded-lg px-3 py-2 text-emerald-100 hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-              href={href}
-              key={href}
-            >
-              {label}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link
-              className="shrink-0 rounded-lg px-3 py-2 text-amber-300 hover:bg-emerald-900"
-              href="/admin"
-            >
-              Administración
-            </Link>
-          )}
-        </nav>
+        <div className="order-3 flex w-full flex-col gap-3 border-t border-emerald-900 pt-3 sm:order-2 sm:w-auto sm:flex-1 sm:flex-row sm:items-center sm:border-0 sm:pt-0">
+          <div className="hidden sm:block sm:flex-1">
+            <RecipeSearch tone="dark" />
+          </div>
+          <nav
+            aria-label="Panel de usuario"
+            className="flex w-full gap-1 overflow-x-auto text-sm font-bold sm:w-auto"
+          >
+            {dashboardLinks.map(([label, href]) => (
+              <Link
+                className="shrink-0 rounded-lg px-3 py-2 text-emerald-100 hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                href={href}
+                key={href}
+              >
+                {label}
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link
+                className="shrink-0 rounded-lg px-3 py-2 text-amber-300 hover:bg-emerald-900"
+                href="/admin"
+              >
+                Administración
+              </Link>
+            )}
+          </nav>
+        </div>
         <div className="order-2 ml-auto flex shrink-0 items-center gap-3 sm:order-3 sm:ml-0">
+          <ShoppingCart loggedIn tone="dark" />
           <Link
             aria-label="Abrir mi cuenta"
             className="flex items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"

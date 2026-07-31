@@ -5,7 +5,6 @@ import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
 
 import { RecipeSlotModal } from "@/components/recipes/recipe-slot-modal";
-import { LocalShoppingList } from "@/components/shopping/shopping-list";
 import { saveMenuSlotAction } from "@/lib/actions/planificador";
 import type { ShoppingRecipeIngredient } from "@/lib/shopping-list";
 import {
@@ -60,7 +59,6 @@ export function WeeklyPlanner({
   const [pool, setPool] = useState<string[]>(initialPool);
   const [query, setQuery] = useState("");
   const [addingRecipeId, setAddingRecipeId] = useState<string | null>(null);
-  const [localReady, setLocalReady] = useState(mode !== "local");
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -147,7 +145,6 @@ export function WeeklyPlanner({
       setSlots({});
       setPool([]);
     }
-    setLocalReady(true);
 
     function handleStorage(event: StorageEvent) {
       if (event.key === slotsKey) {
@@ -323,15 +320,10 @@ export function WeeklyPlanner({
           <div>
             <p className="font-bold text-amber-950">¿Ya tienes el menú listo?</p>
             <p className="mt-1 text-sm text-amber-800">
-              Consolida todos sus ingredientes en una lista sincronizada.
+              Revisa la lista consolidada de la semana desde el carrito del menú
+              superior.
             </p>
           </div>
-          <Link
-            className="rounded-lg bg-amber-300 px-4 py-2 text-center text-sm font-bold text-amber-950 hover:bg-amber-200"
-            href={`/dashboard/lista-compra?week=${week}`}
-          >
-            Abrir lista de compra
-          </Link>
         </div>
       )}
 
@@ -516,10 +508,6 @@ export function WeeklyPlanner({
           })}
         </div>
       </section>
-
-      {mode === "local" && localReady && (
-        <LocalShoppingList pool={pool} recipes={recipes} slots={slots} week={week} />
-      )}
 
       {addingRecipeId &&
         (() => {

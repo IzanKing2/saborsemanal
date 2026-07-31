@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
+import { RecipeSearch } from "@/components/navigation/recipe-search";
+import { ShoppingCart } from "@/components/shopping/shopping-cart";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,7 +34,11 @@ export async function SiteHeader({ tone = "dark" }: { tone?: "dark" | "light" })
         <Link className="text-lg font-black tracking-tight" href="/">
           Sabor<span className={dark ? "text-amber-300" : "text-amber-700"}>Semanal</span>
         </Link>
+        <div className="hidden max-w-md flex-1 sm:block">
+          <RecipeSearch tone={tone} />
+        </div>
         <div className="flex items-center gap-2 text-sm font-bold sm:gap-4">
+          <ShoppingCart loggedIn={Boolean(user)} tone={tone} />
           <Link className={dark ? "hidden text-emerald-100 hover:text-white sm:block" : "hidden text-stone-600 hover:text-stone-950 sm:block"} href="/recetas">Recetas</Link>
           <Link className={dark ? "hidden text-emerald-100 hover:text-white sm:block" : "hidden text-stone-600 hover:text-stone-950 sm:block"} href={user ? "/dashboard/planificador" : "/planificador"}>Planificador</Link>
           {user ? (
