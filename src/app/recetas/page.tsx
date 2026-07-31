@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getRecipeImageUrls } from "@/lib/recipe-images";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { getProfileAvatarUrls } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
@@ -27,16 +29,19 @@ function pageUrl({
   maxTime,
   allergens,
   page,
+  preferencesOff,
 }: {
   query: string;
   maxTime: number | null;
   allergens: string[];
   page: number;
+  preferencesOff?: boolean;
 }) {
   const params = new URLSearchParams();
   if (query) params.set("q", query);
   if (maxTime) params.set("maxTime", String(maxTime));
   allergens.forEach((allergen) => params.append("allergen", allergen));
+  if (preferencesOff) params.set("preferences", "off");
   if (page > 1) params.set("page", String(page));
   const search = params.toString();
   return search ? `/recetas?${search}` : "/recetas";
@@ -60,7 +65,9 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
     : params.allergen
       ? [params.allergen]
       : [];
-  const selectedAllergens = [...new Set(requestedAllergens.filter(isUuid))];
+  const explicitAllergenIds = [...new Set(requestedAllergens.filter(isUuid))];
+  const preferencesOff = firstValue(params.preferences) === "off";
+  const hasExplicitAllergens = params.allergen !== undefined;
 
   const supabase = await createClient();
   const { data: allergens, error: allergensError } = await supabase
@@ -73,10 +80,36 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
     );
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: preferenceRows, error: preferencesError } =
+    user && !hasExplicitAllergens && !preferencesOff
+      ? await supabase
+          .from("profile_allergens")
+          .select("allergen_id")
+          .eq("user_id", user.id)
+      : { data: [], error: null };
+  if (preferencesError) {
+    throw new Error(
+      `No se pudieron cargar las preferencias: ${preferencesError.message}`,
+    );
+  }
+
   const validAllergenIds = new Set((allergens ?? []).map((item) => item.id));
-  const filteredAllergenIds = selectedAllergens.filter((id) =>
+  const preferredAllergenIds = (preferenceRows ?? []).map(
+    (item) => item.allergen_id,
+  );
+  const activeAllergenIds = hasExplicitAllergens
+    ? explicitAllergenIds
+    : preferencesOff
+      ? []
+      : preferredAllergenIds;
+  const filteredAllergenIds = activeAllergenIds.filter((id) =>
     validAllergenIds.has(id),
   );
+  const usingPreferences =
+    !hasExplicitAllergens && !preferencesOff && filteredAllergenIds.length > 0;
   const countArgs: CountArgs = {};
   if (query) countArgs.p_query = query;
   if (maxTime) countArgs.p_max_time = maxTime;
@@ -99,8 +132,9 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
       pageUrl({
         query,
         maxTime,
-        allergens: filteredAllergenIds,
+        allergens: usingPreferences ? [] : filteredAllergenIds,
         page: totalPages,
+        preferencesOff,
       }),
     );
   }
@@ -119,31 +153,38 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   if (error) throw new Error(`No se pudieron buscar recetas: ${error.message}`);
 
   const recipeRows = data ?? [];
-  const imageUrls = await getRecipeImageUrls(
+  const [{ data: authorRows, error: authorsError }, imageUrls] =
+    await Promise.all([
+      supabase.rpc("get_public_recipe_authors", {
+        p_recipe_ids: recipeRows.map((recipe) => recipe.id),
+      }),
+      getRecipeImageUrls(
+        supabase,
+        recipeRows.map((recipe) => recipe.imagen_url),
+      ),
+    ]);
+  if (authorsError) {
+    throw new Error(`No se pudieron cargar los autores: ${authorsError.message}`);
+  }
+  const avatarUrls = await getProfileAvatarUrls(
     supabase,
-    recipeRows.map((recipe) => recipe.imagen_url),
+    (authorRows ?? []).map((author) => author.avatar_path),
+  );
+  const authorsByRecipe = new Map(
+    (authorRows ?? []).map((author) => [author.recipe_id, author]),
   );
   const recipes = recipeRows.map((recipe) => ({
     ...recipe,
     imageUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
+    author: authorsByRecipe.get(recipe.id) ?? null,
   }));
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
       <header className="bg-emerald-950 text-white">
+        <SiteHeader />
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-between gap-4 text-sm">
-            <Link className="font-black tracking-wide" href="/">
-              SaborSemanal
-            </Link>
-            <Link
-              className="font-semibold text-emerald-100 hover:text-white"
-              href="/dashboard/recetas"
-            >
-              Mis recetas
-            </Link>
-          </nav>
-          <p className="mt-10 text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
             Cocina con intención
           </p>
           <h1 className="mt-2 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl">
@@ -160,6 +201,34 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
         <aside>
           <form className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-stone-950">Filtros</h2>
+            {preferencesOff && (
+              <input name="preferences" type="hidden" value="off" />
+            )}
+            {usingPreferences && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-800">
+                Aplicamos tus alérgenos guardados.
+                <Link
+                  className="ml-1 font-bold underline"
+                  href={pageUrl({
+                    query,
+                    maxTime,
+                    allergens: [],
+                    page: 1,
+                    preferencesOff: true,
+                  })}
+                >
+                  Ver todo
+                </Link>
+              </div>
+            )}
+            {preferencesOff && user && (
+              <Link
+                className="mt-4 block text-xs font-bold text-emerald-700 underline"
+                href="/recetas"
+              >
+                Restaurar mis preferencias
+              </Link>
+            )}
             <div className="mt-5">
               <label
                 className="mb-1 block text-sm font-medium text-stone-700"
@@ -284,6 +353,27 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                       <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-stone-600">
                         {recipe.descripcion || "Sin descripción."}
                       </p>
+                      <div className="mt-4 flex items-center gap-2 border-t border-stone-100 pt-4 text-xs font-semibold text-stone-600">
+                        <span className="relative flex size-7 items-center justify-center overflow-hidden rounded-full bg-emerald-950 text-[10px] font-black text-amber-300">
+                          {recipe.author?.avatar_path &&
+                          avatarUrls.get(recipe.author.avatar_path) ? (
+                            <Image
+                              alt=""
+                              className="object-cover"
+                              fill
+                              sizes="28px"
+                              src={avatarUrls.get(recipe.author.avatar_path)!}
+                            />
+                          ) : (
+                            (recipe.author?.display_name ?? "A")
+                              .slice(0, 1)
+                              .toUpperCase()
+                          )}
+                        </span>
+                        <span>
+                          {recipe.author?.display_name ?? "Autor anónimo"}
+                        </span>
+                      </div>
                       <div className="mt-4 flex gap-4 text-xs font-bold text-emerald-800">
                         <span>{recipe.tiempo_preparacion} min</span>
                         <span>{recipe.porciones} porciones</span>
@@ -315,8 +405,9 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                   href={pageUrl({
                     query,
                     maxTime,
-                    allergens: filteredAllergenIds,
+                    allergens: usingPreferences ? [] : filteredAllergenIds,
                     page: currentPage - 1,
+                    preferencesOff,
                   })}
                 >
                   Anterior
@@ -328,8 +419,9 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                   href={pageUrl({
                     query,
                     maxTime,
-                    allergens: filteredAllergenIds,
+                    allergens: usingPreferences ? [] : filteredAllergenIds,
                     page: currentPage + 1,
+                    preferencesOff,
                   })}
                 >
                   Siguiente

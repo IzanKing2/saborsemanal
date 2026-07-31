@@ -174,27 +174,69 @@ export type Database = {
       }
       profiles: {
         Row: {
-          banned: boolean | null
-          created_at: string | null
+          avatar_path: string | null
+          banned: boolean
+          created_at: string
+          deletion_requested_at: string | null
+          display_name: string | null
           email: string
           id: string
-          role: string | null
+          role: string
+          updated_at: string
         }
         Insert: {
-          banned?: boolean | null
-          created_at?: string | null
+          avatar_path?: string | null
+          banned?: boolean
+          created_at?: string
+          deletion_requested_at?: string | null
+          display_name?: string | null
           email: string
           id: string
-          role?: string | null
+          role?: string
+          updated_at?: string
         }
         Update: {
-          banned?: boolean | null
-          created_at?: string | null
+          avatar_path?: string | null
+          banned?: boolean
+          created_at?: string
+          deletion_requested_at?: string | null
+          display_name?: string | null
           email?: string
           id?: string
-          role?: string | null
+          role?: string
+          updated_at?: string
         }
         Relationships: []
+      }
+      profile_allergens: {
+        Row: {
+          allergen_id: string
+          user_id: string
+        }
+        Insert: {
+          allergen_id: string
+          user_id: string
+        }
+        Update: {
+          allergen_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_allergens_allergen_id_fkey"
+            columns: ["allergen_id"]
+            isOneToOne: false
+            referencedRelation: "alergenos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_allergens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       receta_ingredientes: {
         Row: {
@@ -354,6 +396,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_profile_access: {
+        Args: { p_banned: boolean; p_role: string; p_user_id: string }
+        Returns: string
+      }
       count_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
@@ -363,6 +409,18 @@ export type Database = {
         Returns: number
       }
       delete_ingredient: { Args: { p_id: string }; Returns: undefined }
+      delete_user_account: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      get_public_recipe_authors: {
+        Args: { p_recipe_ids: string[] }
+        Returns: {
+          avatar_path: string | null
+          display_name: string | null
+          recipe_id: string
+        }[]
+      }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       moderate_recipe: {
@@ -431,6 +489,18 @@ export type Database = {
       storage_recipe_is_public: {
         Args: { object_name: string }
         Returns: boolean
+      }
+      storage_avatar_is_public: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
+      update_my_profile: {
+        Args: {
+          p_allergen_ids?: string[]
+          p_avatar_path: string | null
+          p_display_name: string
+        }
+        Returns: string
       }
       valid_recipe_instructions: {
         Args: { value: string[] }

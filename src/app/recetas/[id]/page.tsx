@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getRecipeImageUrl } from "@/lib/recipe-images";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -61,10 +63,43 @@ export default async function RecipeDetailPage({
         .map((link) => [link.alergenos!.id, link.alergenos!]),
     ).values(),
   ].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  const imageUrl = await getRecipeImageUrl(supabase, recipe.imagen_url);
+  const [imageUrl, authorResult, userResult] = await Promise.all([
+    getRecipeImageUrl(supabase, recipe.imagen_url),
+    supabase.rpc("get_public_recipe_authors", { p_recipe_ids: [recipe.id] }),
+    supabase.auth.getUser(),
+  ]);
+  if (authorResult.error) {
+    throw new Error(
+      `No se pudo cargar el autor: ${authorResult.error.message}`,
+    );
+  }
+  const author = authorResult.data?.[0] ?? null;
+  const authorAvatarUrl = await getProfileAvatarUrl(
+    supabase,
+    author?.avatar_path ?? null,
+  );
+  const user = userResult.data.user;
+  const { data: preferenceRows, error: preferencesError } = user
+    ? await supabase
+        .from("profile_allergens")
+        .select("allergen_id")
+        .eq("user_id", user.id)
+    : { data: [], error: null };
+  if (preferencesError) {
+    throw new Error(
+      `No se pudieron cargar las preferencias: ${preferencesError.message}`,
+    );
+  }
+  const preferredAllergens = new Set(
+    (preferenceRows ?? []).map((item) => item.allergen_id),
+  );
+  const preferenceConflicts = allergens.filter((allergen) =>
+    preferredAllergens.has(allergen.id),
+  );
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
+      <SiteHeader tone="light" />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <Link
           className="text-sm font-bold text-emerald-800 hover:underline"
@@ -99,6 +134,22 @@ export default async function RecipeDetailPage({
             <h1 className="mt-3 text-4xl font-black tracking-tight text-stone-950">
               {recipe.titulo}
             </h1>
+            <div className="mt-5 flex items-center gap-3 text-sm font-bold text-stone-700">
+              <span className="relative flex size-10 items-center justify-center overflow-hidden rounded-full bg-emerald-950 text-amber-300">
+                {authorAvatarUrl ? (
+                  <Image
+                    alt=""
+                    className="object-cover"
+                    fill
+                    sizes="40px"
+                    src={authorAvatarUrl}
+                  />
+                ) : (
+                  (author?.display_name ?? "A").slice(0, 1).toUpperCase()
+                )}
+              </span>
+              <span>{author?.display_name ?? "Autor anónimo"}</span>
+            </div>
             <p className="mt-4 leading-7 text-stone-600">
               {recipe.descripcion || "Sin descripción."}
             </p>
@@ -160,6 +211,18 @@ export default async function RecipeDetailPage({
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+            {preferenceConflicts.length > 0 && (
+              <div
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+                role="alert"
+              >
+                Esta receta contiene preferencias que evitas: {" "}
+                <strong>
+                  {preferenceConflicts.map((item) => item.nombre).join(", ")}
+                </strong>
+                .
               </div>
             )}
           </section>
