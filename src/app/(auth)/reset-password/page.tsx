@@ -4,16 +4,11 @@ import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { verifyRecoveryToken } from "@/lib/recovery-token";
-import { createClient } from "@/lib/supabase/server";
 
 export default async function ResetPasswordPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("saborsemanal-recovery")?.value;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!token || !user || !verifyRecoveryToken(token, user.id)) {
+  if (!token || !verifyRecoveryToken(token)) {
     redirect("/forgot-password");
   }
   return (

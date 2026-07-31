@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [nextPath, setNextPath] = useState("/dashboard");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -26,7 +27,10 @@ export default function LoginPage() {
         );
       }
     }
-    if (params.get("error") === "auth") setError("El enlace de acceso no es válido o ha caducado.");
+    if (params.get("error") === "auth")
+      setError("El enlace de acceso no es válido o ha caducado.");
+    if (params.get("reset") === "ok")
+      setNotice("Contraseña actualizada. Inicia sesión con tu nueva clave.");
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -46,6 +50,7 @@ export default function LoginPage() {
 
   return (
     <AuthShell eyebrow="Bienvenido de nuevo" title="Inicia sesión" description="Recupera tus recetas, tu menú y la lista de compra desde cualquier dispositivo.">
+      {notice && <p className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">{notice}</p>}
       {error && <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
       <form className="space-y-5" noValidate onSubmit={submit}>
         <div><label className="text-sm font-bold text-stone-800" htmlFor="email">Email</label><input autoComplete="email" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20" id="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>

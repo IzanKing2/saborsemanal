@@ -17,24 +17,27 @@ export function createRecoveryToken(userId: string) {
   return `${payload}.${signature(payload)}`;
 }
 
-export function verifyRecoveryToken(token: string, userId: string) {
+export function verifyRecoveryToken(token: string): string | null {
   try {
     const [payload, providedSignature] = token.split(".");
-    if (!payload || !providedSignature) return false;
+    if (!payload || !providedSignature) return null;
     const provided = Buffer.from(providedSignature);
     const expected = Buffer.from(signature(payload));
     if (
       provided.length !== expected.length ||
       !timingSafeEqual(provided, expected)
     ) {
-      return false;
+      return null;
     }
     const parsed = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
       userId?: string;
       expiresAt?: number;
     };
-    return parsed.userId === userId && Number(parsed.expiresAt) > Date.now();
+    return typeof parsed.userId === "string" &&
+      Number(parsed.expiresAt) > Date.now()
+      ? parsed.userId
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }

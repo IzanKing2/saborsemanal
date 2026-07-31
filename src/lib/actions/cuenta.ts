@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { isUuid } from "@/lib/recipes";
+import { verifyRecoveryToken } from "@/lib/recovery-token";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -166,13 +167,50 @@ export async function deleteAccountAction(
   }
 }
 
-export async function clearRecoveryMarkerAction() {
-  const cookieStore = await cookies();
-  cookieStore.set("saborsemanal-recovery", "", {
-    expires: new Date(0),
-    httpOnly: true,
-    path: "/reset-password",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+export async function resetPasswordAction(
+  password: string,
+): Promise<AccountActionResult> {
+  if (
+    typeof password !== "string" ||
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/\d/.test(password)
+  ) {
+    return {
+      ok: false,
+      message: "La contraseña necesita 8 caracteres, una mayúscula y un número.",
+    };
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("saborsemanal-recovery")?.value;
+    const userId = token ? verifyRecoveryToken(token) : null;
+    if (!userId) {
+      return { ok: false, message: "El enlace ha caducado. Solicita uno nuevo." };
+    }
+
+    const admin = createAdminClient();
+    const { error } = await admin.auth.admin.updateUserById(userId, {
+      password,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          "No se pudo guardar la contraseña. Solicita un nuevo enlace de recuperación.",
+      };
+    }
+
+    cookieStore.set("saborsemanal-recovery", "", {
+      expires: new Date(0),
+      httpOnly: true,
+      path: "/reset-password",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    return { ok: true, message: "Contraseña actualizada." };
+  } catch {
+    return { ok: false, message: "No se pudo guardar la contraseña." };
+  }
 }
