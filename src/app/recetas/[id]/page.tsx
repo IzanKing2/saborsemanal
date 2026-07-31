@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { getRecipeImageUrl } from "@/lib/recipe-images";
 import { SiteHeader } from "@/components/navigation/site-header";
+import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
@@ -100,13 +101,14 @@ export default async function RecipeDetailPage({
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
       <SiteHeader tone="light" />
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-6 sm:px-6 lg:px-8">
         <Link
           className="text-sm font-bold text-emerald-800 hover:underline"
           href="/recetas"
         >
           ← Volver a recetas
         </Link>
+        {user && <CopyRecipeButton id={recipe.id} />}
       </div>
 
       <article className="mx-auto max-w-6xl overflow-hidden border-y border-stone-200 bg-white shadow-sm sm:rounded-3xl sm:border">

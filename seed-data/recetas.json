@@ -1,0 +1,605 @@
+{
+  "categorias": [
+    { "nombre": "Cereales y granos" },
+    { "nombre": "Verduras y hortalizas" },
+    { "nombre": "Frutas" },
+    { "nombre": "Legumbres" },
+    { "nombre": "Carnes" },
+    { "nombre": "Aves" },
+    { "nombre": "Pescados y mariscos" },
+    { "nombre": "Huevos y lácteos" },
+    { "nombre": "Frutos secos y semillas" },
+    { "nombre": "Especias y condimentos" },
+    { "nombre": "Aceites y grasas" },
+    { "nombre": "Otros" }
+  ],
+  "ingredientes": [
+    { "nombre": "Arroz", "categoria": "Cereales y granos", "alergenos": [] },
+    { "nombre": "Arroz integral", "categoria": "Cereales y granos", "alergenos": [] },
+    { "nombre": "Pasta", "categoria": "Cereales y granos", "alergenos": ["Gluten", "Huevo"] },
+    { "nombre": "Pan de molde", "categoria": "Cereales y granos", "alergenos": ["Gluten", "Lácteos", "Soja"] },
+    { "nombre": "Harina de trigo", "categoria": "Cereales y granos", "alergenos": ["Gluten"] },
+    { "nombre": "Avena", "categoria": "Cereales y granos", "alergenos": ["Gluten"] },
+    { "nombre": "Cuscús", "categoria": "Cereales y granos", "alergenos": ["Gluten"] },
+    { "nombre": "Tortilla de maíz", "categoria": "Cereales y granos", "alergenos": [] },
+
+    { "nombre": "Cebolla", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Ajo", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Pimiento rojo", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Pimiento verde", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Tomate", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Zanahoria", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Calabacín", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Berenjena", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Champiñón", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Espinacas", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Lechuga", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Brócoli", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Calabaza", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Patata", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Boniato", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Guisantes", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Judía verde", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Pepino", "categoria": "Verduras y hortalizas", "alergenos": [] },
+    { "nombre": "Puerro", "categoria": "Verduras y hortalizas", "alergenos": [] },
+
+    { "nombre": "Limón", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Naranja", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Plátano", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Manzana", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Aguacate", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Fresas", "categoria": "Frutas", "alergenos": [] },
+    { "nombre": "Uvas", "categoria": "Frutas", "alergenos": [] },
+
+    { "nombre": "Garbanzos", "categoria": "Legumbres", "alergenos": [] },
+    { "nombre": "Lentejas", "categoria": "Legumbres", "alergenos": [] },
+    { "nombre": "Lentejas rojas", "categoria": "Legumbres", "alergenos": [] },
+    { "nombre": "Alubias blancas", "categoria": "Legumbres", "alergenos": [] },
+    { "nombre": "Tofu", "categoria": "Legumbres", "alergenos": ["Soja"] },
+
+    { "nombre": "Carne de ternera", "categoria": "Carnes", "alergenos": [] },
+    { "nombre": "Carne de cerdo", "categoria": "Carnes", "alergenos": [] },
+    { "nombre": "Carne picada de ternera", "categoria": "Carnes", "alergenos": [] },
+    { "nombre": "Bacon", "categoria": "Carnes", "alergenos": [] },
+    { "nombre": "Chorizo", "categoria": "Carnes", "alergenos": [] },
+    { "nombre": "Jamón serrano", "categoria": "Carnes", "alergenos": [] },
+
+    { "nombre": "Pechuga de pollo", "categoria": "Aves", "alergenos": [] },
+    { "nombre": "Muslo de pollo", "categoria": "Aves", "alergenos": [] },
+    { "nombre": "Pavo", "categoria": "Aves", "alergenos": [] },
+
+    { "nombre": "Salmón", "categoria": "Pescados y mariscos", "alergenos": ["Pescado"] },
+    { "nombre": "Atún", "categoria": "Pescados y mariscos", "alergenos": ["Pescado"] },
+    { "nombre": "Merluza", "categoria": "Pescados y mariscos", "alergenos": ["Pescado"] },
+    { "nombre": "Bacalao", "categoria": "Pescados y mariscos", "alergenos": ["Pescado"] },
+    { "nombre": "Gambas", "categoria": "Pescados y mariscos", "alergenos": ["Marisco"] },
+    { "nombre": "Mejillones", "categoria": "Pescados y mariscos", "alergenos": ["Marisco"] },
+    { "nombre": "Anchoas", "categoria": "Pescados y mariscos", "alergenos": ["Pescado"] },
+
+    { "nombre": "Huevo", "categoria": "Huevos y lácteos", "alergenos": ["Huevo"] },
+    { "nombre": "Leche", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Mantequilla", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Nata para cocinar", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Queso parmesano", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Queso mozzarella", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Queso feta", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Yogur natural", "categoria": "Huevos y lácteos", "alergenos": ["Lácteos"] },
+    { "nombre": "Leche de coco", "categoria": "Huevos y lácteos", "alergenos": [] },
+
+    { "nombre": "Almendras", "categoria": "Frutos secos y semillas", "alergenos": ["Frutos secos"] },
+    { "nombre": "Nueces", "categoria": "Frutos secos y semillas", "alergenos": ["Frutos secos"] },
+    { "nombre": "Anacardos", "categoria": "Frutos secos y semillas", "alergenos": ["Frutos secos"] },
+    { "nombre": "Avellanas", "categoria": "Frutos secos y semillas", "alergenos": ["Frutos secos"] },
+    { "nombre": "Cacahuete", "categoria": "Frutos secos y semillas", "alergenos": ["Frutos secos"] },
+    { "nombre": "Sésamo", "categoria": "Frutos secos y semillas", "alergenos": ["Sésamo"] },
+    { "nombre": "Semillas de chía", "categoria": "Frutos secos y semillas", "alergenos": [] },
+    { "nombre": "Pipas de girasol", "categoria": "Frutos secos y semillas", "alergenos": [] },
+
+    { "nombre": "Sal", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Pimienta negra", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Comino", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Pimentón dulce", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Pimentón picante", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Cúrcuma", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Jengibre", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Canela", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Orégano", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Tomillo", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Romero", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Laurel", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Azafrán", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Nuez moscada", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Albahaca", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Perejil", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Cilantro", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Curry", "categoria": "Especias y condimentos", "alergenos": [] },
+    { "nombre": "Mostaza", "categoria": "Especias y condimentos", "alergenos": ["Mostaza"] },
+    { "nombre": "Salsa de soja", "categoria": "Especias y condimentos", "alergenos": ["Gluten", "Soja"] },
+
+    { "nombre": "Aceite de oliva", "categoria": "Aceites y grasas", "alergenos": [] },
+    { "nombre": "Aceite de girasol", "categoria": "Aceites y grasas", "alergenos": [] },
+    { "nombre": "Aceite de sésamo", "categoria": "Aceites y grasas", "alergenos": ["Sésamo"] },
+
+    { "nombre": "Azúcar", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Miel", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Sirope de arce", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Cacao en polvo", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Chocolate negro", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Levadura en polvo", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Caldo de verduras", "categoria": "Otros", "alergenos": ["Apio"] },
+    { "nombre": "Caldo de pollo", "categoria": "Otros", "alergenos": ["Apio"] },
+    { "nombre": "Vinagre", "categoria": "Otros", "alergenos": [] },
+    { "nombre": "Vino tinto", "categoria": "Otros", "alergenos": [] }
+  ],
+  "recetas": [
+    {
+      "titulo": "Paella de verduras",
+      "descripcion": "Arroz especiado con verduras de temporada, perfecto para un domingo en familia.",
+      "tiempo_preparacion": 60,
+      "porciones": 4,
+      "instrucciones": [
+        "Calienta el aceite en una paella amplia y sofríe la cebolla y el ajo picados hasta que estén dorados.",
+        "Añade el pimiento rojo en tiras y las judías verdes, y rehoga durante 5 minutos.",
+        "Incorpora el tomate rallado y el pimentón dulce, y cocina 2 minutos más.",
+        "Añade el arroz, el azafrán y el caldo de verduras caliente, y reparte de forma uniforme.",
+        "Cocina a fuego medio durante 18 minutos sin remover, hasta que el arroz absorba el caldo.",
+        "Retira del fuego, tapa con un paño limpio y deja reposar 5 minutos antes de servir."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Arroz", "cantidad": 300, "unidad": "g" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Pimiento rojo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Judía verde", "cantidad": 150, "unidad": "g" },
+        { "ingrediente": "Tomate", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pimentón dulce", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Azafrán", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Caldo de verduras", "cantidad": 800, "unidad": "ml" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 3, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Lentejas guisadas",
+      "descripcion": "Un guiso tradicional, reconfortante y lleno de sabor.",
+      "tiempo_preparacion": 45,
+      "porciones": 4,
+      "instrucciones": [
+        "Sofríe la cebolla y el ajo picados con el aceite de oliva hasta que estén transparentes.",
+        "Añade la zanahoria en rodajas y el pimiento verde troceado, y rehoga 5 minutos.",
+        "Incorpora las lentejas, el pimentón dulce, el comino y el laurel, y cubre con agua.",
+        "Cocina a fuego suave durante 30 minutos o hasta que las lentejas estén tiernas.",
+        "Salpimienta al final y rectifica de agua si quedara muy seco."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Lentejas", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Zanahoria", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Pimiento verde", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pimentón dulce", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Comino", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Laurel", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Salmón al horno con verduras",
+      "descripcion": "Un plato ligero y rápido con una lámina de salmón y verduras al punto.",
+      "tiempo_preparacion": 30,
+      "porciones": 2,
+      "instrucciones": [
+        "Precalienta el horno a 200 grados.",
+        "Coloca el calabacín en rodajas y las espinacas en una bandeja con un hilo de aceite.",
+        "Sazona el salmón con sal y pimienta y colócalo sobre las verduras.",
+        "Añade el ajo laminado, el perejil picado y unas gotas de limón.",
+        "Hornea durante 15 minutos, hasta que el salmón esté en su punto."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Salmón", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Calabacín", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Espinacas", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Limón", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Perejil", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Espaguetis a la carbonara",
+      "descripcion": "La versión clásica con huevo, bacon y queso parmesano.",
+      "tiempo_preparacion": 25,
+      "porciones": 2,
+      "instrucciones": [
+        "Cuece la pasta en abundante agua con sal hasta que esté al dente y reserva un vaso del agua.",
+        "Dora el bacon en una sartén sin añadir aceite hasta que quede crujiente.",
+        "Bate los huevos con el queso parmesano rallado y abundante pimienta.",
+        "Escurre la pasta y mézclala con el bacon fuera del fuego.",
+        "Añade la mezcla de huevo y remueve rápido; aligera con un poco de agua de la cocción."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Pasta", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Huevo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Bacon", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Queso parmesano", "cantidad": 50, "unidad": "g" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Pollo al curry",
+      "descripcion": "Pollo en una salsa cremosa de curry con leche de coco y jengibre.",
+      "tiempo_preparacion": 35,
+      "porciones": 4,
+      "instrucciones": [
+        "Dora el pollo en aceite a fuego fuerte y retíralo.",
+        "Sofríe la cebolla picada con el ajo y el jengibre.",
+        "Añade el curry y cocina un minuto para que suelte su aroma.",
+        "Incorpora la leche de coco, devuelve el pollo y deja cocer 15 minutos a fuego suave.",
+        "Sirve sobre arroz blanco recién hecho."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Pechuga de pollo", "cantidad": 500, "unidad": "g" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Jengibre", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Curry", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Leche de coco", "cantidad": 400, "unidad": "ml" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Arroz", "cantidad": 300, "unidad": "g" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Tortilla de patatas",
+      "descripcion": "La tortilla española clásica, jugosa por dentro y dorada por fuera.",
+      "tiempo_preparacion": 30,
+      "porciones": 4,
+      "instrucciones": [
+        "Pela y corta las patatas en rodajas finas y la cebolla en juliana.",
+        "Poach las patatas y la cebolla en abundante aceite a fuego medio hasta que estén tiernas.",
+        "Escurre bien y mezcla con los huevos batidos y un punto de sal.",
+        "Cuaja la mezcla en una sartén antiadherente a fuego medio, dale la vuelta y termina.",
+        "Deja reposar un par de minutos antes de cortarla."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Patata", "cantidad": 500, "unidad": "g" },
+        { "ingrediente": "Huevo", "cantidad": 4, "unidad": "unidad" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 4, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Ensalada de garbanzos",
+      "descripcion": "Fresca, rápida y sin cocinar, ideal para el verano.",
+      "tiempo_preparacion": 15,
+      "porciones": 2,
+      "instrucciones": [
+        "Escurre y lava los garbanzos.",
+        "Trocea el tomate, el pepino y la cebolla en dados pequeños.",
+        "Mezcla todo en un bol con el perejil picado.",
+        "Aliña con aceite de oliva, zumo de limón, sal y pimienta."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Garbanzos", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Tomate", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Pepino", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Limón", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Perejil", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Pisto manchego",
+      "descripcion": "Guiso de verduras de temporada, perfecto acompañado de un huevo.",
+      "tiempo_preparacion": 40,
+      "porciones": 4,
+      "instrucciones": [
+        "Sofríe la cebolla en aceite de oliva hasta que esté transparente.",
+        "Añade el calabacín y la berenjena en dados y rehoga 10 minutos.",
+        "Incorpora el pimiento rojo y el tomate rallado, y cocina a fuego suave 15 minutos más.",
+        "Salpimienta al gusto.",
+        "Sirve con un huevo frito o poché encima."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Calabacín", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Berenjena", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pimiento rojo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Tomate", "cantidad": 3, "unidad": "unidad" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Huevo", "cantidad": 4, "unidad": "unidad" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 3, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Berenjenas rellenas de carne",
+      "descripcion": "Berenjenas al horno con relleno de carne picada y gratinadas con mozzarella.",
+      "tiempo_preparacion": 50,
+      "porciones": 4,
+      "instrucciones": [
+        "Precalienta el horno a 190 grados y corta las berenjenas por la mitad.",
+        "Vacía la pulpa, pícala y reserva; hornea las mitades 10 minutos.",
+        "Sofríe la cebolla y el ajo, añade la carne picada y la pulpa, y cocina 10 minutos.",
+        "Añade el tomate triturado y el orégano, y deja reducir.",
+        "Rellena las berenjenas, cubre con mozzarella y gratina 15 minutos."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Berenjena", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Carne picada de ternera", "cantidad": 300, "unidad": "g" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Tomate", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Queso mozzarella", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Orégano", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Crema de calabaza",
+      "descripcion": "Una crema suave y aterciopelada, perfecta para los días fríos.",
+      "tiempo_preparacion": 30,
+      "porciones": 4,
+      "instrucciones": [
+        "Pela y trocea la calabaza y la patata.",
+        "Sofríe la cebolla picada en un poco de aceite.",
+        "Añade la calabaza y la patata, y cubre con el caldo de verduras.",
+        "Cuece 20 minutos hasta que esté todo tierno.",
+        "Tritura con la nata, sazona con sal y nuez moscada, y sirve caliente."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Calabaza", "cantidad": 600, "unidad": "g" },
+        { "ingrediente": "Patata", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Caldo de verduras", "cantidad": 500, "unidad": "ml" },
+        { "ingrediente": "Nata para cocinar", "cantidad": 100, "unidad": "ml" },
+        { "ingrediente": "Nuez moscada", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Gazpacho andaluz",
+      "descripcion": "Tomate, pepino y pimiento batidos en frío, sin fuego y en un momento.",
+      "tiempo_preparacion": 20,
+      "porciones": 4,
+      "instrucciones": [
+        "Lava y trocea el tomate, el pepino y el pimiento verde.",
+        "Añade el ajo, la miga de pan remojada y un buen chorro de aceite.",
+        "Tritura todo con el vinagre y un punto de sal hasta lograr una textura fina.",
+        "Añade un poco de agua fría si quedara muy espeso.",
+        "Enfría en la nevera al menos una hora antes de servir."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Tomate", "cantidad": 6, "unidad": "unidad" },
+        { "ingrediente": "Pepino", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pimiento verde", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pan de molde", "cantidad": 50, "unidad": "g" },
+        { "ingrediente": "Vinagre", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 4, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Curry de garbanzos y espinacas",
+      "descripcion": "Un plato vegano, cremoso y lleno de proteína vegetal.",
+      "tiempo_preparacion": 25,
+      "porciones": 4,
+      "instrucciones": [
+        "Sofríe la cebolla y el ajo en aceite.",
+        "Añade el curry y el tomate troceado, y cocina 3 minutos.",
+        "Incorpora los garbanzos y la leche de coco, y deja hervir 10 minutos.",
+        "Añade las espinacas y cocina hasta que se ablanden.",
+        "Salpimienta y sirve con arroz."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Garbanzos", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Espinacas", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Tomate", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Curry", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Leche de coco", "cantidad": 200, "unidad": "ml" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Merluza a la gallega",
+      "descripcion": "Merluza sobre patatas con pimentón y aceite de oliva.",
+      "tiempo_preparacion": 25,
+      "porciones": 2,
+      "instrucciones": [
+        "Cuece las patatas en rodajas en agua con sal hasta que estén tiernas.",
+        "Escúrrelas y colócalas en el plato de servir.",
+        "Cuece la merluza al vapor o en agua apenas hirviendo durante 5 minutos.",
+        "Coloca la merluza sobre las patatas.",
+        "Espolvorea con pimentón dulce, ajo laminado y perejil, y riega con aceite de oliva."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Merluza", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Patata", "cantidad": 3, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Pimentón dulce", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Perejil", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 3, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Pancakes de avena y plátano",
+      "descripcion": "Un desayuno esponjoso, sin azúcar añadido más allá del sirope.",
+      "tiempo_preparacion": 20,
+      "porciones": 4,
+      "instrucciones": [
+        "Tritura la avena con el plátano, el huevo, la leche y la levadura.",
+        "Deja reposar la masa 5 minutos.",
+        "Cocina porciones de masa en una sartén engrasada con aceite de girasol.",
+        "Dale la vuelta cuando aparezcan burbujas en la superficie.",
+        "Sirve con sirope de arce y un punto de canela."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Avena", "cantidad": 150, "unidad": "g" },
+        { "ingrediente": "Plátano", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Huevo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Leche", "cantidad": 200, "unidad": "ml" },
+        { "ingrediente": "Levadura en polvo", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Aceite de girasol", "cantidad": 1, "unidad": "cucharada" },
+        { "ingrediente": "Sirope de arce", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Canela", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Ensalada César de pollo",
+      "descripcion": "Pollo a la plancha, lechuga crujiente, picatostes y salsa cremosa.",
+      "tiempo_preparacion": 20,
+      "porciones": 2,
+      "instrucciones": [
+        "Dora la pechuga de pollo salpimentada a la plancha y córtala en tiras.",
+        "Tuesta el pan de molde en dados hasta que queden crujientes.",
+        "Lava y corta la lechuga.",
+        "Mezcla el yogur con el ajo, el zumo de limón y el aceite para la salsa.",
+        "Monta la ensalada con el pollo, los picatostes, el parmesano y la salsa."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Pechuga de pollo", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Lechuga", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Pan de molde", "cantidad": 50, "unidad": "g" },
+        { "ingrediente": "Queso parmesano", "cantidad": 30, "unidad": "g" },
+        { "ingrediente": "Yogur natural", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Limón", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Estofado de ternera",
+      "descripcion": "Ternera a fuego lento en vino tinto con verduras, tierna y sabrosa.",
+      "tiempo_preparacion": 120,
+      "porciones": 4,
+      "instrucciones": [
+        "Dora la carne troceada en aceite a fuego fuerte y retírala.",
+        "Sofríe la cebolla, la zanahoria y el puerro picados.",
+        "Añade el tomate rallado y rehoga 2 minutos.",
+        "Devuelve la carne, cubre con el vino y el caldo, y añade el laurel y el tomillo.",
+        "Cocina a fuego muy suave 90 minutos, hasta que la carne esté tierna."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Carne de ternera", "cantidad": 700, "unidad": "g" },
+        { "ingrediente": "Cebolla", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Zanahoria", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Puerro", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Tomate", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Vino tinto", "cantidad": 200, "unidad": "ml" },
+        { "ingrediente": "Caldo de verduras", "cantidad": 300, "unidad": "ml" },
+        { "ingrediente": "Laurel", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Tomillo", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 3, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Hummus de garbanzos",
+      "descripcion": "Crema de garbanzos con sésamo y comino, ideal para untar.",
+      "tiempo_preparacion": 15,
+      "porciones": 4,
+      "instrucciones": [
+        "Escurre y lava los garbanzos.",
+        "Tritúralos con el sésamo, el zumo de limón, el ajo, el comino y un poco de aceite.",
+        "Añade agua fría poco a poco hasta lograr una textura cremosa.",
+        "Salpimienta al gusto.",
+        "Sirve con un hilo de aceite y una pizca de pimentón dulce."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Garbanzos", "cantidad": 400, "unidad": "g" },
+        { "ingrediente": "Sésamo", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Limón", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Comino", "cantidad": 1, "unidad": "cucharadita" },
+        { "ingrediente": "Pimentón dulce", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 3, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Muffins de plátano y chocolate",
+      "descripcion": "Magdalenas esponjosas con trozos de chocolate negro.",
+      "tiempo_preparacion": 35,
+      "porciones": 12,
+      "instrucciones": [
+        "Precalienta el horno a 180 grados y prepara un molde de muffins.",
+        "Bate los huevos con el azúcar y añade el aceite y la leche.",
+        "Incorpora la harina con la levadura y una pizca de sal, sin batir en exceso.",
+        "Añade el plátano machacado y el chocolate troceado.",
+        "Reparte la masa en el molde y hornea 20 minutos."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Plátano", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Huevo", "cantidad": 2, "unidad": "unidad" },
+        { "ingrediente": "Harina de trigo", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Azúcar", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Aceite de girasol", "cantidad": 80, "unidad": "ml" },
+        { "ingrediente": "Leche", "cantidad": 100, "unidad": "ml" },
+        { "ingrediente": "Chocolate negro", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Levadura en polvo", "cantidad": 2, "unidad": "cucharadita" },
+        { "ingrediente": "Canela", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Pasta con tomate y albahaca",
+      "descripcion": "Un plato sencillo de siempre: salsa de tomate casera con albahaca.",
+      "tiempo_preparacion": 20,
+      "porciones": 2,
+      "instrucciones": [
+        "Cuece la pasta en agua con sal al dente.",
+        "Sofríe el ajo en aceite y añade el tomate troceado.",
+        "Cocina la salsa 10 minutos y añade la albahaca picada.",
+        "Mezcla la pasta con la salsa.",
+        "Sirve con queso parmesano rallado por encima."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Pasta", "cantidad": 200, "unidad": "g" },
+        { "ingrediente": "Tomate", "cantidad": 4, "unidad": "unidad" },
+        { "ingrediente": "Ajo", "cantidad": 1, "unidad": "unidad" },
+        { "ingrediente": "Albahaca", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Queso parmesano", "cantidad": 30, "unidad": "g" },
+        { "ingrediente": "Aceite de oliva", "cantidad": 2, "unidad": "cucharada" },
+        { "ingrediente": "Sal", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Pimienta negra", "cantidad": 1, "unidad": "pizca" }
+      ]
+    },
+    {
+      "titulo": "Arroz con leche",
+      "descripcion": "Postre cremoso y aromatizado con canela y limón.",
+      "tiempo_preparacion": 40,
+      "porciones": 4,
+      "instrucciones": [
+        "Lava el arroz y cuécelo con la leche, la piel de limón y la canela.",
+        "Cocina a fuego suave 35 minutos, removiendo de vez en cuando.",
+        "Añade el azúcar al final y remueve hasta que se disuelva.",
+        "Reparte en cuencos y deja enfriar.",
+        "Espolvorea con canela antes de servir."
+      ],
+      "ingredientes": [
+        { "ingrediente": "Arroz", "cantidad": 150, "unidad": "g" },
+        { "ingrediente": "Leche", "cantidad": 1, "unidad": "l" },
+        { "ingrediente": "Azúcar", "cantidad": 100, "unidad": "g" },
+        { "ingrediente": "Canela", "cantidad": 1, "unidad": "pizca" },
+        { "ingrediente": "Limón", "cantidad": 1, "unidad": "unidad" }
+      ]
+    }
+  ]
+}

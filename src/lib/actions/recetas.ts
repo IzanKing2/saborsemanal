@@ -1,6 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -18,6 +21,11 @@ export type SaveRecipeResult = {
 };
 
 export type DeleteRecipeState = {
+  ok: boolean;
+  message: string;
+};
+
+export type DuplicateRecipeState = {
   ok: boolean;
   message: string;
 };
@@ -167,6 +175,84 @@ export async function saveRecipeAction(
     message: shouldPublish ? "Receta publicada." : "Borrador guardado.",
     recipeId: data,
   };
+}
+
+export async function duplicateRecipeAction(
+  _previousState: DuplicateRecipeState,
+  formData: FormData,
+): Promise<DuplicateRecipeState> {
+  const id = getText(formData, "id");
+  if (!isUuid(id)) {
+    return { ok: false, message: "La receta no es válida." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return { ok: false, message: "Tu sesión ha caducado. Inicia sesión de nuevo." };
+  }
+
+  const { data: recipe, error: recipeError } = await supabase
+    .from("recetas")
+    .select("titulo, descripcion, instrucciones, tiempo_preparacion, porciones")
+    .eq("id", id)
+    .eq("publica", true)
+    .eq("aprobada", true)
+    .maybeSingle();
+  if (recipeError || !recipe) {
+    return { ok: false, message: "La receta ya no existe." };
+  }
+
+  const { data: ingredientRows, error: ingredientsError } = await supabase
+    .from("receta_ingredientes")
+    .select("ingrediente_id, nombre_personalizado, cantidad, unidad")
+    .eq("receta_id", id);
+  if (ingredientsError || !ingredientRows || ingredientRows.length === 0) {
+    return { ok: false, message: "No se pudo copiar la receta." };
+  }
+
+  const ingredients: RecipeIngredientInput[] = ingredientRows.map((ingredient) => ({
+    ingredienteId: ingredient.ingrediente_id,
+    nombrePersonalizado: ingredient.nombre_personalizado ?? "",
+    cantidad: ingredient.cantidad,
+    unidad: ingredient.unidad as RecipeIngredientInput["unidad"],
+  }));
+
+  const args: SaveRecipeArgs = {
+    p_id: randomUUID(),
+    p_titulo: recipe.titulo,
+    p_instrucciones: recipe.instrucciones,
+    p_tiempo_preparacion: recipe.tiempo_preparacion,
+    p_porciones: recipe.porciones,
+    p_publica: false,
+    p_ingredientes: ingredients.map((ingredient) => ({
+      ingrediente_id: ingredient.ingredienteId,
+      nombre_personalizado:
+        ingredient.ingredienteId === null
+          ? ingredient.nombrePersonalizado.trim()
+          : null,
+      cantidad: ingredient.cantidad,
+      unidad: ingredient.unidad,
+    })) as Json,
+  };
+  if (recipe.descripcion) args.p_descripcion = recipe.descripcion;
+
+  const { data: newRecipeId, error } = await supabase.rpc("save_recipe", args);
+
+  if (error || !newRecipeId) {
+    return {
+      ok: false,
+      message: "No se pudo copiar la receta. Inténtalo de nuevo.",
+    };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/recetas");
+  revalidatePath("/recetas");
+  redirect(`/dashboard/recetas/${newRecipeId}/editar`);
 }
 
 export async function deleteRecipeAction(
