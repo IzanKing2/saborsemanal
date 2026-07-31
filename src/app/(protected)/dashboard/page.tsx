@@ -66,6 +66,25 @@ export default function DashboardPage() {
               Preparar compra →
             </span>
           </Link>
+
+          <Link
+            className="group rounded-2xl bg-amber-200 p-6 shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-100 hover:shadow-lg md:col-span-2"
+            href="/dashboard/cuenta"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-900">
+              Tu espacio
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-stone-950">
+              Perfil y preferencias
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-stone-700">
+              Actualiza tu foto, protege tu acceso y adapta el catálogo a tus
+              alérgenos.
+            </p>
+            <span className="mt-6 inline-block text-sm font-bold text-emerald-900 group-hover:underline">
+              Gestionar mi cuenta →
+            </span>
+          </Link>
         </div>
       </div>
     </main>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SiteHeader } from "@/components/navigation/site-header";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
@@ -12,34 +13,8 @@ export default async function HomePage() {
     <main className="min-h-screen overflow-hidden bg-[#f6f3ea] text-stone-950">
       <div className="relative bg-emerald-950 text-white">
         <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,#fcd34d_0,transparent_28%),radial-gradient(circle_at_80%_70%,#34d399_0,transparent_25%)]" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 sm:pb-28 lg:px-8">
-          <nav className="flex items-center justify-between gap-4">
-            <span className="text-lg font-black tracking-tight">SaborSemanal</span>
-            {user ? (
-              <Link
-                className="rounded-lg bg-amber-300 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-amber-200"
-                href="/dashboard/recetas"
-              >
-                Mis recetas
-              </Link>
-            ) : (
-              <div className="flex items-center gap-4 text-sm font-semibold">
-                <Link
-                  className="text-emerald-100 hover:text-white"
-                  href="/login"
-                >
-                  Iniciar sesión
-                </Link>
-                <Link
-                  className="rounded-lg bg-amber-300 px-4 py-2 text-emerald-950 hover:bg-amber-200"
-                  href="/register"
-                >
-                  Crear cuenta
-                </Link>
-              </div>
-            )}
-          </nav>
-
+        <div className="relative"><SiteHeader /></div>
+        <div className="relative mx-auto max-w-7xl px-4 pb-20 sm:px-6 sm:pb-28 lg:px-8">
           <div className="mt-24 max-w-4xl sm:mt-32">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">
               Cocina mejor, semana a semana

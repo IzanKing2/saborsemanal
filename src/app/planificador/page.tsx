@@ -5,6 +5,7 @@ import {
   WeeklyPlanner,
   type PlannerRecipe,
 } from "@/components/planner/weekly-planner";
+import { SiteHeader } from "@/components/navigation/site-header";
 import { createClient } from "@/lib/supabase/server";
 import { parseMonday } from "@/lib/week";
 
@@ -65,6 +66,7 @@ export default async function GuestPlannerPage({
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
+      <SiteHeader />
       <header className="bg-emerald-950 text-white">
         <div className="mx-auto max-w-6xl px-4 py-9 sm:px-6 lg:px-8">
           <Link
