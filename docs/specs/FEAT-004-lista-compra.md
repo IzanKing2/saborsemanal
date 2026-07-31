@@ -66,3 +66,26 @@ RPC actualizará únicamente `comprado` para una fila propia.
 7. Regenerar es atómico y no deja una lista parcial.
 8. Marcar comprado persiste en el almacenamiento correspondiente.
 9. TypeScript, lint y build terminan sin errores.
+
+## 6. Implementación
+
+- `202607300015_shopping_list.sql` endurece la tabla, añade la fuente
+  personalizada y crea `regenerate_shopping_list` y
+  `set_shopping_item_purchased`.
+- `/planificador` deriva la lista en cliente y persiste los checks por semana en
+  `LocalStorage` sin escribir en Supabase.
+- `/dashboard/lista-compra` lee las filas propias mediante RLS y reserva toda
+  mutación a las dos RPC.
+- La interfaz agrupa por categoría, envía elementos sin categoría o
+  personalizados a `Otros` y mantiene unidades distintas en filas separadas.
+- `supabase/tests/shopping_list.test.sql` cubre consolidación, repetición de
+  slots, unidades, personalizados, escritura directa y aislamiento entre
+  usuarios.
+
+## 7. Cierre - 2026-07-30
+
+**Estado:** completado.
+
+La cadena de migraciones `001` a `015` se reconstruyó desde cero y la suite SQL
+de doce casos terminó correctamente. También se verificaron TypeScript, lint y
+build de producción.

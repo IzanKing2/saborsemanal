@@ -156,6 +156,8 @@ Cambios aprobados desde el modelo inicial:
 - Las imágenes se almacenan en un bucket privado y se sirven con URL firmada.
 - `menus_semanales` identifica una semana por su lunes de inicio.
 - Cada menú admite una sola receta por combinación de día y tipo de comida.
+- `shopping_list_items` pertenece obligatoriamente a un usuario y un menú, y
+  admite una fuente maestra o un nombre personalizado mediante XOR.
 - Las escrituras complejas se realizan mediante RPC transaccionales y RLS.
 
 Estado:
@@ -163,10 +165,15 @@ Estado:
 - Hito 1: completado.
 - Hito 2: completado.
 - Hito 3: completado.
-- Hito 4: especificado y pendiente de implementación.
+- Hito 4: completado.
 
 Para el Hito 4, los ingredientes maestros se consolidarán por
 `(ingrediente_id, unidad)` y los personalizados por
 `(nombre_normalizado, unidad)`. Cada aparición de una receta en un slot del menú
 aportará una vez sus cantidades. El ajuste por número de comensales queda fuera
 del alcance inicial.
+
+La migración `202607300015_shopping_list.sql` implementa la consolidación
+transaccional, revoca las escrituras directas y expone únicamente las RPC de
+regeneración y marcado de compra. Los invitados conservan menú y checks por
+semana exclusivamente en `LocalStorage`.
