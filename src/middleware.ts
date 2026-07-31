@@ -6,6 +6,13 @@ import type { Database } from "@/types/database.types";
 
 export async function middleware(request: NextRequest) {
   const { response } = await updateSession(request);
+  function redirectWithRefreshedCookies(url: URL) {
+    const redirectResponse = NextResponse.redirect(url);
+    response.cookies
+      .getAll()
+      .forEach((cookie) => redirectResponse.cookies.set(cookie));
+    return redirectResponse;
+  }
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,24 +41,37 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const isDashboardRoute =
     pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const isGuestAuthRoute = ["/login", "/register", "/forgot-password"].includes(
+    pathname,
+  );
+
+  if (user && isGuestAuthRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return redirectWithRefreshedCookies(url);
+  }
+
+  const { data: profile } =
+    user && (isAdminRoute || isDashboardRoute)
+      ? await supabase
+          .from("profiles")
+          .select("role, banned")
+          .eq("id", user.id)
+          .single()
+      : { data: null };
 
   if (isAdminRoute) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      return NextResponse.redirect(url);
+      return redirectWithRefreshedCookies(url);
     }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, banned")
-      .eq("id", user.id)
-      .single();
 
     if (profile?.role !== "admin" || profile.banned) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
-      const redirectResponse = NextResponse.redirect(url);
+      const redirectResponse = redirectWithRefreshedCookies(url);
       redirectResponse.headers.set("x-redirect-reason", "unauthorized");
       return redirectResponse;
     }
@@ -62,7 +82,16 @@ export async function middleware(request: NextRequest) {
   if (isDashboardRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    url.search = "";
+    url.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    return redirectWithRefreshedCookies(url);
+  }
+
+  if (isDashboardRoute && profile?.banned) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/cuenta-bloqueada";
+    url.search = "";
+    return redirectWithRefreshedCookies(url);
   }
 
   return response;

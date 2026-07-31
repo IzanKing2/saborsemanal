@@ -3,201 +3,42 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
+import { AuthShell } from "@/components/auth/auth-shell";
 import { createClient } from "@/lib/supabase/client";
 
-type FieldErrors = {
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-};
-
 export default function RegisterPage() {
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, setPending] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    const errors: FieldErrors = {};
-    const normalizedEmail = email.trim();
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      errors.email = "Introduce un email válido.";
-    }
-
-    if (password.length < 8) {
-      errors.password = "La contraseña debe tener al menos 8 caracteres.";
-    } else if (!/[A-Z]/.test(password)) {
-      errors.password = "La contraseña debe incluir al menos una mayúscula.";
-    } else if (!/[0-9]/.test(password)) {
-      errors.password = "La contraseña debe incluir al menos un número.";
-    }
-
-    if (confirmPassword !== password) {
-      errors.confirmPassword = "Las contraseñas no coinciden.";
-    }
-
-    setFieldErrors(errors);
-    setError(null);
-    setSuccess(null);
-
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
-    } else {
-      setSuccess("Revisa tu email para confirmar tu cuenta.");
-    }
-
-    setIsSubmitting(false);
+    setMessage(null);
+    const name = displayName.trim();
+    if (name.length < 2 || name.length > 60) return setMessage({ ok: false, text: "El nombre debe tener entre 2 y 60 caracteres." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setMessage({ ok: false, text: "Introduce un email válido." });
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) return setMessage({ ok: false, text: "La contraseña necesita 8 caracteres, una mayúscula y un número." });
+    if (password !== confirmation) return setMessage({ ok: false, text: "Las contraseñas no coinciden." });
+    setPending(true);
+    const { error } = await createClient().auth.signUp({ email: email.trim(), password, options: { data: { display_name: name } } });
+    setMessage(error ? { ok: false, text: "No se pudo crear la cuenta. Revisa los datos." } : { ok: true, text: "Revisa tu email para confirmar la cuenta." });
+    setPending(false);
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-          Crear una cuenta
-        </h1>
-
-        {error && (
-          <div
-            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div
-            className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm"
-            role="status"
-          >
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="email"
-            >
-              Email
-            </label>
-            <input
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              aria-invalid={Boolean(fieldErrors.email)}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                fieldErrors.email ? "border-red-500" : "border-gray-300"
-              }`}
-              id="email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-            {fieldErrors.email && (
-              <p className="text-red-500 text-xs mt-1" id="email-error">
-                {fieldErrors.email}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="password"
-            >
-              Contraseña
-            </label>
-            <input
-              aria-describedby={
-                fieldErrors.password ? "password-error" : undefined
-              }
-              aria-invalid={Boolean(fieldErrors.password)}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                fieldErrors.password ? "border-red-500" : "border-gray-300"
-              }`}
-              id="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-            {fieldErrors.password && (
-              <p className="text-red-500 text-xs mt-1" id="password-error">
-                {fieldErrors.password}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="confirm-password"
-            >
-              Confirmar contraseña
-            </label>
-            <input
-              aria-describedby={
-                fieldErrors.confirmPassword
-                  ? "confirm-password-error"
-                  : undefined
-              }
-              aria-invalid={Boolean(fieldErrors.confirmPassword)}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                fieldErrors.confirmPassword
-                  ? "border-red-500"
-                  : "border-gray-300"
-              }`}
-              id="confirm-password"
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-              type="password"
-              value={confirmPassword}
-            />
-            {fieldErrors.confirmPassword && (
-              <p
-                className="text-red-500 text-xs mt-1"
-                id="confirm-password-error"
-              >
-                {fieldErrors.confirmPassword}
-              </p>
-            )}
-          </div>
-
-          <button
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? "Registrando..." : "Registrarse"}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-600 mt-4">
-          ¿Ya tienes cuenta?{" "}
-          <Link className="text-green-600 hover:underline" href="/login">
-            Inicia sesión
-          </Link>
-        </p>
-      </div>
-    </main>
+    <AuthShell eyebrow="Tu cocina, a tu manera" title="Crea tu cuenta" description="Guarda recetas propias, planifica cada semana y adapta el catálogo a tus necesidades.">
+      {message && <p className={`mb-5 rounded-xl border px-4 py-3 text-sm ${message.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`} role={message.ok ? "status" : "alert"}>{message.text}</p>}
+      <form className="space-y-4" noValidate onSubmit={submit}>
+        <div><label className="text-sm font-bold" htmlFor="display-name">Nombre visible</label><input className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="display-name" maxLength={60} onChange={(event) => setDisplayName(event.target.value)} required value={displayName} /></div>
+        <div><label className="text-sm font-bold" htmlFor="email">Email</label><input autoComplete="email" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
+        <div><label className="text-sm font-bold" htmlFor="password">Contraseña</label><input autoComplete="new-password" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /></div>
+        <div><label className="text-sm font-bold" htmlFor="confirmation">Repite la contraseña</label><input autoComplete="new-password" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="confirmation" onChange={(event) => setConfirmation(event.target.value)} required type="password" value={confirmation} /></div>
+        <button className="w-full rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50" disabled={pending} type="submit">{pending ? "Creando cuenta..." : "Crear mi cuenta"}</button>
+      </form>
+      <p className="mt-6 text-center text-sm text-stone-600">¿Ya tienes cuenta? <Link className="font-bold text-emerald-700 hover:underline" href="/login">Inicia sesión</Link></p>
+    </AuthShell>
   );
 }

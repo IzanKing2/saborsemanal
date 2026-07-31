@@ -2,156 +2,57 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
+import { AuthShell } from "@/components/auth/auth-shell";
 import { createClient } from "@/lib/supabase/client";
-
-type FieldErrors = {
-  email?: string;
-  password?: string;
-};
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [nextPath, setNextPath] = useState("/dashboard");
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedNext = params.get("next");
+    if (requestedNext && !requestedNext.includes("\\")) {
+      const parsedNext = new URL(requestedNext, window.location.origin);
+      if (parsedNext.origin === window.location.origin) {
+        setNextPath(
+          `${parsedNext.pathname}${parsedNext.search}${parsedNext.hash}`,
+        );
+      }
+    }
+    if (params.get("error") === "auth") setError("El enlace de acceso no es válido o ha caducado.");
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    const errors: FieldErrors = {};
-    const normalizedEmail = email.trim();
-
-    if (!normalizedEmail) {
-      errors.email = "El email es obligatorio.";
-    }
-
-    if (!password) {
-      errors.password = "La contraseña es obligatoria.";
-    }
-
-    setFieldErrors(errors);
     setError(null);
-
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
-
+    if (!email.trim() || !password) return setError("Introduce tu email y contraseña.");
+    setPending(true);
+    const { error: signInError } = await createClient().auth.signInWithPassword({ email: email.trim(), password });
     if (signInError) {
-      setError(signInError.message);
-      setIsSubmitting(false);
+      setError(signInError.message.toLowerCase().includes("email not confirmed") ? "Confirma tu email antes de iniciar sesión." : "El email o la contraseña no son correctos.");
+      setPending(false);
       return;
     }
-
-    router.push("/dashboard");
+    router.push(nextPath);
+    router.refresh();
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-          Iniciar sesión
-        </h1>
-
-        {error && (
-          <div
-            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="email"
-            >
-              Email
-            </label>
-            <input
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              aria-invalid={Boolean(fieldErrors.email)}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                fieldErrors.email ? "border-red-500" : "border-gray-300"
-              }`}
-              id="email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-            {fieldErrors.email && (
-              <p className="text-red-500 text-xs mt-1" id="email-error">
-                {fieldErrors.email}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="password"
-            >
-              Contraseña
-            </label>
-            <input
-              aria-describedby={
-                fieldErrors.password ? "password-error" : undefined
-              }
-              aria-invalid={Boolean(fieldErrors.password)}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                fieldErrors.password ? "border-red-500" : "border-gray-300"
-              }`}
-              id="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-            {fieldErrors.password && (
-              <p className="text-red-500 text-xs mt-1" id="password-error">
-                {fieldErrors.password}
-              </p>
-            )}
-          </div>
-
-          <button
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? "Entrando..." : "Entrar"}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-600 mt-4">
-          <Link
-            className="text-green-600 hover:underline"
-            href="/auth/forgot-password"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </p>
-        <p className="text-center text-sm text-gray-600 mt-4">
-          ¿No tienes cuenta?{" "}
-          <Link className="text-green-600 hover:underline" href="/register">
-            Regístrate
-          </Link>
-        </p>
-      </div>
-    </main>
+    <AuthShell eyebrow="Bienvenido de nuevo" title="Inicia sesión" description="Recupera tus recetas, tu menú y la lista de compra desde cualquier dispositivo.">
+      {error && <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+      <form className="space-y-5" noValidate onSubmit={submit}>
+        <div><label className="text-sm font-bold text-stone-800" htmlFor="email">Email</label><input autoComplete="email" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20" id="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
+        <div><div className="flex items-center justify-between gap-4"><label className="text-sm font-bold text-stone-800" htmlFor="password">Contraseña</label><Link className="text-xs font-bold text-emerald-700 hover:underline" href="/forgot-password">¿La has olvidado?</Link></div><input autoComplete="current-password" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20" id="password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /></div>
+        <button className="w-full rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50" disabled={pending} type="submit">{pending ? "Entrando..." : "Entrar en mi cocina"}</button>
+      </form>
+      <p className="mt-6 text-center text-sm text-stone-600">¿Todavía no tienes cuenta? <Link className="font-bold text-emerald-700 hover:underline" href="/register">Créala gratis</Link></p>
+    </AuthShell>
   );
 }
