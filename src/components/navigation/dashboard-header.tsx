@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
 import { DashboardNav } from "@/components/navigation/dashboard-nav";
-import { RecipeSearch } from "@/components/navigation/recipe-search";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 
 type DashboardHeaderProps = {
@@ -13,10 +12,7 @@ type DashboardHeaderProps = {
 };
 
 const dashboardLinks = [
-  ["Resumen", "/dashboard"],
   ["Mis recetas", "/dashboard/recetas"],
-  ["Planificador", "/dashboard/planificador"],
-  ["Lista de compra", "/dashboard/lista-compra"],
   ["Favoritas", "/dashboard/favoritas"],
   ["Mi cuenta", "/dashboard/cuenta"],
 ] as const;
@@ -33,9 +29,6 @@ export function DashboardHeader({
           Sabor<span className="text-amber-300">Semanal</span>
         </Link>
         <div className="hidden flex-1 items-center gap-4 sm:order-2 sm:flex">
-          <div className="flex-1">
-            <RecipeSearch tone="dark" />
-          </div>
           <nav
             aria-label="Panel de usuario"
             className="flex items-center gap-1 text-sm font-bold"

@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const dashboardLinks = [
-  ["Resumen", "/dashboard"],
   ["Mis recetas", "/dashboard/recetas"],
-  ["Planificador", "/dashboard/planificador"],
-  ["Lista de compra", "/dashboard/lista-compra"],
   ["Favoritas", "/dashboard/favoritas"],
   ["Mi cuenta", "/dashboard/cuenta"],
 ] as const;
