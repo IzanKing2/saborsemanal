@@ -84,6 +84,94 @@ function DeleteButton({ children }: { children: React.ReactNode }) {
   );
 }
 
+const ingredientPageSize = 10;
+
+type PaginationItem = number | "…";
+
+function paginationItems(
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] {
+  const items: PaginationItem[] = [];
+  const push = (value: PaginationItem) => {
+    if (items[items.length - 1] !== value) items.push(value);
+  };
+
+  if (totalPages <= 7) {
+    for (let page = 1; page <= totalPages; page += 1) push(page);
+    return items;
+  }
+
+  push(1);
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  if (start > 2) push("…");
+  for (let page = start; page <= end; page += 1) push(page);
+  if (end < totalPages - 1) push("…");
+  push(totalPages);
+  return items;
+}
+
+function PaginationControls({
+  currentPage,
+  onPageChange,
+  totalPages,
+}: {
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <nav
+      aria-label="Paginación de ingredientes"
+      className="flex flex-wrap items-center justify-center gap-2 pt-4"
+    >
+      <button
+        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        type="button"
+      >
+        Anterior
+      </button>
+      {paginationItems(currentPage, totalPages).map((item, index) =>
+        item === "…" ? (
+          <span
+            className="px-2 py-2 text-sm text-stone-400"
+            key={`ellipsis-${index}`}
+          >
+            …
+          </span>
+        ) : (
+          <button
+            aria-current={item === currentPage ? "page" : undefined}
+            className={
+              item === currentPage
+                ? "rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white"
+                : "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-bold hover:bg-stone-50"
+            }
+            key={item}
+            onClick={() => onPageChange(item)}
+            type="button"
+          >
+            {item}
+          </button>
+        ),
+      )}
+      <button
+        className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        type="button"
+      >
+        Siguiente
+      </button>
+    </nav>
+  );
+}
+
 function CreateNameForm({ catalog }: { catalog: NameCatalog }) {
   const action =
     catalog === "category" ? createCategoryAction : createAllergenAction;
@@ -446,7 +534,12 @@ export function CatalogManager({
 }: CatalogManagerProps) {
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase("es"));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredQuery, filterCategory]);
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.nombre]));
   const allergenNames = new Map(allergens.map((allergen) => [allergen.id, allergen.nombre]));
@@ -459,6 +552,21 @@ export function CatalogManager({
       filterCategory === "all" || ingredient.categoriaId === filterCategory;
     return matchesQuery && matchesCategory;
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredIngredients.length / ingredientPageSize),
+  );
+  const visiblePage = Math.min(currentPage, totalPages);
+  const visibleIngredients = filteredIngredients.slice(
+    (visiblePage - 1) * ingredientPageSize,
+    visiblePage * ingredientPageSize,
+  );
+  const listStart = (visiblePage - 1) * ingredientPageSize + 1;
+  const listEnd = Math.min(
+    visiblePage * ingredientPageSize,
+    filteredIngredients.length,
+  );
 
   return (
     <div className="space-y-8">
@@ -546,51 +654,65 @@ export function CatalogManager({
           </div>
         </details>
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-6">
           {filteredIngredients.length > 0 ? (
-            filteredIngredients.map((ingredient) => (
-              <details
-                className="group rounded-2xl border border-stone-200 bg-white open:shadow-sm"
-                key={ingredient.id}
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden">
-                  <span className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="truncate font-semibold text-stone-900">
-                      {ingredient.nombre}
-                    </span>
-                    {ingredient.categoriaId &&
-                      categoryNames.get(ingredient.categoriaId) && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                          {categoryNames.get(ingredient.categoriaId)}
+            <>
+              {filteredIngredients.length > ingredientPageSize && (
+                <p className="mb-3 text-sm text-stone-500">
+                  Mostrando {listStart}–{listEnd} de {filteredIngredients.length}
+                </p>
+              )}
+              <div className="space-y-3">
+                {visibleIngredients.map((ingredient) => (
+                  <details
+                    className="group rounded-2xl border border-stone-200 bg-white open:shadow-sm"
+                    key={ingredient.id}
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden">
+                      <span className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="truncate font-semibold text-stone-900">
+                          {ingredient.nombre}
                         </span>
-                      )}
-                    {ingredient.alergenoIds.map((allergenId) => {
-                      const allergenName = allergenNames.get(allergenId);
-                      if (!allergenName) return null;
-                      return (
-                        <span
-                          className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800"
-                          key={allergenId}
-                        >
-                          {allergenName}
-                        </span>
-                      );
-                    })}
-                  </span>
-                  <span className="shrink-0 text-xs font-medium text-stone-500 group-open:hidden">
-                    Editar
-                  </span>
-                </summary>
-                <div className="border-t border-stone-200 p-3 sm:p-4">
-                  <IngredientForm
-                    allergens={allergens}
-                    categories={categories}
-                    ingredient={ingredient}
-                    variant="plain"
-                  />
-                </div>
-              </details>
-            ))
+                        {ingredient.categoriaId &&
+                          categoryNames.get(ingredient.categoriaId) && (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                              {categoryNames.get(ingredient.categoriaId)}
+                            </span>
+                          )}
+                        {ingredient.alergenoIds.map((allergenId) => {
+                          const allergenName = allergenNames.get(allergenId);
+                          if (!allergenName) return null;
+                          return (
+                            <span
+                              className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800"
+                              key={allergenId}
+                            >
+                              {allergenName}
+                            </span>
+                          );
+                        })}
+                      </span>
+                      <span className="shrink-0 text-xs font-medium text-stone-500 group-open:hidden">
+                        Editar
+                      </span>
+                    </summary>
+                    <div className="border-t border-stone-200 p-3 sm:p-4">
+                      <IngredientForm
+                        allergens={allergens}
+                        categories={categories}
+                        ingredient={ingredient}
+                        variant="plain"
+                      />
+                    </div>
+                  </details>
+                ))}
+              </div>
+              <PaginationControls
+                currentPage={visiblePage}
+                onPageChange={setCurrentPage}
+                totalPages={totalPages}
+              />
+            </>
           ) : (
             <p className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500">
               {ingredients.length === 0
