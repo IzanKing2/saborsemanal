@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 
 import { LocalShoppingList } from "@/components/shopping/shopping-list";
 import {
@@ -75,6 +75,11 @@ export function WeeklyPlanner({
 
   const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 
+  const slotsRef = useRef(slots);
+  useEffect(() => {
+    slotsRef.current = slots;
+  }, [slots]);
+
   useEffect(() => {
     if (mode !== "local") return;
 
@@ -115,6 +120,7 @@ export function WeeklyPlanner({
         return;
       }
 
+      const currentSlots = slotsRef.current;
       const parsed: unknown = JSON.parse(value);
       if (!Array.isArray(parsed)) {
         throw new Error("Invalid local menu pool");
@@ -126,7 +132,7 @@ export function WeeklyPlanner({
               (recipeId): recipeId is string =>
                 typeof recipeId === "string" &&
                 validRecipeIds.has(recipeId) &&
-                !Object.values(slots).includes(recipeId),
+                !Object.values(currentSlots).includes(recipeId),
             ),
           ),
         ].slice(0, 50),
@@ -167,7 +173,7 @@ export function WeeklyPlanner({
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [mode, recipes, slots, slotsKey, poolKey]);
+  }, [mode, recipes, slotsKey, poolKey]);
 
   function persistLocal(nextSlots: PlannerSlots, nextPool: string[]) {
     try {
