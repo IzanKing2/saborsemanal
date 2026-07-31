@@ -26,7 +26,22 @@ export default async function GuestPlannerPage({
 
   const { data, error } = await supabase
     .from("recetas")
-    .select("id, titulo")
+    .select(
+      `
+        id,
+        titulo,
+        receta_ingredientes (
+          cantidad,
+          unidad,
+          ingrediente_id,
+          nombre_personalizado,
+          ingredientes (
+            nombre,
+            categorias_ingredientes (nombre)
+          )
+        )
+      `,
+    )
     .eq("publica", true)
     .eq("aprobada", true)
     .order("titulo");
@@ -35,7 +50,18 @@ export default async function GuestPlannerPage({
     throw new Error(`No se pudieron cargar las recetas: ${error.message}`);
   }
 
-  const recipes: PlannerRecipe[] = data ?? [];
+  const recipes: PlannerRecipe[] = (data ?? []).map((recipe) => ({
+    id: recipe.id,
+    titulo: recipe.titulo,
+    ingredientes: recipe.receta_ingredientes.map((item) => ({
+      ingredienteId: item.ingrediente_id,
+      nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+      categoria:
+        item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+      cantidad: Number(item.cantidad),
+      unidad: item.unidad,
+    })),
+  }));
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">

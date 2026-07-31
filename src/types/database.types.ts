@@ -294,33 +294,36 @@ export type Database = {
       shopping_list_items: {
         Row: {
           cantidad: number
-          comprado: boolean | null
-          created_at: string | null
+          comprado: boolean
+          created_at: string
           id: string
           ingrediente_id: string | null
-          menu_id: string | null
+          menu_id: string
+          nombre_personalizado: string | null
           unidad: string
-          usuario_id: string | null
+          usuario_id: string
         }
         Insert: {
           cantidad: number
-          comprado?: boolean | null
-          created_at?: string | null
+          comprado?: boolean
+          created_at?: string
           id?: string
           ingrediente_id?: string | null
-          menu_id?: string | null
+          menu_id: string
+          nombre_personalizado?: string | null
           unidad: string
-          usuario_id?: string | null
+          usuario_id: string
         }
         Update: {
           cantidad?: number
-          comprado?: boolean | null
-          created_at?: string | null
+          comprado?: boolean
+          created_at?: string
           id?: string
           ingrediente_id?: string | null
-          menu_id?: string | null
+          menu_id?: string
+          nombre_personalizado?: string | null
           unidad?: string
-          usuario_id?: string | null
+          usuario_id?: string
         }
         Relationships: [
           {
@@ -365,6 +368,10 @@ export type Database = {
       moderate_recipe: {
         Args: { p_decision: string; p_id: string }
         Returns: string
+      }
+      regenerate_shopping_list: {
+        Args: { p_week: string }
+        Returns: Database["public"]["Tables"]["shopping_list_items"]["Row"][]
       }
       save_ingredient: {
         Args: {
@@ -416,6 +423,10 @@ export type Database = {
           titulo: string
           total_count: number
         }[]
+      }
+      set_shopping_item_purchased: {
+        Args: { p_item_id: string; p_purchased: boolean }
+        Returns: string
       }
       storage_recipe_is_public: {
         Args: { object_name: string }

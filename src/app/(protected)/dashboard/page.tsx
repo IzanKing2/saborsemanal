@@ -47,6 +47,25 @@ export default function DashboardPage() {
               Planificar semana →
             </span>
           </Link>
+
+          <Link
+            className="group rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg md:col-span-2"
+            href="/dashboard/lista-compra"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">
+              Compra organizada
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-stone-900">
+              Lista de la compra
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              Consolida los ingredientes del menú y marca lo que ya está en la
+              cesta.
+            </p>
+            <span className="mt-6 inline-block text-sm font-bold text-emerald-700 group-hover:underline">
+              Preparar compra →
+            </span>
+          </Link>
         </div>
       </div>
     </main>

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 
+import { LocalShoppingList } from "@/components/shopping/shopping-list";
 import { saveMenuSlotAction } from "@/lib/actions/planificador";
+import type { ShoppingRecipeIngredient } from "@/lib/shopping-list";
 import {
   MEAL_TYPES,
   WEEK_DAYS,
@@ -18,6 +20,7 @@ export type PlannerRecipe = {
   id: string;
   titulo: string;
   etiqueta?: string;
+  ingredientes?: ShoppingRecipeIngredient[];
 };
 
 export type PlannerSlots = Record<string, string>;
@@ -46,6 +49,7 @@ export function WeeklyPlanner({
   basePath,
 }: WeeklyPlannerProps) {
   const [slots, setSlots] = useState(initialSlots);
+  const [localReady, setLocalReady] = useState(mode !== "local");
   const [pendingSlots, setPendingSlots] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -55,33 +59,60 @@ export function WeeklyPlanner({
   useEffect(() => {
     if (mode !== "local") return;
 
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return;
-      const parsed: unknown = JSON.parse(stored);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        const validKeys = new Set(
-          WEEK_DAYS.flatMap((day) =>
-            MEAL_TYPES.map((meal) => menuSlotKey(day, meal)),
-          ),
-        );
-        const validRecipeIds = new Set(recipes.map((recipe) => recipe.id));
-        setSlots(
-          Object.fromEntries(
-            Object.entries(parsed)
-              .slice(0, 21)
-              .filter(
-              ([key, value]) =>
-                  validKeys.has(key) &&
-                  typeof value === "string" &&
-                  validRecipeIds.has(value),
-              ),
-          ),
-        );
+    const validKeys = new Set(
+      WEEK_DAYS.flatMap((day) =>
+        MEAL_TYPES.map((meal) => menuSlotKey(day, meal)),
+      ),
+    );
+    const validRecipeIds = new Set(recipes.map((recipe) => recipe.id));
+
+    function loadStored(value: string | null) {
+      if (!value) {
+        setSlots({});
+        return;
       }
-    } catch {
-      localStorage.removeItem(storageKey);
+
+      const parsed: unknown = JSON.parse(value);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid local menu");
+      }
+      setSlots(
+        Object.fromEntries(
+          Object.entries(parsed)
+            .slice(0, 21)
+            .filter(
+              ([key, recipeId]) =>
+                validKeys.has(key) &&
+                typeof recipeId === "string" &&
+                validRecipeIds.has(recipeId),
+            ),
+        ),
+      );
     }
+
+    try {
+      loadStored(localStorage.getItem(storageKey));
+    } catch {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // Storage can be unavailable in privacy-restricted browsers.
+      }
+      setSlots({});
+    }
+    setLocalReady(true);
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== storageKey) return;
+      try {
+        loadStored(event.newValue);
+      } catch {
+        setSlots({});
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [mode, recipes, storageKey]);
 
   function updateSlot(day: WeekDay, meal: MealType, recipeId: string) {
@@ -193,6 +224,23 @@ export function WeeklyPlanner({
         </div>
       )}
 
+      {mode === "cloud" && (
+        <div className="mb-5 flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="font-bold text-amber-950">¿Ya tienes el menú listo?</p>
+            <p className="mt-1 text-sm text-amber-800">
+              Consolida todos sus ingredientes en una lista sincronizada.
+            </p>
+          </div>
+          <Link
+            className="rounded-lg bg-amber-300 px-4 py-2 text-center text-sm font-bold text-amber-950 hover:bg-amber-200"
+            href={`/dashboard/lista-compra?week=${week}`}
+          >
+            Abrir lista de compra
+          </Link>
+        </div>
+      )}
+
       <div className="space-y-4">
         {WEEK_DAYS.map((day, dayIndex) => (
           <section
@@ -255,6 +303,10 @@ export function WeeklyPlanner({
           </section>
         ))}
       </div>
+
+      {mode === "local" && localReady && (
+        <LocalShoppingList recipes={recipes} slots={slots} week={week} />
+      )}
     </div>
   );
 }
