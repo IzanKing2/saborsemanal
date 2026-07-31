@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { getRecipeImageUrl } from "@/lib/recipe-images";
 import { SiteHeader } from "@/components/navigation/site-header";
+import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
@@ -108,7 +109,12 @@ export default async function RecipeDetailPage({
         >
           ← Volver a recetas
         </Link>
-        {user && <CopyRecipeButton id={recipe.id} />}
+        {user && (
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <AddToMenuButton recipeId={recipe.id} />
+            <CopyRecipeButton id={recipe.id} />
+          </div>
+        )}
       </div>
 
       <article className="mx-auto max-w-6xl overflow-hidden border-y border-stone-200 bg-white shadow-sm sm:rounded-3xl sm:border">

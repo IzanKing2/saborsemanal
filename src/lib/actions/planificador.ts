@@ -24,6 +24,84 @@ export type MenuSlotResult = {
   message: string;
 };
 
+export type MenuRecipeInput = {
+  week: string;
+  recipeId: string;
+};
+
+export type MenuRecipeResult = {
+  ok: boolean;
+  message: string;
+};
+
+export async function addMenuRecipeAction(
+  input: MenuRecipeInput,
+): Promise<MenuRecipeResult> {
+  if (parseMonday(input.week) !== input.week || !isUuid(input.recipeId)) {
+    return { ok: false, message: "La receta no es válida." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { ok: false, message: "Inicia sesión para planificar tu semana." };
+    }
+
+    const { error } = await supabase.rpc("add_menu_recipe", {
+      p_week: input.week,
+      p_recipe_id: input.recipeId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "Esa receta no está disponible para tu menú."
+            : "No se pudo añadir la receta.",
+      };
+    }
+
+    revalidatePath("/dashboard/planificador");
+    return { ok: true, message: "Receta añadida al menú." };
+  } catch {
+    return { ok: false, message: "No se pudo añadir la receta." };
+  }
+}
+
+export async function removeMenuRecipeAction(
+  input: MenuRecipeInput,
+): Promise<MenuRecipeResult> {
+  if (parseMonday(input.week) !== input.week || !isUuid(input.recipeId)) {
+    return { ok: false, message: "La receta no es válida." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { ok: false, message: "Tu sesión ha caducado." };
+    }
+
+    const { error } = await supabase.rpc("remove_menu_recipe", {
+      p_week: input.week,
+      p_recipe_id: input.recipeId,
+    });
+    if (error) {
+      return { ok: false, message: "No se pudo retirar la receta." };
+    }
+
+    revalidatePath("/dashboard/planificador");
+    return { ok: true, message: "Receta retirada del menú." };
+  } catch {
+    return { ok: false, message: "No se pudo retirar la receta." };
+  }
+}
+
 export async function saveMenuSlotAction(
   input: MenuSlotInput,
 ): Promise<MenuSlotResult> {

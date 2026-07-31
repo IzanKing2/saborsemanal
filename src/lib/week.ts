@@ -8,7 +8,7 @@ export const WEEK_DAYS = [
   "Domingo",
 ] as const;
 
-export const MEAL_TYPES = ["Desayuno", "Almuerzo", "Cena"] as const;
+export const MEAL_TYPES = ["Desayuno", "Almuerzo", "Cena", "Otro"] as const;
 
 export type WeekDay = (typeof WEEK_DAYS)[number];
 export type MealType = (typeof MEAL_TYPES)[number];

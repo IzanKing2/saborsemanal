@@ -18,6 +18,7 @@ import {
 type LocalShoppingListProps = {
   week: string;
   slots: Record<string, string>;
+  pool: string[];
   recipes: { id: string; ingredientes?: ShoppingRecipeIngredient[] }[];
 };
 
@@ -82,15 +83,16 @@ function ShoppingItems({
 export function LocalShoppingList({
   week,
   slots,
+  pool,
   recipes,
 }: LocalShoppingListProps) {
-  const derivedItems = consolidateShoppingList(slots, recipes);
+  const derivedItems = consolidateShoppingList(slots, recipes, pool);
   const [purchases, setPurchases] = useState<Record<string, StoredPurchase>>({});
   const [message, setMessage] = useState<string | null>(null);
   const storageKey = `saborsemanal:shopping:${week}`;
 
   useEffect(() => {
-    const currentItems = consolidateShoppingList(slots, recipes);
+    const currentItems = consolidateShoppingList(slots, recipes, pool);
     function reconcile(value: string | null) {
       let stored: Record<string, StoredPurchase> = {};
       if (value) {
@@ -138,7 +140,7 @@ export function LocalShoppingList({
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [recipes, slots, storageKey]);
+  }, [pool, recipes, slots, storageKey]);
 
   const items = derivedItems.map((item) => ({
     ...item,

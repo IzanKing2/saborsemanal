@@ -23,11 +23,12 @@ type ShoppingRecipe = {
 export function consolidateShoppingList(
   slots: Record<string, string>,
   recipes: ShoppingRecipe[],
+  poolRecipeIds: string[] = [],
 ): ShoppingListItem[] {
   const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const consolidated = new Map<string, ShoppingListItem>();
 
-  for (const recipeId of Object.values(slots)) {
+  for (const recipeId of [...Object.values(slots), ...poolRecipeIds]) {
     const recipe = recipesById.get(recipeId);
     for (const ingredient of recipe?.ingredientes ?? []) {
       const normalizedName = ingredient.nombre.trim().toLocaleLowerCase("es");

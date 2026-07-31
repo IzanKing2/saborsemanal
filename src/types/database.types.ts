@@ -109,22 +109,25 @@ export type Database = {
       }
       menu_recetas: {
         Row: {
-          dia_semana: string
+          dia_semana: string | null
+          id: string
           menu_id: string
           receta_id: string
-          tipo_comida: string
+          tipo_comida: string | null
         }
         Insert: {
-          dia_semana: string
+          dia_semana?: string | null
+          id?: string
           menu_id: string
           receta_id: string
-          tipo_comida: string
+          tipo_comida?: string | null
         }
         Update: {
-          dia_semana?: string
+          dia_semana?: string | null
+          id?: string
           menu_id?: string
           receta_id?: string
-          tipo_comida?: string
+          tipo_comida?: string | null
         }
         Relationships: [
           {
@@ -400,6 +403,13 @@ export type Database = {
         Args: { p_banned: boolean; p_role: string; p_user_id: string }
         Returns: string
       }
+      add_menu_recipe: {
+        Args: {
+          p_recipe_id: string
+          p_week: string
+        }
+        Returns: string
+      }
       count_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
@@ -433,6 +443,13 @@ export type Database = {
           p_categoria_id?: string
           p_id?: string
           p_nombre: string
+        }
+        Returns: string
+      }
+      remove_menu_recipe: {
+        Args: {
+          p_recipe_id: string
+          p_week: string
         }
         Returns: string
       }

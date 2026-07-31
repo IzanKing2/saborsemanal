@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { SiteHeader } from "@/components/navigation/site-header";
+import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { getProfileAvatarUrls } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
@@ -380,6 +381,11 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                       </div>
                     </div>
                   </Link>
+                  {user && (
+                    <div className="px-5 pb-5">
+                      <AddToMenuButton recipeId={recipe.id} />
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
