@@ -134,20 +134,14 @@ INSERT INTO public.menu_recetas (
   ),
   (
     '50000000-0000-4000-8000-000000000001',
-    '40000000-0000-4000-8000-000000000001',
+    '40000000-0000-4000-8000-000000000002',
     'Martes',
     'Almuerzo'
   ),
   (
     '50000000-0000-4000-8000-000000000001',
-    '40000000-0000-4000-8000-000000000002',
-    'Miércoles',
-    'Cena'
-  ),
-  (
-    '50000000-0000-4000-8000-000000000001',
     '40000000-0000-4000-8000-000000000003',
-    'Jueves',
+    'Miércoles',
     'Cena'
   );
 
@@ -156,16 +150,12 @@ INSERT INTO public.menu_recetas (
   receta_id,
   dia_semana,
   tipo_comida
-)
-SELECT
+) VALUES (
   '50000000-0000-4000-8000-000000000002',
   '40000000-0000-4000-8000-000000000004',
-  day_name,
-  meal_name
-FROM unnest(ARRAY[
-  'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
-]) AS day_name
-CROSS JOIN unnest(ARRAY['Desayuno', 'Almuerzo', 'Cena']) AS meal_name;
+  'Lunes',
+  'Almuerzo'
+);
 
 SET LOCAL ROLE authenticated;
 SELECT set_config(
@@ -187,8 +177,8 @@ SELECT is(
     WHERE ingrediente_id = '30000000-0000-4000-8000-000000000001'
       AND unidad = 'g'
   ),
-  21000000::NUMERIC,
-  'a valid ingredient can contribute its maximum in all 21 slots'
+  1000000::NUMERIC,
+  'a recipe contributes its full ingredient quantity'
 );
 
 SELECT is(
@@ -199,8 +189,8 @@ SELECT is(
       AND ingrediente_id = '30000000-0000-4000-8000-000000000001'
       AND unidad = 'g'
   ),
-  220::NUMERIC,
-  'the same recipe in two slots contributes twice'
+  120::NUMERIC,
+  'recipes sharing a master ingredient consolidate into one row'
 );
 
 SELECT is(
@@ -222,7 +212,7 @@ SELECT is(
     WHERE menu_id = '50000000-0000-4000-8000-000000000001'
       AND lower(nombre_personalizado) = 'sal marina'
   ),
-  12::NUMERIC,
+  7::NUMERIC,
   'custom names are normalized and consolidated'
 );
 

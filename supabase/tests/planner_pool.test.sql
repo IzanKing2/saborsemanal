@@ -309,8 +309,8 @@ SELECT is(
     FROM public.menus_semanales
     WHERE usuario_id = '70000000-0000-4000-8000-000000000001'
   ),
-  1::BIGINT,
-  'menus stay isolated per user'
+  0::BIGINT,
+  'a user cannot see another user weekly menu'
 );
 
 SELECT * FROM finish();
