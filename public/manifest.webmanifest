@@ -1,0 +1,17 @@
+{
+  "name": "SaborSemanal",
+  "short_name": "SaborSemanal",
+  "description": "Recetas, planificación semanal y lista de la compra.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ea",
+  "theme_color": "#022c22",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

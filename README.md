@@ -6,13 +6,14 @@ SaborSemanal es una aplicación web para planificar menús semanales, descubrir 
 
 - Catálogo público de recetas con búsqueda, filtros por tiempo y exclusión de alérgenos; en móvil los filtros se abren en un drawer.
 - Planificador semanal con pool de recetas, asignación por día/comida y modo local para invitados.
-- Lista de la compra generada desde el menú semanal, con elementos extra añadidos a mano y retirada individual de ingredientes.
+- Lista de la compra generada desde el menú semanal, con elementos extra añadidos a mano, retirada individual, impresión y compartir.
 - Carrito lateral con marcado de comprados, regeneración, retirada de ingredientes y vaciado con confirmación.
-- Favoritos, creación/edición de recetas, subida de imágenes y enlaces de vídeo o YouTube como guía de preparación.
+- Favoritos, creación/edición de recetas, subida de imágenes, enlaces de vídeo o YouTube y escalado de ingredientes por porciones.
 - Panel privado de usuario y panel de administración.
-- Gestión admin de recetas, ingredientes, categorías y alérgenos.
+- Gestión admin de recetas, ingredientes, categorías y alérgenos; los administradores pueden editar o eliminar cualquier receta sin perder su autoría.
 - Autenticación, recuperación de contraseña, perfiles, roles, RLS y RPC seguras con Supabase.
 - Popups de confirmación personalizados para acciones destructivas.
+- PWA instalable con caché de rutas públicas y del planificador local para uso básico sin conexión.
 
 ## Stack
 
@@ -125,7 +126,7 @@ Las RPC principales se usan para encapsular escritura segura con `SECURITY DEFIN
 
 RPC destacadas:
 
-- `save_recipe`: guarda recetas, ingredientes, imagen y enlace opcional de vídeo.
+- `save_recipe`: guarda recetas, ingredientes, imagen y enlace opcional de vídeo; autoriza al creador o a un administrador y preserva la autoría original.
 - `add_menu_recipe` / `remove_menu_recipe`: gestionan el pool semanal del planificador.
 - `save_menu_slot`: asigna recetas a huecos de la semana.
 - `regenerate_shopping_list`: regenera la lista desde el menú semanal.
@@ -157,7 +158,11 @@ La aplicación también admite enlaces PKCE con `?code=...`, emitidos por la pla
 - En el carrito, los ingredientes derivados del menú pueden retirarse sin tocar el menú semanal. Si regeneras la lista, pueden volver a aparecer.
 - En modo invitado, el planificador, el pool y la lista se guardan en `localStorage` por semana.
 - Los enlaces de vídeo se guardan como URL HTTPS. YouTube se muestra embebido con `youtube-nocookie.com`; otros enlaces se abren como recurso externo.
+- El detalle de receta permite ajustar porciones entre 1 y 100 y recalcula las cantidades mostradas sin modificar la receta ni el menú semanal.
+- La lista completa permite imprimir o compartir el enlace mediante la Web Share API, con copia al portapapeles como fallback.
 - Los diálogos de confirmación usan `ConfirmDialog`, renderizado con portal al `document.body` para evitar problemas con headers con blur.
+- Publicar una receta exige confirmación explícita porque quedará visible para el resto de usuarios; guardar borrador mantiene la receta privada.
+- El manifest, el service worker y el aviso de instalación están en `public/manifest.webmanifest`, `public/sw.js` y `src/components/pwa`.
 
 ## Estructura
 

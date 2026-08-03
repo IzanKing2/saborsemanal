@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { saveRecipeAction } from "@/lib/actions/recetas";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   isValidVideoUrl,
   RECIPE_UNITS,
@@ -47,6 +48,7 @@ export type RecipeFormValue = {
 type RecipeFormProps = {
   ingredientOptions: IngredientOption[];
   initialRecipe: RecipeFormValue;
+  returnTo?: string;
 };
 
 type InstructionRow = { key: string; value: string };
@@ -78,6 +80,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export function RecipeForm({
   ingredientOptions,
   initialRecipe,
+  returnTo = "/dashboard/recetas",
 }: RecipeFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialRecipe.titulo);
@@ -110,6 +113,7 @@ export function RecipeForm({
   const [errors, setErrors] = useState<RecipeFormErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false);
   const submittingRef = useRef(false);
 
   useEffect(() => {
@@ -279,7 +283,7 @@ export function RecipeForm({
         }
       }
 
-      router.push("/dashboard/recetas");
+      router.push(returnTo);
       router.refresh();
     } catch (error) {
       if (uploadedPath) {
@@ -310,8 +314,19 @@ export function RecipeForm({
       | HTMLButtonElement
       | null;
     const action = submitter?.value === "publicar" ? "publicar" : "borrador";
+    if (action === "publicar") {
+      setPublishConfirmationOpen(true);
+      return;
+    }
     startTransition(() => {
       void persistRecipe(action);
+    });
+  }
+
+  function confirmPublication() {
+    setPublishConfirmationOpen(false);
+    startTransition(() => {
+      void persistRecipe("publicar");
     });
   }
 
@@ -830,7 +845,8 @@ export function RecipeForm({
           className="rounded-xl border border-stone-300 px-5 py-3 text-sm font-bold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isPending}
           name="accion"
-          type="submit"
+          onClick={() => setPublishConfirmationOpen(true)}
+          type="button"
           value="borrador"
         >
           {isPending ? "Guardando..." : "Guardar borrador"}
@@ -842,9 +858,25 @@ export function RecipeForm({
           type="submit"
           value="publicar"
         >
-          {isPending ? "Guardando..." : "Enviar a revisión"}
+          {isPending ? "Publicando..." : "Publicar receta"}
         </button>
       </div>
+      <ConfirmDialog
+        busy={isPending}
+        cancelLabel="Guardar borrador"
+        confirmLabel="Sí, publicar"
+        description="La receta será visible para el resto de usuarios. Si aún no está lista, guárdala como borrador."
+        dismissible={false}
+        onCancel={() => {
+          setPublishConfirmationOpen(false);
+          startTransition(() => {
+            void persistRecipe("borrador");
+          });
+        }}
+        onConfirm={confirmPublication}
+        open={publishConfirmationOpen}
+        title="¿Publicar esta receta?"
+      />
     </form>
   );
 }

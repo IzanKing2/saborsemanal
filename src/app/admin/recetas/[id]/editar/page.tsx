@@ -10,18 +10,22 @@ import { getRecipeImageUrl } from "@/lib/recipe-images";
 import { RECIPE_UNITS, type RecipeUnit } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
 
-type EditRecipePageProps = {
+type AdminEditRecipePageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function EditRecipePage({ params }: EditRecipePageProps) {
+export default async function AdminEditRecipePage({
+  params,
+}: AdminEditRecipePageProps) {
   const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) redirect("/login");
+
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (!isAdmin) redirect("/dashboard");
 
   const [recipeResult, recipeIngredientsResult, optionsResult] =
     await Promise.all([
@@ -31,7 +35,6 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
           "id, titulo, descripcion, instrucciones, imagen_url, video_url, tiempo_preparacion, porciones",
         )
         .eq("id", id)
-        .eq("creador_id", user.id)
         .maybeSingle(),
       supabase
         .from("receta_ingredientes")
@@ -42,7 +45,6 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
         .select("id, nombre, categorias_ingredientes(nombre)")
         .order("nombre"),
     ]);
-
   const queryError =
     recipeResult.error ?? recipeIngredientsResult.error ?? optionsResult.error;
   if (queryError) {
@@ -85,18 +87,18 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
           <Link
             className="text-sm font-semibold text-emerald-200 hover:text-white"
-            href="/dashboard/recetas"
+            href="/admin/recetas"
           >
-            ← Mis recetas
+            ← Recetario global
           </Link>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
-            Edición
+            Administración
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            {recipe.titulo}
+            Editar receta
           </h1>
           <p className="mt-3 max-w-2xl text-emerald-100">
-            Puedes guardar cambios como borrador o volver a publicar la receta.
+            Los cambios conservan la autoría original y se aplican al catálogo.
           </p>
         </div>
       </header>
@@ -105,6 +107,7 @@ export default async function EditRecipePage({ params }: EditRecipePageProps) {
         <RecipeForm
           ingredientOptions={ingredientOptions}
           initialRecipe={initialRecipe}
+          returnTo="/admin/recetas"
         />
       </div>
     </main>

@@ -10,6 +10,7 @@ type ConfirmDialogProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   busy?: boolean;
+  dismissible?: boolean;
   tone?: "danger" | "default";
   onCancel: () => void;
   onConfirm: () => void;
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
   busy = false,
+  dismissible = true,
   tone = "default",
   onCancel,
   onConfirm,
@@ -30,12 +32,12 @@ export function ConfirmDialog({
     if (!open) return;
 
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !busy) onCancel();
+      if (event.key === "Escape" && !busy && dismissible) onCancel();
     }
 
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [busy, onCancel, open]);
+  }, [busy, dismissible, onCancel, open]);
 
   if (!open) return null;
 
@@ -48,7 +50,7 @@ export function ConfirmDialog({
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/55 px-4 py-6"
       onClick={() => {
-        if (!busy) onCancel();
+        if (!busy && dismissible) onCancel();
       }}
       role="presentation"
     >

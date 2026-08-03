@@ -8,6 +8,7 @@ import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { FavoriteButton } from "@/components/recipes/favorite-button";
+import { RecipeServings } from "@/components/recipes/recipe-servings";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
@@ -236,26 +237,18 @@ export default async function RecipeDetailPage({
         </div>
 
         <div className="grid gap-10 border-t border-stone-200 p-6 sm:p-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <section aria-labelledby="ingredients-heading">
-            <h2 className="text-2xl font-bold text-stone-950" id="ingredients-heading">
-              Ingredientes
-            </h2>
-            <ul className="mt-5 divide-y divide-stone-100">
-              {(ingredientRows ?? []).map((ingredient, index) => (
-                <li
-                  className="flex items-baseline justify-between gap-4 py-3 text-sm"
-                  key={`${ingredient.ingrediente_id ?? ingredient.nombre_personalizado}-${index}`}
-                >
-                  <span className="font-medium text-stone-800">
-                    {ingredient.ingredientes?.nombre ??
-                      ingredient.nombre_personalizado}
-                  </span>
-                  <span className="shrink-0 text-stone-500">
-                    {ingredient.cantidad} {ingredient.unidad}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <div>
+            <RecipeServings
+              baseServings={recipe.porciones}
+              ingredients={(ingredientRows ?? []).map((ingredient) => ({
+                cantidad: Number(ingredient.cantidad),
+                nombre:
+                  ingredient.ingredientes?.nombre ??
+                  ingredient.nombre_personalizado ??
+                  "Otros",
+                unidad: ingredient.unidad,
+              }))}
+            />
 
             {allergens.length > 0 && (
               <div className="mt-7 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -286,7 +279,7 @@ export default async function RecipeDetailPage({
                 .
               </div>
             )}
-          </section>
+          </div>
 
           <section aria-labelledby="instructions-heading">
             <h2 className="text-2xl font-bold text-stone-950" id="instructions-heading">

@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(28);
+SELECT plan(30);
 
 INSERT INTO auth.users (id, email) VALUES
   ('80000000-0000-4000-8000-000000000001', 'save-owner@example.com'),
@@ -421,6 +421,39 @@ SELECT throws_ok(
   '42501',
   'An active user is required',
   'a session without a profile cannot save recipes'
+);
+
+SET LOCAL ROLE postgres;
+UPDATE public.profiles
+SET role = 'admin'
+WHERE id = '80000000-0000-4000-8000-000000000001';
+
+SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'request.jwt.claim.sub',
+  '80000000-0000-4000-8000-000000000001',
+  true
+);
+
+SELECT lives_ok(
+  $$SELECT public.save_recipe(
+    '80000000-0000-4000-8000-000000000010',
+    'Receta ajena editada por admin',
+    ARRAY['Preparar la receta editada'],
+    20,
+    4,
+    true,
+    '[{"ingrediente_id": "80000000-0000-4000-8000-000000000004", "cantidad": 250, "unidad": "g"}]'::JSONB,
+    'Editada por administración',
+    NULL
+  )$$,
+  'an admin can edit another user recipe'
+);
+
+SELECT is(
+  (SELECT creador_id FROM public.recetas WHERE id = '80000000-0000-4000-8000-000000000010'),
+  '80000000-0000-4000-8000-000000000002',
+  'admin editing preserves the original author'
 );
 
 SET LOCAL ROLE anon;

@@ -15,6 +15,7 @@ import {
   groupShoppingList,
   type ShoppingListItem,
 } from "@/lib/shopping-list";
+import { ShoppingListTools } from "@/components/shopping/shopping-list-tools";
 
 export function ShoppingListContent({
   items,
@@ -284,21 +285,24 @@ export function CloudShoppingList({
 
   return (
     <div>
-      <div className="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+      <div className="no-print mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
         <div>
           <p className="font-bold text-stone-950">Lista derivada del menú</p>
           <p className="mt-1 text-sm text-stone-600">
             Regenera después de cambiar una receta. Las unidades no se convierten.
           </p>
         </div>
-        <button
-          className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
-          disabled={regenerating}
-          onClick={regenerate}
-          type="button"
-        >
-          {regenerating ? "Regenerando..." : "Regenerar lista"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <ShoppingListTools />
+          <button
+            className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
+            disabled={regenerating}
+            onClick={regenerate}
+            type="button"
+          >
+            {regenerating ? "Regenerando..." : "Regenerar lista"}
+          </button>
+        </div>
       </div>
 
       {message && (

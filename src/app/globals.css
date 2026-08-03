@@ -51,3 +51,13 @@ textarea {
 .animate-cart-in {
   animation: cart-in 220ms ease-out;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+}

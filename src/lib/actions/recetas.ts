@@ -174,6 +174,7 @@ export async function saveRecipeAction(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/recetas");
+  revalidatePath("/admin/recetas");
   revalidatePath(`/dashboard/recetas/${data}/editar`);
   revalidatePath("/recetas");
 

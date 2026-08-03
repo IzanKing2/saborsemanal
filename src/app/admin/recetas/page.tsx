@@ -135,7 +135,7 @@ export default async function RecipeAdminPage({
             Recetario global
           </h1>
           <p className="mt-3 max-w-2xl text-emerald-100">
-            Busca, filtra y elimina cualquier receta de la aplicación.
+            Busca, filtra, edita y elimina cualquier receta de la aplicación.
           </p>
         </div>
       </header>
@@ -278,7 +278,15 @@ export default async function RecipeAdminPage({
                     </span>
                   </div>
                 </div>
-                <AdminDeleteRecipeForm id={recipe.id} title={recipe.titulo} />
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link
+                    className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50"
+                    href={`/admin/recetas/${recipe.id}/editar`}
+                  >
+                    Editar
+                  </Link>
+                  <AdminDeleteRecipeForm id={recipe.id} title={recipe.titulo} />
+                </div>
               </article>
             ))}
             {totalPages > 1 && (
