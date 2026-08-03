@@ -49,7 +49,7 @@ export function DashboardNav({
         createPortal(
           <div
             aria-hidden="true"
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-30"
             onClick={() => setOpen(false)}
             role="presentation"
           />,
