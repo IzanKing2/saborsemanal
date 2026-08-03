@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { MEAL_TYPES, WEEK_DAYS, type MealType, type WeekDay } from "@/lib/week";
 
@@ -18,9 +18,6 @@ export function RecipeSlotModal({
   onCancel,
   onConfirm,
 }: RecipeSlotModalProps) {
-  const [day, setDay] = useState<WeekDay>("Lunes");
-  const [meal, setMeal] = useState<MealType>("Almuerzo");
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onCancel();
@@ -38,7 +35,7 @@ export function RecipeSlotModal({
       <div
         aria-labelledby="recipe-slot-modal-title"
         aria-modal="true"
-        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl"
+        className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
@@ -69,47 +66,36 @@ export function RecipeSlotModal({
           </p>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium text-stone-700"
-              htmlFor="recipe-slot-day"
+        <p className="mt-5 text-sm font-medium text-stone-700">
+          Elige día y comida
+        </p>
+        <div className="mt-3 grid grid-cols-4 gap-1.5 overflow-hidden rounded-xl border border-stone-200">
+          <div className="bg-stone-100" />
+          {MEAL_TYPES.map((meal) => (
+            <p
+              className="bg-stone-100 px-1 py-2 text-center text-[11px] font-bold uppercase tracking-wider text-stone-500"
+              key={meal}
             >
-              Día
-            </label>
-            <select
-              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
-              id="recipe-slot-day"
-              onChange={(event) => setDay(event.target.value as WeekDay)}
-              value={day}
-            >
-              {WEEK_DAYS.map((weekDay) => (
-                <option key={weekDay} value={weekDay}>
-                  {weekDay}
-                </option>
+              {meal}
+            </p>
+          ))}
+          {WEEK_DAYS.map((day) => (
+            <div className="contents" key={day}>
+              <p className="flex items-center bg-stone-100 px-1 py-2 text-xs font-bold text-stone-600">
+                {day}
+              </p>
+              {MEAL_TYPES.map((meal) => (
+                <button
+                  className="rounded-md px-1 py-2 text-center text-xs font-semibold text-stone-700 outline-none transition hover:bg-emerald-700 hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-700"
+                  key={meal}
+                  onClick={() => onConfirm(day, meal)}
+                  type="button"
+                >
+                  ＋
+                </button>
               ))}
-            </select>
-          </div>
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium text-stone-700"
-              htmlFor="recipe-slot-meal"
-            >
-              Comida
-            </label>
-            <select
-              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
-              id="recipe-slot-meal"
-              onChange={(event) => setMeal(event.target.value as MealType)}
-              value={meal}
-            >
-              {MEAL_TYPES.map((mealType) => (
-                <option key={mealType} value={mealType}>
-                  {mealType}
-                </option>
-              ))}
-            </select>
-          </div>
+            </div>
+          ))}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
@@ -119,13 +105,6 @@ export function RecipeSlotModal({
             type="button"
           >
             Cancelar
-          </button>
-          <button
-            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800"
-            onClick={() => onConfirm(day, meal)}
-            type="button"
-          >
-            Añadir al menú
           </button>
         </div>
       </div>

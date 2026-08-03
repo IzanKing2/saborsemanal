@@ -12,6 +12,7 @@ import {
 
 import { saveRecipeAction } from "@/lib/actions/recetas";
 import {
+  isValidVideoUrl,
   RECIPE_UNITS,
   validateRecipe,
   type RecipeFormErrors,
@@ -32,6 +33,7 @@ export type RecipeFormValue = {
   instrucciones: string[];
   imagenPath: string | null;
   imagenUrl: string | null;
+  videoUrl: string | null;
   tiempoPreparacion: number;
   porciones: number;
   ingredientes: Array<{
@@ -80,6 +82,7 @@ export function RecipeForm({
   const router = useRouter();
   const [title, setTitle] = useState(initialRecipe.titulo);
   const [description, setDescription] = useState(initialRecipe.descripcion);
+  const [videoUrl, setVideoUrl] = useState(initialRecipe.videoUrl ?? "");
   const [preparationTime, setPreparationTime] = useState(
     String(initialRecipe.tiempoPreparacion),
   );
@@ -166,6 +169,10 @@ export function RecipeForm({
       porciones: Number(servings),
     });
 
+    if (videoUrl.trim() && !isValidVideoUrl(videoUrl.trim())) {
+      validationErrors.video = "Introduce un enlace HTTPS válido.";
+    }
+
     if (imageFile) {
       if (
         !["image/jpeg", "image/png", "image/webp"].includes(imageFile.type)
@@ -238,6 +245,7 @@ export function RecipeForm({
       formData.set("porciones", servings);
       formData.set("accion", action);
       if (imagePath) formData.set("imagen_url", imagePath);
+      formData.set("video_url", videoUrl.trim());
 
       const result = await saveRecipeAction(formData);
       if (!result.ok) {
@@ -483,6 +491,29 @@ export function RecipeForm({
               </button>
             )}
           </div>
+        </div>
+        <div className="mt-6 border-t border-stone-100 pt-5">
+          <label
+            className="mb-1 block text-sm font-medium text-stone-700"
+            htmlFor="recipe-video-url"
+          >
+            Vídeo o guía de preparación
+          </label>
+          <input
+            aria-describedby={errors.video ? "recipe-video-url-error" : undefined}
+            aria-invalid={Boolean(errors.video)}
+            className={`${inputClass} ${errors.video ? errorInputClass : ""}`}
+            id="recipe-video-url"
+            maxLength={500}
+            onChange={(event) => setVideoUrl(event.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            type="url"
+            value={videoUrl}
+          />
+          <p className="mt-2 text-xs text-stone-500">
+            Opcional. Añade un enlace HTTPS de YouTube u otra guía útil.
+          </p>
+          <FieldError id="recipe-video-url-error" message={errors.video} />
         </div>
       </section>
 

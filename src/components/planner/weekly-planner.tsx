@@ -2,10 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 
-import { RecipeSlotModal } from "@/components/recipes/recipe-slot-modal";
-import { saveMenuSlotAction } from "@/lib/actions/planificador";
+import { SlotPickerModal } from "@/components/planner/slot-picker-modal";
+import {
+  addMenuRecipeAction,
+  removeMenuRecipeAction,
+  saveMenuSlotAction,
+} from "@/lib/actions/planificador";
 import type { ShoppingRecipeIngredient } from "@/lib/shopping-list";
 import {
   MEAL_TYPES,
@@ -58,7 +62,10 @@ export function WeeklyPlanner({
   const [slots, setSlots] = useState(initialSlots);
   const [pool, setPool] = useState<string[]>(initialPool);
   const [query, setQuery] = useState("");
-  const [addingRecipeId, setAddingRecipeId] = useState<string | null>(null);
+  const [editingSlot, setEditingSlot] = useState<{
+    day: WeekDay;
+    meal: MealType;
+  } | null>(null);
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
@@ -66,7 +73,10 @@ export function WeeklyPlanner({
   const slotsKey = `saborsemanal:menu:${week}`;
   const poolKey = `saborsemanal:menu:pool:${week}`;
 
-  const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+  const recipesById = useMemo(
+    () => new Map(recipes.map((recipe) => [recipe.id, recipe])),
+    [recipes],
+  );
 
   const slotsRef = useRef(slots);
   useEffect(() => {
@@ -250,6 +260,69 @@ export function WeeklyPlanner({
     });
   }
 
+  function addToPool(recipeId: string) {
+    if (isRecipeInMenu(recipeId)) return;
+    const nextPool = [...pool, recipeId];
+    setPool(nextPool);
+    setMessage(null);
+
+    if (mode === "local") {
+      persistLocal(slots, nextPool);
+      return;
+    }
+
+    setPending((current) => new Set(current).add(`pool:${recipeId}`));
+    startTransition(async () => {
+      try {
+        const result = await addMenuRecipeAction({ week, recipeId });
+        if (!result.ok) {
+          setPool((current) => current.filter((id) => id !== recipeId));
+        }
+        setMessage({ ok: result.ok, text: result.message });
+      } catch {
+        setPool((current) => current.filter((id) => id !== recipeId));
+        setMessage({ ok: false, text: "No se pudo añadir la receta." });
+      } finally {
+        setPending((current) => {
+          const next = new Set(current);
+          next.delete(`pool:${recipeId}`);
+          return next;
+        });
+      }
+    });
+  }
+
+  function removeFromPool(recipeId: string) {
+    const nextPool = pool.filter((id) => id !== recipeId);
+    setPool(nextPool);
+    setMessage(null);
+
+    if (mode === "local") {
+      persistLocal(slots, nextPool);
+      return;
+    }
+
+    setPending((current) => new Set(current).add(`pool:${recipeId}`));
+    startTransition(async () => {
+      try {
+        const result = await removeMenuRecipeAction({ week, recipeId });
+        if (!result.ok) {
+          setPool((current) => [...current, recipeId]);
+        }
+        setMessage({ ok: result.ok, text: result.message });
+      } catch {
+        setPool((current) => [...current, recipeId]);
+        setMessage({ ok: false, text: "No se pudo quitar la receta." });
+      } finally {
+        setPending((current) => {
+          const next = new Set(current);
+          next.delete(`pool:${recipeId}`);
+          return next;
+        });
+      }
+    });
+  }
+
   const suggestions = recipes
     .filter((recipe) => {
       const normalizedQuery = query.trim().toLocaleLowerCase("es");
@@ -260,14 +333,15 @@ export function WeeklyPlanner({
     })
     .slice(0, MAX_SUGGESTIONS);
 
+  const poolRecipes = pool
+    .map((recipeId) => recipesById.get(recipeId))
+    .filter((recipe): recipe is PlannerRecipe => recipe !== undefined);
+
   const isCurrentWeek = getCurrentMonday() === week;
   const todayIndex = isCurrentWeek ? (new Date().getUTCDay() + 6) % 7 : -1;
 
-  function confirmAdd(day: WeekDay, meal: MealType) {
-    if (!addingRecipeId) return;
-    const recipeId = addingRecipeId;
-    setAddingRecipeId(null);
-    setSlot(day, meal, recipeId, false);
+  function closePicker() {
+    setEditingSlot(null);
   }
 
   return (
@@ -392,7 +466,7 @@ export function WeeklyPlanner({
                   <button
                     className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={added}
-                    onClick={() => setAddingRecipeId(recipe.id)}
+                    onClick={() => addToPool(recipe.id)}
                     type="button"
                   >
                     {added ? "En el menú" : "Añadir"}
@@ -413,114 +487,231 @@ export function WeeklyPlanner({
       </section>
 
       <section
-        aria-label="Calendario semanal"
-        className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm"
+        className="mb-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
+        aria-labelledby="menu-pool-heading"
       >
-        <div className="grid min-w-[950px] grid-cols-7 divide-x divide-stone-200">
-          {WEEK_DAYS.map((day, dayIndex) => {
-            const isToday = dayIndex === todayIndex;
-            return (
-              <section className="min-w-0" key={day}>
-                <header
-                  className={`px-3 py-3 text-center ${
-                    isToday
-                      ? "bg-amber-300 text-emerald-950"
-                      : "bg-emerald-950 text-white"
-                  }`}
-                >
-                  <p className="text-sm font-black">{day}</p>
-                  <p
-                    className={`mt-0.5 text-xs font-semibold ${
-                      isToday ? "text-emerald-800" : "text-emerald-200"
-                    }`}
+        <header className="bg-emerald-950 px-5 py-3 text-white">
+          <h2 className="text-lg font-bold" id="menu-pool-heading">
+            2 · Recetas del menú
+          </h2>
+        </header>
+        <div className="p-5">
+          {poolRecipes.length > 0 ? (
+            <>
+              <p className="text-sm text-stone-500">
+                Pulsa un hueco del calendario para asignarlas.
+              </p>
+              <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {poolRecipes.map((recipe) => (
+                  <li
+                    className="group relative rounded-xl border border-stone-200 p-2"
+                    key={recipe.id}
                   >
-                    {formatDay(week, dayIndex)}
-                  </p>
-                </header>
-                <div className="space-y-4 p-3">
-                  {MEAL_TYPES.map((meal) => {
-                    const key = menuSlotKey(day, meal);
-                    const selectId = `slot-${dayIndex}-${meal}`;
-                    const selectedRecipeId = slots[key];
-                    const selectedRecipeIsUnavailable =
-                      Boolean(selectedRecipeId) &&
-                      !recipes.some((recipe) => recipe.id === selectedRecipeId);
-                    return (
-                      <div key={meal}>
-                        <label
-                          className="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-500"
-                          htmlFor={selectId}
-                        >
-                          {meal}
-                        </label>
-                        <select
-                          className="w-full rounded-xl border border-stone-300 bg-white px-2 py-2 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 disabled:opacity-50"
-                          disabled={pending.has(`slot:${key}`)}
-                          id={selectId}
-                          onChange={(event) =>
-                            setSlot(
-                              day,
-                              meal,
-                              event.target.value,
-                              pool.includes(event.target.value),
-                            )
-                          }
-                          value={slots[key] ?? ""}
-                        >
-                          <option value="">Sin receta</option>
-                          {selectedRecipeIsUnavailable && (
-                            <option value={selectedRecipeId}>
-                              Receta no disponible
-                            </option>
-                          )}
-                          {selectedRecipeId && !selectedRecipeIsUnavailable && (
-                            <option value={selectedRecipeId}>
-                              {recipesById.get(selectedRecipeId)?.titulo ?? ""}
-                            </option>
-                          )}
-                          {pool
-                            .filter((recipeId) => recipeId !== selectedRecipeId)
-                            .map((recipeId) => (
-                              <option key={recipeId} value={recipeId}>
-                                {recipesById.get(recipeId)?.titulo ?? "Receta"}
-                              </option>
-                            ))}
-                        </select>
-                        {pending.has(`slot:${key}`) && (
-                          <p className="mt-2 text-xs text-stone-500" role="status">
-                            Guardando...
-                          </p>
-                        )}
-                        {selectedRecipeId && !selectedRecipeIsUnavailable && (
-                          <Link
-                            className="mt-1 inline-block text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
-                            href={`/recetas/${selectedRecipeId}`}
-                          >
-                            Ver detalles
-                          </Link>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+                    <span className="relative block h-20 w-full overflow-hidden rounded-lg bg-stone-100">
+                      {recipe.imagenUrl ? (
+                        <Image
+                          alt=""
+                          className="object-cover"
+                          fill
+                          sizes="160px"
+                          src={recipe.imagenUrl}
+                        />
+                      ) : (
+                        <span className="flex h-full items-center justify-center text-[10px] font-bold text-stone-400">
+                          Sin foto
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-2 block truncate text-sm font-semibold text-stone-900">
+                      {recipe.titulo}
+                    </span>
+                    {recipe.etiqueta && (
+                      <span className="block truncate text-xs font-semibold text-emerald-700">
+                        {recipe.etiqueta}
+                      </span>
+                    )}
+                    <button
+                      aria-label={`Quitar ${recipe.titulo} del menú`}
+                      className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full bg-stone-200 text-sm font-black text-stone-600 hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={pending.has(`pool:${recipe.id}`)}
+                      onClick={() => removeFromPool(recipe.id)}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="rounded-xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-500">
+              Aún no hay recetas en tu menú. Usa la búsqueda de arriba para
+              añadirlas.
+            </p>
+          )}
         </div>
       </section>
 
-      {addingRecipeId &&
-        (() => {
-          const recipe = recipesById.get(addingRecipeId);
-          return (
-            <RecipeSlotModal
-              imageUrl={recipe?.imagenUrl}
-              onCancel={() => setAddingRecipeId(null)}
-              onConfirm={confirmAdd}
-              recipeTitle={recipe?.titulo ?? "Receta"}
-            />
-          );
-        })()}
+      <section
+        aria-label="Calendario semanal"
+        className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
+      >
+        <header className="bg-emerald-950 px-5 py-3 text-white">
+          <h2 className="text-lg font-bold">3 · Organiza tu semana</h2>
+        </header>
+        <div className="overflow-x-auto">
+          <div className="grid min-w-[950px] grid-cols-7 divide-x divide-stone-200">
+            {WEEK_DAYS.map((day, dayIndex) => {
+              const isToday = dayIndex === todayIndex;
+              return (
+                <section className="min-w-0" key={day}>
+                  <header
+                    className={`px-3 py-3 text-center ${
+                      isToday
+                        ? "bg-amber-300 text-emerald-950"
+                        : "bg-emerald-950 text-white"
+                    }`}
+                  >
+                    <p className="text-sm font-black">{day}</p>
+                    <p
+                      className={`mt-0.5 text-xs font-semibold ${
+                        isToday ? "text-emerald-800" : "text-emerald-200"
+                      }`}
+                    >
+                      {formatDay(week, dayIndex)}
+                    </p>
+                  </header>
+                  <div className="space-y-4 p-3">
+                    {MEAL_TYPES.map((meal) => {
+                      const key = menuSlotKey(day, meal);
+                      const selectedRecipeId = slots[key];
+                      const selectedRecipe = selectedRecipeId
+                        ? recipesById.get(selectedRecipeId)
+                        : undefined;
+                      const selectedRecipeIsUnavailable =
+                        Boolean(selectedRecipeId) && !selectedRecipe;
+                      const slotPending = pending.has(`slot:${key}`);
+                      return (
+                        <div key={meal}>
+                          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-stone-500">
+                            {meal}
+                          </p>
+                          {selectedRecipeIsUnavailable ? (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                              <p className="text-xs font-semibold text-red-700">
+                                Receta no disponible
+                              </p>
+                              <button
+                                className="mt-2 text-xs font-bold text-red-700 underline hover:text-red-900"
+                                disabled={slotPending}
+                                onClick={() => setSlot(day, meal, "", false)}
+                                type="button"
+                              >
+                                Quitar
+                              </button>
+                              {slotPending && (
+                                <p
+                                  className="mt-2 text-xs text-stone-500"
+                                  role="status"
+                                >
+                                  Guardando...
+                                </p>
+                              )}
+                            </div>
+                          ) : selectedRecipe ? (
+                            <div className="relative rounded-xl border border-stone-200 bg-white p-2 shadow-sm transition hover:border-emerald-700">
+                              <button
+                                className="flex w-full items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                                disabled={slotPending}
+                                onClick={() => setEditingSlot({ day, meal })}
+                                type="button"
+                              >
+                                <span className="relative block size-10 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+                                  {selectedRecipe.imagenUrl ? (
+                                    <Image
+                                      alt=""
+                                      className="object-cover"
+                                      fill
+                                      sizes="40px"
+                                      src={selectedRecipe.imagenUrl}
+                                    />
+                                  ) : (
+                                    <span className="flex h-full items-center justify-center text-[9px] font-bold text-stone-400">
+                                      Sin foto
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-xs font-bold text-stone-900">
+                                    {selectedRecipe.titulo}
+                                  </span>
+                                  <span className="block text-[10px] font-semibold text-emerald-700">
+                                    Cambiar
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                aria-label={`Quitar ${selectedRecipe.titulo} del hueco`}
+                                className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-stone-200 text-xs font-black text-stone-600 hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={slotPending}
+                                onClick={() => setSlot(day, meal, "", false)}
+                                type="button"
+                              >
+                                ×
+                              </button>
+                              {slotPending && (
+                                <p
+                                  className="mt-2 text-xs text-stone-500"
+                                  role="status"
+                                >
+                                  Guardando...
+                                </p>
+                              )}
+                              <Link
+                                className="mt-1 inline-block text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
+                                href={`/recetas/${selectedRecipe.id}`}
+                              >
+                                Ver detalles
+                              </Link>
+                            </div>
+                          ) : (
+                            <button
+                              className="w-full rounded-xl border border-dashed border-stone-300 px-2 py-4 text-center text-xs font-bold text-stone-400 outline-none transition hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-700"
+                              disabled={slotPending}
+                              onClick={() => setEditingSlot({ day, meal })}
+                              type="button"
+                            >
+                              ＋ Añadir
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {editingSlot && (
+        <SlotPickerModal
+          currentRecipeId={slots[menuSlotKey(editingSlot.day, editingSlot.meal)]}
+          day={editingSlot.day}
+          meal={editingSlot.meal}
+          onAssign={(recipeId) => {
+            setSlot(editingSlot.day, editingSlot.meal, recipeId, true);
+            closePicker();
+          }}
+          onClose={closePicker}
+          onRemove={() => {
+            setSlot(editingSlot.day, editingSlot.meal, "", false);
+            closePicker();
+          }}
+          pool={poolRecipes}
+        />
+      )}
     </div>
   );
 }

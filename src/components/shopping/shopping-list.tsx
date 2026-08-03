@@ -6,6 +6,7 @@ import { startTransition, useEffect, useState } from "react";
 import {
   regenerateShoppingListAction,
   removeExtraItemAction,
+  removeShoppingItemAction,
   setExtraItemPurchasedAction,
   setShoppingItemPurchasedAction,
 } from "@/lib/actions/lista-compra";
@@ -260,6 +261,27 @@ export function CloudShoppingList({
     });
   }
 
+  function removeItem(item: ShoppingListItem) {
+    setPendingIds((current) => new Set(current).add(item.id));
+    setMessage(null);
+
+    startTransition(async () => {
+      const result = await removeShoppingItemAction(item.id);
+      if (result.ok) {
+        setItems((current) =>
+          current.filter((candidate) => candidate.id !== item.id),
+        );
+        router.refresh();
+      }
+      setMessage({ ok: result.ok, text: result.message });
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
+    });
+  }
+
   return (
     <div>
       <div className="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
@@ -300,9 +322,10 @@ export function CloudShoppingList({
           </p>
         </div>
       ) : (
-        <ShoppingListContent
-          items={items}
-          onToggle={toggleItem}
+          <ShoppingListContent
+            items={items}
+            onRemove={removeItem}
+            onToggle={toggleItem}
           pendingIds={pendingIds}
         />
       )}

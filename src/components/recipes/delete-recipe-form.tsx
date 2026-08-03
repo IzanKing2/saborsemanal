@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   deleteRecipeAction,
   type DeleteRecipeState,
@@ -10,14 +11,15 @@ import {
 
 const initialState: DeleteRecipeState = { ok: false, message: "" };
 
-function DeleteButton() {
+function DeleteButton({ onClick }: { onClick: () => void }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       className="text-sm font-bold text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
       disabled={pending}
-      type="submit"
+      onClick={onClick}
+      type="button"
     >
       {pending ? "Eliminando..." : "Eliminar"}
     </button>
@@ -32,23 +34,32 @@ export function DeleteRecipeForm({
   title: string;
 }) {
   const [state, formAction] = useActionState(deleteRecipeAction, initialState);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (!window.confirm(`¿Eliminar definitivamente “${title}”?`)) {
-          event.preventDefault();
-        }
-      }}
-    >
-      <input name="id" type="hidden" value={id} />
-      <DeleteButton />
-      {state.message && !state.ok && (
-        <p className="mt-2 text-xs text-red-600" role="alert">
-          {state.message}
-        </p>
-      )}
-    </form>
+    <>
+      <form action={formAction} ref={formRef}>
+        <input name="id" type="hidden" value={id} />
+        <DeleteButton onClick={() => setConfirmOpen(true)} />
+        {state.message && !state.ok && (
+          <p className="mt-2 text-xs text-red-600" role="alert">
+            {state.message}
+          </p>
+        )}
+      </form>
+      <ConfirmDialog
+        confirmLabel="Eliminar receta"
+        description={`La receta “${title}” se eliminará definitivamente de tu cuenta. Esta acción no se puede deshacer.`}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          formRef.current?.requestSubmit();
+        }}
+        open={confirmOpen}
+        title="¿Eliminar esta receta?"
+        tone="danger"
+      />
+    </>
   );
 }

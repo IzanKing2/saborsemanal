@@ -16,6 +16,31 @@ type RecipeDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
+function getYouTubeEmbedUrl(videoUrl: string | null) {
+  if (!videoUrl) return null;
+
+  try {
+    const url = new URL(videoUrl);
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+    let videoId = "";
+
+    if (host === "youtu.be") videoId = url.pathname.slice(1).split("/")[0] ?? "";
+    if (host === "youtube.com") {
+      videoId =
+        url.searchParams.get("v") ??
+        (url.pathname.startsWith("/shorts/")
+          ? url.pathname.split("/")[2] ?? ""
+          : "");
+    }
+
+    return /^[A-Za-z0-9_-]{6,20}$/.test(videoId)
+      ? `https://www.youtube-nocookie.com/embed/${videoId}`
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function RecipeDetailPage({
   params,
 }: RecipeDetailPageProps) {
@@ -29,7 +54,7 @@ export default async function RecipeDetailPage({
   const query = supabase
     .from("recetas")
     .select(
-      "id, titulo, descripcion, instrucciones, imagen_url, tiempo_preparacion, porciones",
+      "id, titulo, descripcion, instrucciones, imagen_url, video_url, tiempo_preparacion, porciones",
     )
     .eq("id", id);
   const filteredQuery = user
@@ -87,6 +112,7 @@ export default async function RecipeDetailPage({
     supabase,
     author?.avatar_path ?? null,
   );
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(recipe.video_url);
   const { data: preferenceRows, error: preferencesError } = user
     ? await supabase
         .from("profile_allergens")
@@ -276,6 +302,34 @@ export default async function RecipeDetailPage({
                 </li>
               ))}
             </ol>
+            {recipe.video_url && (
+              <div className="mt-8 border-t border-stone-100 pt-7">
+                <h3 className="text-lg font-bold text-stone-950">
+                  Vídeo guía
+                </h3>
+                {youtubeEmbedUrl ? (
+                  <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-stone-100">
+                    <iframe
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="size-full"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      src={youtubeEmbedUrl}
+                      title={`Vídeo de preparación de ${recipe.titulo}`}
+                    />
+                  </div>
+                ) : (
+                  <a
+                    className="mt-4 inline-flex rounded-xl border border-emerald-700 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50"
+                    href={recipe.video_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Abrir guía de preparación
+                  </a>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </article>

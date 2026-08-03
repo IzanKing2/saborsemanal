@@ -297,6 +297,7 @@ export type Database = {
           tiempo_preparacion: number
           titulo: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           aprobada?: boolean
@@ -311,6 +312,7 @@ export type Database = {
           tiempo_preparacion?: number
           titulo: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           aprobada?: boolean
@@ -325,6 +327,7 @@ export type Database = {
           tiempo_preparacion?: number
           titulo?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -495,6 +498,7 @@ export type Database = {
         Args: { p_receta_id: string }
         Returns: Database["public"]["Tables"]["shopping_list_extra"]["Row"][]
       }
+      clear_shopping_list: { Args: { p_week: string }; Returns: undefined }
       count_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
@@ -542,6 +546,10 @@ export type Database = {
         Args: { p_item_id: string }
         Returns: string
       }
+      remove_shopping_item: {
+        Args: { p_item_id: string }
+        Returns: string
+      }
       save_menu_slot: {
         Args: {
           p_day: string
@@ -553,15 +561,16 @@ export type Database = {
       }
       save_recipe: {
         Args: {
-          p_descripcion?: string
+          p_descripcion?: string | null
           p_id: string
-          p_imagen_url?: string
+          p_imagen_url?: string | null
           p_ingredientes: Json
           p_instrucciones: string[]
           p_porciones: number
           p_publica: boolean
           p_tiempo_preparacion: number
           p_titulo: string
+          p_video_url?: string | null
         }
         Returns: string
       }

@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { startTransition, useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ShoppingListContent } from "@/components/shopping/shopping-list";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
+  clearShoppingListAction,
   regenerateShoppingListAction,
   removeExtraItemAction,
+  removeShoppingItemAction,
   setExtraItemPurchasedAction,
   setShoppingItemPurchasedAction,
 } from "@/lib/actions/lista-compra";
@@ -23,6 +27,62 @@ type CartRow = ShoppingListItem & { removable: boolean };
 type StoredPurchase = { cantidad: number; comprado: boolean };
 
 const purchasesKey = (week: string) => `saborsemanal:shopping:${week}`;
+const clearedKey = (week: string) => `saborsemanal:shopping:cleared:${week}`;
+const removedItemsKey = (week: string) => `saborsemanal:shopping:removed:${week}`;
+
+type RemovedItems = { signature: string; ids: string[] };
+
+const parseObject = (value: string | null): Record<string, string> => {
+  if (!value) return {};
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, string>;
+    }
+  } catch {
+    // Ignore unreadable storage.
+  }
+  return {};
+};
+
+const parseList = (value: string | null): string[] => {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((id): id is string => typeof id === "string");
+    }
+  } catch {
+    // Ignore unreadable storage.
+  }
+  return [];
+};
+
+function recipeSignature(recipeIds: string[]) {
+  return [...new Set(recipeIds)].sort().join("|");
+}
+
+function loadRemovedItems(week: string, signature: string) {
+  try {
+    const raw = localStorage.getItem(removedItemsKey(week));
+    if (!raw) return new Set<string>();
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      (parsed as RemovedItems).signature === signature &&
+      Array.isArray((parsed as RemovedItems).ids)
+    ) {
+      return new Set(
+        (parsed as RemovedItems).ids.filter((id): id is string => typeof id === "string"),
+      );
+    }
+  } catch {
+    // Ignore unreadable storage.
+  }
+  return new Set<string>();
+}
 
 export function ShoppingCart({
   loggedIn,
@@ -36,6 +96,8 @@ export function ShoppingCart({
   const [rows, setRows] = useState<CartRow[]>([]);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [regenerating, setRegenerating] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
@@ -125,36 +187,18 @@ export function ShoppingCart({
       const slotsRaw = localStorage.getItem(`saborsemanal:menu:${week}`);
       const poolRaw = localStorage.getItem(`saborsemanal:menu:pool:${week}`);
       const extraRaw = localStorage.getItem("saborsemanal:shopping:extra");
-      const parseObject = (value: string | null): Record<string, string> => {
-        if (!value) return {};
-        try {
-          const parsed: unknown = JSON.parse(value);
-          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-            return parsed as Record<string, string>;
-          }
-        } catch {
-          // Ignore unreadable storage.
-        }
-        return {};
-      };
-      const parseList = (value: string | null): string[] => {
-        if (!value) return [];
-        try {
-          const parsed: unknown = JSON.parse(value);
-          if (Array.isArray(parsed)) {
-            return parsed.filter((id): id is string => typeof id === "string");
-          }
-        } catch {
-          // Ignore unreadable storage.
-        }
-        return [];
-      };
 
       const slots = parseObject(slotsRaw);
       const pool = parseList(poolRaw);
       const extraIds = parseList(extraRaw);
       const recipeIds = [...new Set([...Object.values(slots), ...pool, ...extraIds])];
       if (recipeIds.length === 0) {
+        localStorage.removeItem(clearedKey(week));
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+      if (localStorage.getItem(clearedKey(week)) === recipeSignature(recipeIds)) {
         setRows([]);
         setLoading(false);
         return;
@@ -199,6 +243,7 @@ export function ShoppingCart({
         ...pool,
         ...extraIds,
       ]);
+      const removedIds = loadRemovedItems(week, recipeSignature(recipeIds));
 
       let stored: Record<string, StoredPurchase> = {};
       try {
@@ -214,13 +259,15 @@ export function ShoppingCart({
       }
 
       setRows(
-        items.map((item) => ({
-          ...item,
-          comprado:
-            stored[item.id]?.cantidad === item.cantidad &&
-            stored[item.id]?.comprado === true,
-          removable: false,
-        })),
+        items
+          .filter((item) => !removedIds.has(item.id))
+          .map((item) => ({
+            ...item,
+            comprado:
+              stored[item.id]?.cantidad === item.cantidad &&
+              stored[item.id]?.comprado === true,
+            removable: true,
+          })),
       );
     } catch {
       setRows([]);
@@ -299,11 +346,54 @@ export function ShoppingCart({
 
   function removeItem(item: ShoppingListItem) {
     const row = item as CartRow;
-    if (!row.removable) return;
     setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
+
+    if (!loggedIn) {
+      try {
+        const week = getCurrentMonday();
+        const slots = parseObject(
+          localStorage.getItem(`saborsemanal:menu:${week}`),
+        );
+        const pool = parseList(
+          localStorage.getItem(`saborsemanal:menu:pool:${week}`),
+        );
+        const extraIds = parseList(
+          localStorage.getItem("saborsemanal:shopping:extra"),
+        );
+        const signature = recipeSignature([
+          ...Object.values(slots),
+          ...pool,
+          ...extraIds,
+        ]);
+        const removedIds = loadRemovedItems(week, signature);
+        removedIds.add(item.id);
+        localStorage.setItem(
+          removedItemsKey(week),
+          JSON.stringify({ signature, ids: [...removedIds] }),
+        );
+        setRows((current) =>
+          current.filter((candidate) => candidate.id !== item.id),
+        );
+        setMessage({ ok: true, text: "Ingrediente retirado de la lista." });
+      } catch {
+        setMessage({
+          ok: false,
+          text: "El navegador no pudo retirar el ingrediente.",
+        });
+      }
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
+      return;
+    }
+
     startTransition(async () => {
-      const result = await removeExtraItemAction(item.id);
+      const result = row.removable
+        ? await removeExtraItemAction(item.id)
+        : await removeShoppingItemAction(item.id);
       if (result.ok) {
         setRows((current) =>
           current.filter((candidate) => candidate.id !== item.id),
@@ -326,6 +416,53 @@ export function ShoppingCart({
       setMessage({ ok: result.ok, text: result.message });
       if (result.ok) await load();
       setRegenerating(false);
+    });
+  }
+
+  function clearList() {
+    const week = getCurrentMonday();
+    setClearing(true);
+    setMessage(null);
+
+    if (!loggedIn) {
+      try {
+        const slots = parseObject(
+          localStorage.getItem(`saborsemanal:menu:${week}`),
+        );
+        const pool = parseList(
+          localStorage.getItem(`saborsemanal:menu:pool:${week}`),
+        );
+        const remainingRecipeIds = [...Object.values(slots), ...pool];
+        const signature = recipeSignature(remainingRecipeIds);
+
+        localStorage.removeItem("saborsemanal:shopping:extra");
+        localStorage.removeItem(purchasesKey(week));
+        localStorage.removeItem(removedItemsKey(week));
+        if (signature) {
+          localStorage.setItem(clearedKey(week), signature);
+        } else {
+          localStorage.removeItem(clearedKey(week));
+        }
+
+        setRows([]);
+        setMessage({ ok: true, text: "Lista de la compra vaciada." });
+      } catch {
+        setMessage({
+          ok: false,
+          text: "El navegador no pudo vaciar la lista.",
+        });
+      }
+      setClearing(false);
+      setClearOpen(false);
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await clearShoppingListAction(week);
+      setMessage({ ok: result.ok, text: result.message });
+      if (result.ok) setRows([]);
+      setClearing(false);
+      setClearOpen(false);
     });
   }
 
@@ -375,19 +512,20 @@ export function ShoppingCart({
         )}
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50"
-          onClick={() => setOpen(false)}
-          role="presentation"
-        >
-          <aside
-            aria-label="Lista de la compra"
-            aria-modal="true"
-            className="animate-cart-in absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[#f6f3ea] shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
+      {open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => setOpen(false)}
+            role="presentation"
           >
+            <aside
+              aria-label="Lista de la compra"
+              aria-modal="true"
+              className="animate-cart-in absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[#f6f3ea] shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+            >
             <header className="flex items-center justify-between border-b border-stone-200 bg-emerald-950 px-5 py-4 text-white">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
@@ -460,6 +598,14 @@ export function ShoppingCart({
             )}
 
             <footer className="flex flex-col gap-3 border-t border-stone-200 bg-white px-5 py-4">
+              <button
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={clearing || rows.length === 0}
+                onClick={() => setClearOpen(true)}
+                type="button"
+              >
+                {clearing ? "Vaciando..." : "Vaciar lista"}
+              </button>
               {loggedIn && (
                 <button
                   className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
@@ -482,9 +628,20 @@ export function ShoppingCart({
                 {loggedIn ? "Ver lista completa" : "Abrir planificador"}
               </Link>
             </footer>
-          </aside>
-        </div>
-      )}
+            </aside>
+          </div>,
+          document.body,
+        )}
+      <ConfirmDialog
+        busy={clearing}
+        confirmLabel="Sí, vaciar lista"
+        description="Se eliminarán todos los ingredientes que ves ahora en el carrito. Tu menú semanal no se borra; podrás volver a generar la lista si lo necesitas."
+        onCancel={() => setClearOpen(false)}
+        onConfirm={clearList}
+        open={clearOpen}
+        title="¿Vaciar la lista de la compra?"
+        tone="danger"
+      />
     </>
   );
 }

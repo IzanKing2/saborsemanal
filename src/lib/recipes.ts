@@ -27,6 +27,7 @@ export type RecipeFormErrors = {
   tiempo?: string;
   porciones?: string;
   imagen?: string;
+  video?: string;
 };
 
 type RecipeValidationInput = {
@@ -43,6 +44,15 @@ const uuidPattern =
 
 export function isUuid(value: string) {
   return uuidPattern.test(value);
+}
+
+export function isValidVideoUrl(value: string) {
+  if (!value || value.length > 500) return false;
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 export function validateRecipe(input: RecipeValidationInput): RecipeFormErrors {

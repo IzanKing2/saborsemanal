@@ -39,6 +39,7 @@ export default async function NewRecipePage() {
     instrucciones: [""],
     imagenPath: null,
     imagenUrl: null,
+    videoUrl: null,
     tiempoPreparacion: 30,
     porciones: 2,
     ingredientes: [

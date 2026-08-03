@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 const adminLinks = [
   ["Catálogos", "/admin/ingredientes"],
@@ -59,15 +60,18 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
           </svg>
         </button>
 
-        {open && (
-          <>
+        {open &&
+          createPortal(
             <div
               aria-hidden="true"
               className="fixed inset-0 z-40"
               onClick={() => setOpen(false)}
               role="presentation"
-            />
-            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl">
+            />,
+            document.body,
+          )}
+        {open && (
+          <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl">
               <nav className="flex flex-col">
                 {adminLinks.map(([label, href]) => (
                   <Link
@@ -89,7 +93,6 @@ export function AdminNav({ logout }: { logout: () => Promise<void> }) {
                 </form>
               </nav>
             </div>
-          </>
         )}
       </div>
     </>

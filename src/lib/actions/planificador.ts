@@ -66,3 +66,75 @@ export async function saveMenuSlotAction(
     return { ok: false, message: "No se pudo guardar el cambio." };
   }
 }
+
+export type MenuRecipeInput = {
+  week: string;
+  recipeId: string;
+};
+
+export async function addMenuRecipeAction(
+  input: MenuRecipeInput,
+): Promise<MenuSlotResult> {
+  if (parseMonday(input.week) !== input.week || !isUuid(input.recipeId)) {
+    return { ok: false, message: "El cambio del menú no es válido." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("add_menu_recipe", {
+      p_week: input.week,
+      p_recipe_id: input.recipeId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "Esa receta no está disponible para tu menú."
+            : "No se pudo añadir la receta.",
+      };
+    }
+
+    revalidatePath("/dashboard/planificador");
+    return { ok: true, message: "Receta añadida al menú." };
+  } catch {
+    return { ok: false, message: "No se pudo añadir la receta." };
+  }
+}
+
+export async function removeMenuRecipeAction(
+  input: MenuRecipeInput,
+): Promise<MenuSlotResult> {
+  if (parseMonday(input.week) !== input.week || !isUuid(input.recipeId)) {
+    return { ok: false, message: "El cambio del menú no es válido." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("remove_menu_recipe", {
+      p_week: input.week,
+      p_recipe_id: input.recipeId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message: "No se pudo quitar la receta.",
+      };
+    }
+
+    revalidatePath("/dashboard/planificador");
+    return { ok: true, message: "Receta quitada del menú." };
+  } catch {
+    return { ok: false, message: "No se pudo quitar la receta." };
+  }
+}

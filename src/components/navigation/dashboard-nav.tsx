@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 const dashboardLinks = [
   ["Mis recetas", "/dashboard/recetas"],
@@ -44,18 +45,21 @@ export function DashboardNav({
         </svg>
       </button>
 
-      {open && (
-        <>
+      {open &&
+        createPortal(
           <div
             aria-hidden="true"
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
             role="presentation"
-          />
-          <nav
-            aria-label="Panel de usuario"
-            className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl"
-          >
+          />,
+          document.body,
+        )}
+      {open && (
+        <nav
+          aria-label="Panel de usuario"
+          className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl"
+        >
             <div className="flex flex-col py-1">
               {dashboardLinks.map(([label, href]) => (
                 <Link
@@ -86,7 +90,6 @@ export function DashboardNav({
               </form>
             </div>
           </nav>
-        </>
       )}
     </div>
   );

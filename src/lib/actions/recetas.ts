@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   isUuid,
+  isValidVideoUrl,
   RECIPE_UNITS,
   validateRecipe,
   type RecipeIngredientInput,
@@ -95,6 +96,7 @@ export async function saveRecipeAction(
   const title = getText(formData, "titulo");
   const description = getText(formData, "descripcion");
   const imagePath = getText(formData, "imagen_url");
+  const videoUrl = getText(formData, "video_url");
   const instructions = parseInstructions(getText(formData, "instrucciones"));
   const ingredients = parseIngredients(getText(formData, "ingredientes"));
   const preparationTime = getInteger(formData, "tiempo_preparacion");
@@ -108,6 +110,10 @@ export async function saveRecipeAction(
     tiempo: preparationTime,
     porciones: servings,
   });
+
+  if (videoUrl && !isValidVideoUrl(videoUrl)) {
+    errors.video = "Introduce un enlace HTTPS válido.";
+  }
 
   if (!isUuid(id) || Object.keys(errors).length > 0) {
     return {
@@ -150,8 +156,9 @@ export async function saveRecipeAction(
       unidad: ingredient.unidad,
     })) as Json,
   };
-  if (description) args.p_descripcion = description;
-  if (imagePath) args.p_imagen_url = imagePath;
+  args.p_descripcion = description || null;
+  args.p_imagen_url = imagePath || null;
+  args.p_video_url = videoUrl || null;
 
   const { data, error } = await supabase.rpc("save_recipe", args);
 
@@ -197,7 +204,7 @@ export async function duplicateRecipeAction(
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recetas")
-    .select("titulo, descripcion, instrucciones, tiempo_preparacion, porciones")
+    .select("titulo, descripcion, instrucciones, tiempo_preparacion, porciones, video_url")
     .eq("id", id)
     .eq("publica", true)
     .eq("aprobada", true)
@@ -238,7 +245,9 @@ export async function duplicateRecipeAction(
       unidad: ingredient.unidad,
     })) as Json,
   };
-  if (recipe.descripcion) args.p_descripcion = recipe.descripcion;
+  args.p_descripcion = recipe.descripcion;
+  args.p_imagen_url = null;
+  args.p_video_url = recipe.video_url;
 
   const { data: newRecipeId, error } = await supabase.rpc("save_recipe", args);
 

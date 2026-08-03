@@ -3,6 +3,7 @@
 import { useActionState, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   createAllergenAction,
   createCategoryAction,
@@ -70,14 +71,21 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DeleteButton({ children }: { children: React.ReactNode }) {
+function DeleteButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <button
       className="text-xs font-semibold text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
       disabled={pending}
-      type="submit"
+      onClick={onClick}
+      type="button"
     >
       {pending ? "Eliminando..." : children}
     </button>
@@ -223,7 +231,13 @@ function NameRow({ catalog, item }: { catalog: NameCatalog; item: NamedItem }) {
     initialState,
   );
   const [editing, setEditing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
   const inputId = `${catalog}-${item.id}`;
+  const kind = catalog === "category" ? "categoría" : "alérgeno";
+  const impact = item.usageCount
+    ? ` Afectará a ${item.usageCount} asociación${item.usageCount === 1 ? "" : "es"}.`
+    : "";
 
   useEffect(() => {
     if (updateState.ok) setEditing(false);
@@ -252,17 +266,12 @@ function NameRow({ catalog, item }: { catalog: NameCatalog; item: NamedItem }) {
           </button>
           <form
             action={deleteFormAction}
-            onSubmit={(event) => {
-              const impact = item.usageCount
-                ? ` Afectará a ${item.usageCount} asociación${item.usageCount === 1 ? "" : "es"}.`
-                : "";
-              if (!window.confirm(`¿Eliminar “${item.nombre}”?${impact}`)) {
-                event.preventDefault();
-              }
-            }}
+            ref={deleteFormRef}
           >
             <input name="id" type="hidden" value={item.id} />
-            <DeleteButton>Eliminar</DeleteButton>
+            <DeleteButton onClick={() => setConfirmOpen(true)}>
+              Eliminar
+            </DeleteButton>
           </form>
         </div>
       </div>
@@ -299,6 +308,18 @@ function NameRow({ catalog, item }: { catalog: NameCatalog; item: NamedItem }) {
       )}
 
       <ActionMessage state={deleteState} />
+      <ConfirmDialog
+        confirmLabel={`Eliminar ${kind}`}
+        description={`Vas a eliminar la ${kind} “${item.nombre}”.${impact} Esta acción no se puede deshacer.`}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          deleteFormRef.current?.requestSubmit();
+        }}
+        open={confirmOpen}
+        title={`¿Eliminar esta ${kind}?`}
+        tone="danger"
+      />
     </li>
   );
 }
@@ -381,6 +402,8 @@ function IngredientForm({
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const suffix = ingredient?.id ?? "new";
   const selectedAllergens = new Set(ingredient?.alergenoIds ?? []);
 
@@ -488,16 +511,28 @@ function IngredientForm({
         <form
           action={deleteFormAction}
           className="mt-3 border-t border-stone-100 pt-3"
-          onSubmit={(event) => {
-            if (!window.confirm(`¿Eliminar “${ingredient.nombre}”?`)) {
-              event.preventDefault();
-            }
-          }}
+          ref={deleteFormRef}
         >
           <input name="id" type="hidden" value={ingredient.id} />
-          <DeleteButton>Eliminar ingrediente</DeleteButton>
+          <DeleteButton onClick={() => setConfirmOpen(true)}>
+            Eliminar ingrediente
+          </DeleteButton>
           <ActionMessage state={deleteState} />
         </form>
+      )}
+      {ingredient && (
+        <ConfirmDialog
+          confirmLabel="Eliminar ingrediente"
+          description={`Vas a eliminar “${ingredient.nombre}” del catálogo maestro de ingredientes. Las recetas que lo usen pueden perder esa asociación.`}
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={() => {
+            setConfirmOpen(false);
+            deleteFormRef.current?.requestSubmit();
+          }}
+          open={confirmOpen}
+          title="¿Eliminar este ingrediente?"
+          tone="danger"
+        />
       )}
     </div>
   );

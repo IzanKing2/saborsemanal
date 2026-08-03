@@ -3,19 +3,25 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { exchangeRecoveryTokenAction } from "@/lib/actions/cuenta";
+import {
+  exchangeRecoveryCodeAction,
+  exchangeRecoveryTokenAction,
+} from "@/lib/actions/cuenta";
 
 export function RecoveryTokenForm({
+  code,
   tokenHash,
   type,
 }: {
+  code: string | null;
   tokenHash: string | null;
   type: string | null;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!tokenHash || type !== "recovery") {
+  const usesTokenHash = Boolean(tokenHash && type === "recovery");
+  if (!usesTokenHash && !code) {
     return (
       <div>
         <p
@@ -36,13 +42,13 @@ export function RecoveryTokenForm({
     );
   }
 
-  const hash = tokenHash;
-
   async function submit() {
     if (pending) return;
     setPending(true);
     setError(null);
-    const result = await exchangeRecoveryTokenAction(hash);
+    const result = usesTokenHash
+      ? await exchangeRecoveryTokenAction(tokenHash!)
+      : await exchangeRecoveryCodeAction(code!);
     if (!result.ok) {
       setError(result.message);
       setPending(false);

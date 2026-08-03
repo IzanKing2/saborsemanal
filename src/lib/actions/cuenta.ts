@@ -167,6 +167,32 @@ export async function deleteAccountAction(
   }
 }
 
+async function storeRecoveryCookie(userId: string, email: string) {
+  const cookieStore = await cookies();
+  for (const cookie of cookieStore.getAll()) {
+    if (cookie.name.startsWith("sb-")) {
+      cookieStore.set(cookie.name, "", {
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 0,
+      });
+    }
+  }
+  cookieStore.set(
+    "saborsemanal-recovery",
+    createRecoveryToken(userId, email),
+    {
+      httpOnly: true,
+      maxAge: 600,
+      path: "/reset-password",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
+  );
+}
+
 export async function exchangeRecoveryTokenAction(
   token_hash: string,
 ): Promise<AccountActionResult> {
@@ -185,29 +211,38 @@ export async function exchangeRecoveryTokenAction(
 
     await supabase.auth.signOut();
 
-    const cookieStore = await cookies();
-    for (const cookie of cookieStore.getAll()) {
-      if (cookie.name.startsWith("sb-")) {
-        cookieStore.set(cookie.name, "", {
-          httpOnly: true,
-          path: "/",
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 0,
-        });
-      }
+    await storeRecoveryCookie(data.user.id, data.user.email);
+    return { ok: true, message: "" };
+  } catch {
+    return {
+      ok: false,
+      message: "El enlace ha caducado o no es válido. Solicita uno nuevo.",
+    };
+  }
+}
+
+export async function exchangeRecoveryCodeAction(
+  code: string,
+): Promise<AccountActionResult> {
+  if (!code || code.length > 2_000) {
+    return {
+      ok: false,
+      message: "El enlace ha caducado o no es válido. Solicita uno nuevo.",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data.user?.id || !data.user.email) {
+      return {
+        ok: false,
+        message: "El enlace ha caducado o no es válido. Solicita uno nuevo.",
+      };
     }
-    cookieStore.set(
-      "saborsemanal-recovery",
-      createRecoveryToken(data.user.id, data.user.email),
-      {
-        httpOnly: true,
-        maxAge: 600,
-        path: "/reset-password",
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      },
-    );
+
+    await supabase.auth.signOut();
+    await storeRecoveryCookie(data.user.id, data.user.email);
     return { ok: true, message: "" };
   } catch {
     return {

@@ -49,6 +49,40 @@ export async function regenerateShoppingListAction(
   }
 }
 
+export async function clearShoppingListAction(
+  week: string,
+): Promise<ShoppingListActionResult> {
+  if (parseMonday(week) !== week) {
+    return { ok: false, message: "La semana indicada no es válida." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("clear_shopping_list", {
+      p_week: week,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "No tienes permiso para vaciar esta lista."
+            : "No se pudo vaciar la lista.",
+      };
+    }
+
+    revalidatePath("/dashboard/lista-compra");
+    return { ok: true, message: "Lista de la compra vaciada." };
+  } catch {
+    return { ok: false, message: "No se pudo vaciar la lista." };
+  }
+}
+
 export async function setShoppingItemPurchasedAction(
   itemId: string,
   purchased: boolean,
@@ -184,6 +218,43 @@ export async function removeExtraItemAction(
 
     revalidatePath("/dashboard/lista-compra");
     return { ok: true, message: "Elemento retirado de tu lista." };
+  } catch {
+    return { ok: false, message: "No se pudo retirar el elemento." };
+  }
+}
+
+export async function removeShoppingItemAction(
+  itemId: string,
+): Promise<ShoppingListActionResult> {
+  if (!isUuid(itemId)) {
+    return { ok: false, message: "El elemento indicado no es válido." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+    const { error } = await supabase.rpc("remove_shopping_item", {
+      p_item_id: itemId,
+    });
+    if (error) {
+      return {
+        ok: false,
+        message:
+          error.code === "42501"
+            ? "No tienes permiso para retirar este elemento."
+            : "No se pudo retirar el elemento.",
+      };
+    }
+
+    revalidatePath("/dashboard/lista-compra");
+    return {
+      ok: true,
+      message: "Ingrediente retirado. Volverá si regeneras la lista.",
+    };
   } catch {
     return { ok: false, message: "No se pudo retirar el elemento." };
   }
