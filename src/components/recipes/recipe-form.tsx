@@ -14,8 +14,10 @@ import { saveRecipeAction } from "@/lib/actions/recetas";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   isValidVideoUrl,
+  MEAL_TYPES,
   RECIPE_UNITS,
   validateRecipe,
+  type MealType,
   type RecipeFormErrors,
   type RecipeUnit,
 } from "@/lib/recipes";
@@ -35,6 +37,7 @@ export type RecipeFormValue = {
   imagenPath: string | null;
   imagenUrl: string | null;
   videoUrl: string | null;
+  tipoComida: string[];
   tiempoPreparacion: number;
   porciones: number;
   ingredientes: Array<{
@@ -86,6 +89,11 @@ export function RecipeForm({
   const [title, setTitle] = useState(initialRecipe.titulo);
   const [description, setDescription] = useState(initialRecipe.descripcion);
   const [videoUrl, setVideoUrl] = useState(initialRecipe.videoUrl ?? "");
+  const [mealTypes, setMealTypes] = useState<MealType[]>(
+    initialRecipe.tipoComida.filter((value): value is MealType =>
+      (MEAL_TYPES as readonly string[]).includes(value),
+    ),
+  );
   const [preparationTime, setPreparationTime] = useState(
     String(initialRecipe.tiempoPreparacion),
   );
@@ -143,6 +151,14 @@ export function RecipeForm({
       [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
       return next;
     });
+  }
+
+  function toggleMealType(value: MealType) {
+    setMealTypes((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
   }
 
   function updateIngredient(key: string, patch: Partial<IngredientRow>) {
@@ -250,6 +266,7 @@ export function RecipeForm({
       formData.set("accion", action);
       if (imagePath) formData.set("imagen_url", imagePath);
       formData.set("video_url", videoUrl.trim());
+      formData.set("tipo_comida", JSON.stringify(mealTypes));
 
       const result = await saveRecipeAction(formData);
       if (!result.ok) {
@@ -395,6 +412,39 @@ export function RecipeForm({
               message={errors.descripcion}
             />
           </div>
+
+          <fieldset className="mt-1">
+            <legend className="mb-1 block text-sm font-medium text-stone-700">
+              Tipo de comida
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {MEAL_TYPES.map((option) => {
+                const checked = mealTypes.includes(option);
+                return (
+                  <label
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                      checked
+                        ? "border-emerald-700 bg-emerald-100 text-emerald-900"
+                        : "border-stone-300 bg-white text-stone-600 hover:border-emerald-700"
+                    }`}
+                    key={option}
+                  >
+                    <input
+                      checked={checked}
+                      className="sr-only"
+                      onChange={() => toggleMealType(option)}
+                      type="checkbox"
+                      value={option}
+                    />
+                    {option}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-stone-500">
+              Opcional. Marca los momentos del día para los que encaja esta receta.
+            </p>
+          </fieldset>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

@@ -7,10 +7,12 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import {
+  isMealType,
   isUuid,
   isValidVideoUrl,
   RECIPE_UNITS,
   validateRecipe,
+  type MealType,
   type RecipeIngredientInput,
 } from "@/lib/recipes";
 import type { Database, Json } from "@/types/database.types";
@@ -49,6 +51,18 @@ function parseInstructions(value: string): string[] {
     return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
       ? parsed.map((item) => item.trim())
       : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseMealTypes(value: string): MealType[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === "string")) {
+      return [];
+    }
+    return [...new Set(parsed.filter(isMealType))];
   } catch {
     return [];
   }
@@ -99,6 +113,7 @@ export async function saveRecipeAction(
   const videoUrl = getText(formData, "video_url");
   const instructions = parseInstructions(getText(formData, "instrucciones"));
   const ingredients = parseIngredients(getText(formData, "ingredientes"));
+  const mealTypes = parseMealTypes(getText(formData, "tipo_comida"));
   const preparationTime = getInteger(formData, "tiempo_preparacion");
   const servings = getInteger(formData, "porciones");
   const shouldPublish = getText(formData, "accion") === "publicar";
@@ -163,6 +178,7 @@ export async function saveRecipeAction(
     p_descripcion: description || null,
     p_imagen_url: imagePath || null,
     p_video_url: videoUrl || null,
+    p_tipo_comida: mealTypes,
   } as unknown as SaveRecipeArgs;
 
   const { data, error } = await supabase.rpc("save_recipe", args);
@@ -210,7 +226,9 @@ export async function duplicateRecipeAction(
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recetas")
-    .select("titulo, descripcion, instrucciones, tiempo_preparacion, porciones, video_url")
+    .select(
+      "titulo, descripcion, instrucciones, tiempo_preparacion, porciones, video_url, tipo_comida",
+    )
     .eq("id", id)
     .eq("publica", true)
     .eq("aprobada", true)
@@ -255,6 +273,7 @@ export async function duplicateRecipeAction(
     p_descripcion: recipe.descripcion,
     p_imagen_url: null,
     p_video_url: recipe.video_url,
+    p_tipo_comida: recipe.tipo_comida,
   } as unknown as SaveRecipeArgs;
 
   const { data: newRecipeId, error } = await supabase.rpc("save_recipe", args);
