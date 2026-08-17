@@ -59,6 +59,7 @@ type IngredientRow = {
   key: string;
   ingredienteId: string | null;
   nombrePersonalizado: string;
+  catalogText: string;
   cantidad: string;
   unidad: RecipeUnit;
 };
@@ -109,6 +110,9 @@ export function RecipeForm({
       key: `ingredient-${index}`,
       ingredienteId: ingredient.ingredienteId,
       nombrePersonalizado: ingredient.nombrePersonalizado,
+      catalogText:
+        ingredientOptions.find((option) => option.id === ingredient.ingredienteId)
+          ?.nombre ?? "",
       cantidad: String(ingredient.cantidad),
       unidad: ingredient.unidad,
     })),
@@ -462,6 +466,7 @@ export function RecipeForm({
                 max={1440}
                 min={1}
                 onChange={(event) => setPreparationTime(event.target.value)}
+                onFocus={(event) => event.target.select()}
                 required
                 type="number"
                 value={preparationTime}
@@ -485,6 +490,7 @@ export function RecipeForm({
                 max={100}
                 min={1}
                 onChange={(event) => setServings(event.target.value)}
+                onFocus={(event) => event.target.select()}
                 required
                 type="number"
                 value={servings}
@@ -694,6 +700,7 @@ export function RecipeForm({
                   key: newKey(),
                   ingredienteId: ingredientOptions.length > 0 ? "" : null,
                   nombrePersonalizado: "",
+                  catalogText: "",
                   cantidad: "1",
                   unidad: "unidad",
                 },
@@ -704,6 +711,14 @@ export function RecipeForm({
             Añadir ingrediente
           </button>
         </div>
+
+        <datalist id="ingredient-catalog-options">
+          {ingredientOptions.map((option) => (
+            <option key={option.id} value={option.nombre}>
+              {option.categoriaNombre ? `${option.nombre} · ${option.categoriaNombre}` : option.nombre}
+            </option>
+          ))}
+        </datalist>
 
         {ingredientOptions.length === 0 && (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -733,7 +748,7 @@ export function RecipeForm({
                       ingredient.key,
                       event.target.value === "custom"
                         ? { ingredienteId: null, nombrePersonalizado: "" }
-                        : { ingredienteId: "", nombrePersonalizado: "" },
+                        : { ingredienteId: "", nombrePersonalizado: "", catalogText: "" },
                     )
                   }
                   value={ingredient.ingredienteId === null ? "custom" : "catalog"}
@@ -786,33 +801,34 @@ export function RecipeForm({
                     >
                       Ingrediente de la lista maestra {index + 1}
                     </label>
-                    <select
+                    <input
                       aria-describedby={
                         errors.ingredientes
                           ? "recipe-ingredients-error"
                           : undefined
                       }
                       aria-invalid={Boolean(errors.ingredientes)}
+                      autoComplete="off"
                       className={inputClass}
                       id={`ingredient-option-${ingredient.key}`}
-                      onChange={(event) =>
+                      list="ingredient-catalog-options"
+                      onChange={(event) => {
+                        const text = event.target.value;
+                        const match = ingredientOptions.find(
+                          (option) =>
+                            option.nombre.toLocaleLowerCase("es") ===
+                            text.trim().toLocaleLowerCase("es"),
+                        );
                         updateIngredient(ingredient.key, {
-                          ingredienteId: event.target.value,
-                        })
-                      }
+                          catalogText: text,
+                          ingredienteId: match ? match.id : "",
+                        });
+                      }}
+                      placeholder="Escribe para buscar..."
                       required
-                      value={ingredient.ingredienteId}
-                    >
-                      <option value="">Selecciona...</option>
-                      {ingredientOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.nombre}
-                          {option.categoriaNombre
-                            ? ` · ${option.categoriaNombre}`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
+                      type="text"
+                      value={ingredient.catalogText}
+                    />
                   </>
                 )}
               </div>
