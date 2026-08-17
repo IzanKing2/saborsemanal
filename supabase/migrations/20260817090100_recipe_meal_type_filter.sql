@@ -75,7 +75,14 @@ GRANT EXECUTE ON FUNCTION public.save_recipe(
   UUID, TEXT, TEXT[], INTEGER, INTEGER, BOOLEAN, JSONB, TEXT, TEXT, TEXT, TEXT[]
 ) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.search_public_recipes(
+-- CREATE OR REPLACE cannot change a function's parameter list; since this
+-- adds a new parameter, the old 5-arg overload must be dropped explicitly
+-- or it would keep coexisting (and stay reachable) alongside the new one.
+DROP FUNCTION IF EXISTS public.search_public_recipes(
+  TEXT, INTEGER, UUID[], INTEGER, INTEGER
+);
+
+CREATE FUNCTION public.search_public_recipes(
   p_query TEXT DEFAULT NULL,
   p_max_time INTEGER DEFAULT NULL,
   p_allergen_ids UUID[] DEFAULT NULL,
@@ -146,7 +153,9 @@ GRANT EXECUTE ON FUNCTION public.search_public_recipes(
   TEXT, INTEGER, UUID[], INTEGER, INTEGER, TEXT[]
 ) TO anon, authenticated;
 
-CREATE OR REPLACE FUNCTION public.count_public_recipes(
+DROP FUNCTION IF EXISTS public.count_public_recipes(TEXT, INTEGER, UUID[]);
+
+CREATE FUNCTION public.count_public_recipes(
   p_query TEXT DEFAULT NULL,
   p_max_time INTEGER DEFAULT NULL,
   p_allergen_ids UUID[] DEFAULT NULL,

@@ -529,24 +529,15 @@ export type Database = {
         Returns: string
       }
       clear_shopping_list: { Args: { p_week: string }; Returns: undefined }
-      count_public_recipes:
-        | {
-            Args: {
-              p_allergen_ids?: string[]
-              p_max_time?: number
-              p_query?: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_allergen_ids?: string[]
-              p_max_time?: number
-              p_meal_types?: string[]
-              p_query?: string
-            }
-            Returns: number
-          }
+      count_public_recipes: {
+        Args: {
+          p_allergen_ids?: string[]
+          p_max_time?: number
+          p_meal_types?: string[]
+          p_query?: string
+        }
+        Returns: number
+      }
       delete_ingredient: { Args: { p_id: string }; Returns: undefined }
       delete_user_account: { Args: { p_user_id: string }; Returns: boolean }
       get_public_recipe_authors: {
@@ -670,47 +661,27 @@ export type Database = {
           total_count: number
         }[]
       }
-      search_public_recipes:
-        | {
-            Args: {
-              p_allergen_ids?: string[]
-              p_limit?: number
-              p_max_time?: number
-              p_offset?: number
-              p_query?: string
-            }
-            Returns: {
-              created_at: string
-              descripcion: string
-              id: string
-              imagen_url: string
-              porciones: number
-              tiempo_preparacion: number
-              titulo: string
-              total_count: number
-            }[]
-          }
-        | {
-            Args: {
-              p_allergen_ids?: string[]
-              p_limit?: number
-              p_max_time?: number
-              p_meal_types?: string[]
-              p_offset?: number
-              p_query?: string
-            }
-            Returns: {
-              created_at: string
-              descripcion: string
-              id: string
-              imagen_url: string
-              porciones: number
-              tiempo_preparacion: number
-              tipo_comida: string[]
-              titulo: string
-              total_count: number
-            }[]
-          }
+      search_public_recipes: {
+        Args: {
+          p_allergen_ids?: string[]
+          p_limit?: number
+          p_max_time?: number
+          p_meal_types?: string[]
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: {
+          created_at: string
+          descripcion: string
+          id: string
+          imagen_url: string
+          porciones: number
+          tiempo_preparacion: number
+          tipo_comida: string[]
+          titulo: string
+          total_count: number
+        }[]
+      }
       set_extra_item_purchased: {
         Args: { p_item_id: string; p_purchased: boolean }
         Returns: string
