@@ -14,6 +14,7 @@ type DashboardHeaderProps = {
 const dashboardLinks = [
   ["Mis recetas", "/dashboard/recetas"],
   ["Favoritas", "/dashboard/favoritas"],
+  ["Mi grupo", "/dashboard/grupo"],
   ["Mi cuenta", "/dashboard/cuenta"],
 ] as const;
 
