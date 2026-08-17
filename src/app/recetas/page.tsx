@@ -9,7 +9,7 @@ import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button
 import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { RecipeFilters } from "@/components/recipes/recipe-filters";
 import { getProfileAvatarUrls } from "@/lib/profile-avatars";
-import { isUuid } from "@/lib/recipes";
+import { isMealType, isUuid, type MealType } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
 
@@ -32,12 +32,14 @@ function pageUrl({
   query,
   maxTime,
   allergens,
+  mealTypes,
   page,
   preferencesOff,
 }: {
   query: string;
   maxTime: number | null;
   allergens: string[];
+  mealTypes: string[];
   page: number;
   preferencesOff?: boolean;
 }) {
@@ -45,6 +47,7 @@ function pageUrl({
   if (query) params.set("q", query);
   if (maxTime) params.set("maxTime", String(maxTime));
   allergens.forEach((allergen) => params.append("allergen", allergen));
+  mealTypes.forEach((mealType) => params.append("tipo", mealType));
   if (preferencesOff) params.set("preferences", "off");
   if (page > 1) params.set("page", String(page));
   const search = params.toString();
@@ -72,6 +75,14 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   const explicitAllergenIds = [...new Set(requestedAllergens.filter(isUuid))];
   const preferencesOff = firstValue(params.preferences) === "off";
   const hasExplicitAllergens = params.allergen !== undefined;
+  const requestedMealTypes = Array.isArray(params.tipo)
+    ? params.tipo
+    : params.tipo
+      ? [params.tipo]
+      : [];
+  const mealTypes: MealType[] = [
+    ...new Set(requestedMealTypes.filter(isMealType)),
+  ];
 
   const supabase = await createClient();
   const { data: allergens, error: allergensError } = await supabase
@@ -120,6 +131,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   if (filteredAllergenIds.length > 0) {
     countArgs.p_allergen_ids = filteredAllergenIds;
   }
+  if (mealTypes.length > 0) countArgs.p_meal_types = mealTypes;
 
   const { data: count, error: countError } = await supabase.rpc(
     "count_public_recipes",
@@ -137,6 +149,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
         query,
         maxTime,
         allergens: usingPreferences ? [] : filteredAllergenIds,
+        mealTypes,
         page: totalPages,
         preferencesOff,
       }),
@@ -152,6 +165,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   if (filteredAllergenIds.length > 0) {
     args.p_allergen_ids = filteredAllergenIds;
   }
+  if (mealTypes.length > 0) args.p_meal_types = mealTypes;
 
   const { data, error } = await supabase.rpc("search_public_recipes", args);
   if (error) throw new Error(`No se pudieron buscar recetas: ${error.message}`);
@@ -224,6 +238,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
           canRestorePreferences={Boolean(user)}
           filteredAllergenIds={filteredAllergenIds}
           maxTime={maxTime}
+          mealTypes={mealTypes}
           preferencesOff={preferencesOff}
           query={query}
           usingPreferences={usingPreferences}
@@ -231,6 +246,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
             query,
             maxTime,
             allergens: [],
+            mealTypes,
             page: 1,
             preferencesOff: true,
           })}
@@ -308,6 +324,18 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                         <span>{recipe.tiempo_preparacion} min</span>
                         <span>{recipe.porciones} porciones</span>
                       </div>
+                      {recipe.tipo_comida.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {recipe.tipo_comida.map((tipo) => (
+                            <span
+                              className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900"
+                              key={tipo}
+                            >
+                              {tipo}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </Link>
                   <div className="flex flex-wrap items-center gap-3 px-5 pb-5">
@@ -350,6 +378,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                     query,
                     maxTime,
                     allergens: usingPreferences ? [] : filteredAllergenIds,
+                    mealTypes,
                     page: currentPage - 1,
                     preferencesOff,
                   })}
@@ -364,6 +393,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
                     query,
                     maxTime,
                     allergens: usingPreferences ? [] : filteredAllergenIds,
+                    mealTypes,
                     page: currentPage + 1,
                     preferencesOff,
                   })}

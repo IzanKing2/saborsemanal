@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 
+import { MEAL_TYPES } from "@/lib/recipes";
+
 type Allergen = {
   id: string;
   nombre: string;
@@ -15,6 +17,7 @@ type RecipeFiltersProps = {
   canRestorePreferences: boolean;
   filteredAllergenIds: string[];
   maxTime: number | null;
+  mealTypes: string[];
   preferencesOff: boolean;
   query: string;
   usingPreferences: boolean;
@@ -26,6 +29,7 @@ function FiltersForm({
   canRestorePreferences,
   filteredAllergenIds,
   maxTime,
+  mealTypes,
   onSubmit,
   preferencesOff,
   query,
@@ -101,6 +105,29 @@ function FiltersForm({
 
       <fieldset className="mt-5">
         <legend className="text-sm font-medium text-stone-700">
+          Tipo de comida
+        </legend>
+        <div className="mt-2 space-y-2">
+          {MEAL_TYPES.map((mealType) => (
+            <label
+              className="flex cursor-pointer items-center gap-2 text-sm text-stone-600"
+              key={mealType}
+            >
+              <input
+                className="size-4 accent-emerald-700"
+                defaultChecked={mealTypes.includes(mealType)}
+                name="tipo"
+                type="checkbox"
+                value={mealType}
+              />
+              {mealType}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-5">
+        <legend className="text-sm font-medium text-stone-700">
           Excluir alérgenos
         </legend>
         <div className="mt-2 space-y-2">
@@ -144,7 +171,8 @@ export function RecipeFilters(props: RecipeFiltersProps) {
   const activeCount =
     (props.query ? 1 : 0) +
     (props.maxTime ? 1 : 0) +
-    props.filteredAllergenIds.length;
+    props.filteredAllergenIds.length +
+    props.mealTypes.length;
 
   useEffect(() => {
     if (!open) return;
