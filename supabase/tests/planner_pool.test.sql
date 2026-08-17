@@ -67,10 +67,11 @@ INSERT INTO public.recetas (
     1
   );
 
-INSERT INTO public.menus_semanales (id, usuario_id, semana_inicio)
+INSERT INTO public.menus_semanales (id, usuario_id, grupo_id, semana_inicio)
 VALUES (
   '72000000-0000-4000-8000-000000000001',
   '70000000-0000-4000-8000-000000000001',
+  (SELECT grupo_id FROM public.grupo_miembros WHERE usuario_id = '70000000-0000-4000-8000-000000000001'),
   '2026-07-27'
 );
 

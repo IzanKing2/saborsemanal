@@ -103,6 +103,60 @@ export type Database = {
           },
         ]
       }
+      grupo_miembros: {
+        Row: {
+          grupo_id: string
+          joined_at: string
+          rol: string
+          usuario_id: string
+        }
+        Insert: {
+          grupo_id: string
+          joined_at?: string
+          rol?: string
+          usuario_id: string
+        }
+        Update: {
+          grupo_id?: string
+          joined_at?: string
+          rol?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_miembros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       ingrediente_alergenos: {
         Row: {
           alergeno_id: string
@@ -204,23 +258,33 @@ export type Database = {
       menus_semanales: {
         Row: {
           created_at: string | null
+          grupo_id: string
           id: string
           semana_inicio: string
           usuario_id: string
         }
         Insert: {
           created_at?: string | null
+          grupo_id: string
           id?: string
           semana_inicio?: string
           usuario_id: string
         }
         Update: {
           created_at?: string | null
+          grupo_id?: string
           id?: string
           semana_inicio?: string
           usuario_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "menus_semanales_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "menus_semanales_usuario_id_fkey"
             columns: ["usuario_id"]
@@ -402,6 +466,7 @@ export type Database = {
           cantidad: number
           comprado: boolean
           created_at: string
+          grupo_id: string
           id: string
           ingrediente_id: string | null
           nombre_personalizado: string | null
@@ -412,6 +477,7 @@ export type Database = {
           cantidad: number
           comprado?: boolean
           created_at?: string
+          grupo_id: string
           id?: string
           ingrediente_id?: string | null
           nombre_personalizado?: string | null
@@ -422,6 +488,7 @@ export type Database = {
           cantidad?: number
           comprado?: boolean
           created_at?: string
+          grupo_id?: string
           id?: string
           ingrediente_id?: string | null
           nombre_personalizado?: string | null
@@ -429,6 +496,13 @@ export type Database = {
           usuario_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shopping_list_extra_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shopping_list_extra_ingrediente_id_fkey"
             columns: ["ingrediente_id"]
@@ -501,6 +575,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_group_member: { Args: { p_email: string }; Returns: string }
       add_menu_recipe: {
         Args: { p_recipe_id: string; p_week: string }
         Returns: string
@@ -511,6 +586,7 @@ export type Database = {
           cantidad: number
           comprado: boolean
           created_at: string
+          grupo_id: string
           id: string
           ingrediente_id: string | null
           nombre_personalizado: string | null
@@ -550,6 +626,18 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      list_group_members: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          display_name: string
+          email: string
+          es_yo: boolean
+          rol: string
+          usuario_id: string
+        }[]
+      }
+      my_grupo_id: { Args: never; Returns: string }
       regenerate_shopping_list: {
         Args: { p_week: string }
         Returns: {
@@ -571,6 +659,7 @@ export type Database = {
         }
       }
       remove_extra_item: { Args: { p_item_id: string }; Returns: string }
+      remove_group_member: { Args: { p_target_id: string }; Returns: string }
       remove_menu_recipe: {
         Args: { p_recipe_id: string; p_week: string }
         Returns: string
