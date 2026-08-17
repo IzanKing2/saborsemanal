@@ -174,7 +174,7 @@ export function RecipeForm({
     });
 
     if (videoUrl.trim() && !isValidVideoUrl(videoUrl.trim())) {
-      validationErrors.video = "Introduce un enlace HTTPS válido.";
+      validationErrors.video = "Introduce un enlace de YouTube válido.";
     }
 
     if (imageFile) {
@@ -512,7 +512,7 @@ export function RecipeForm({
             className="mb-1 block text-sm font-medium text-stone-700"
             htmlFor="recipe-video-url"
           >
-            Vídeo o guía de preparación
+            Vídeo de YouTube
           </label>
           <input
             aria-describedby={errors.video ? "recipe-video-url-error" : undefined}
@@ -526,7 +526,7 @@ export function RecipeForm({
             value={videoUrl}
           />
           <p className="mt-2 text-xs text-stone-500">
-            Opcional. Añade un enlace HTTPS de YouTube u otra guía útil.
+            Opcional. Añade un enlace de YouTube con la guía de preparación.
           </p>
           <FieldError id="recipe-video-url-error" message={errors.video} />
         </div>

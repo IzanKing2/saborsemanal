@@ -46,10 +46,42 @@ export function isUuid(value: string) {
   return uuidPattern.test(value);
 }
 
+const YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "youtu.be",
+]);
+
+export function extractYouTubeVideoId(value: string): string | null {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    if (!YOUTUBE_HOSTS.has(host)) return null;
+
+    let videoId = "";
+    if (host === "youtu.be") {
+      videoId = url.pathname.slice(1).split("/")[0] ?? "";
+    } else {
+      videoId =
+        url.searchParams.get("v") ??
+        (url.pathname.startsWith("/shorts/")
+          ? url.pathname.split("/")[2] ?? ""
+          : "");
+    }
+
+    return /^[A-Za-z0-9_-]{6,20}$/.test(videoId) ? videoId : null;
+  } catch {
+    return null;
+  }
+}
+
 export function isValidVideoUrl(value: string) {
   if (!value || value.length > 500) return false;
   try {
-    return new URL(value).protocol === "https:";
+    return (
+      new URL(value).protocol === "https:" && extractYouTubeVideoId(value) !== null
+    );
   } catch {
     return false;
   }

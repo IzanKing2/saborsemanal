@@ -10,7 +10,7 @@ import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { RecipeServings } from "@/components/recipes/recipe-servings";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
-import { isUuid } from "@/lib/recipes";
+import { extractYouTubeVideoId, isUuid } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
 
 type RecipeDetailPageProps = {
@@ -19,27 +19,8 @@ type RecipeDetailPageProps = {
 
 function getYouTubeEmbedUrl(videoUrl: string | null) {
   if (!videoUrl) return null;
-
-  try {
-    const url = new URL(videoUrl);
-    const host = url.hostname.replace(/^www\./, "").toLowerCase();
-    let videoId = "";
-
-    if (host === "youtu.be") videoId = url.pathname.slice(1).split("/")[0] ?? "";
-    if (host === "youtube.com") {
-      videoId =
-        url.searchParams.get("v") ??
-        (url.pathname.startsWith("/shorts/")
-          ? url.pathname.split("/")[2] ?? ""
-          : "");
-    }
-
-    return /^[A-Za-z0-9_-]{6,20}$/.test(videoId)
-      ? `https://www.youtube-nocookie.com/embed/${videoId}`
-      : null;
-  } catch {
-    return null;
-  }
+  const videoId = extractYouTubeVideoId(videoUrl);
+  return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
 }
 
 export default async function RecipeDetailPage({

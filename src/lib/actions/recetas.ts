@@ -112,7 +112,7 @@ export async function saveRecipeAction(
   });
 
   if (videoUrl && !isValidVideoUrl(videoUrl)) {
-    errors.video = "Introduce un enlace HTTPS válido.";
+    errors.video = "Introduce un enlace de YouTube válido.";
   }
 
   if (!isUuid(id) || Object.keys(errors).length > 0) {
