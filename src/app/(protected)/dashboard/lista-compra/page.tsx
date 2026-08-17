@@ -40,7 +40,6 @@ export default async function ShoppingListPage({
   const { data: menu, error: menuError } = await supabase
     .from("menus_semanales")
     .select("id")
-    .eq("usuario_id", user.id)
     .eq("semana_inicio", week)
     .maybeSingle();
   if (menuError) {

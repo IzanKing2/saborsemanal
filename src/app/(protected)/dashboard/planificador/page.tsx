@@ -55,7 +55,6 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
     supabase
       .from("menus_semanales")
       .select("id")
-      .eq("usuario_id", user.id)
       .eq("semana_inicio", week)
       .maybeSingle(),
   ]);
