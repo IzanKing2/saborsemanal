@@ -12,6 +12,14 @@ export const RECIPE_UNITS = [
 
 export type RecipeUnit = (typeof RECIPE_UNITS)[number];
 
+export const MEAL_TYPES = ["Desayuno", "Almuerzo", "Cena", "Otro"] as const;
+
+export type MealType = (typeof MEAL_TYPES)[number];
+
+export function isMealType(value: string): value is MealType {
+  return (MEAL_TYPES as readonly string[]).includes(value);
+}
+
 export type RecipeIngredientInput = {
   ingredienteId: string | null;
   nombrePersonalizado: string;

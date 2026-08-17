@@ -139,7 +139,12 @@ export async function saveRecipeAction(
     return { ok: false, message: "La ruta de la imagen no es válida." };
   }
 
-  const args: SaveRecipeArgs = {
+  // Postgres cannot statically distinguish "no default" from "nullable" for a
+  // plain TEXT parameter, so the generated Args type marks these as required
+  // non-null strings even though the RPC treats an explicit NULL differently
+  // from an empty string (NULL skips validation; "" fails it). The cast below
+  // preserves that runtime distinction instead of coercing to "".
+  const args = {
     p_id: id,
     p_titulo: title,
     p_instrucciones: instructions,
@@ -155,10 +160,10 @@ export async function saveRecipeAction(
       cantidad: ingredient.cantidad,
       unidad: ingredient.unidad,
     })) as Json,
-  };
-  args.p_descripcion = description || null;
-  args.p_imagen_url = imagePath || null;
-  args.p_video_url = videoUrl || null;
+    p_descripcion: description || null,
+    p_imagen_url: imagePath || null,
+    p_video_url: videoUrl || null,
+  } as unknown as SaveRecipeArgs;
 
   const { data, error } = await supabase.rpc("save_recipe", args);
 
@@ -229,7 +234,9 @@ export async function duplicateRecipeAction(
     unidad: ingredient.unidad as RecipeIngredientInput["unidad"],
   }));
 
-  const args: SaveRecipeArgs = {
+  // See the comment in saveRecipeAction: these fields must stay nullable at
+  // runtime even though the generated Args type requires non-null strings.
+  const args = {
     p_id: randomUUID(),
     p_titulo: recipe.titulo,
     p_instrucciones: recipe.instrucciones,
@@ -245,10 +252,10 @@ export async function duplicateRecipeAction(
       cantidad: ingredient.cantidad,
       unidad: ingredient.unidad,
     })) as Json,
-  };
-  args.p_descripcion = recipe.descripcion;
-  args.p_imagen_url = null;
-  args.p_video_url = recipe.video_url;
+    p_descripcion: recipe.descripcion,
+    p_imagen_url: null,
+    p_video_url: recipe.video_url,
+  } as unknown as SaveRecipeArgs;
 
   const { data: newRecipeId, error } = await supabase.rpc("save_recipe", args);
 
