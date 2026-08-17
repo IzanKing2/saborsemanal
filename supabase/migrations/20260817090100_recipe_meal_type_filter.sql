@@ -13,6 +13,11 @@ ALTER TABLE public.recetas
 CREATE INDEX recetas_tipo_comida_gin_idx
   ON public.recetas USING GIN (tipo_comida);
 
+-- p_tipo_comida intentionally has no DEFAULT: a default would let this
+-- overload be called with exactly 10 positional args, which Postgres cannot
+-- distinguish from the existing 10-arg save_recipe (ERROR: function ... is
+-- not unique). Callers (including the delegation call below) must always
+-- pass all 11 arguments; the application always sends p_tipo_comida.
 CREATE OR REPLACE FUNCTION public.save_recipe(
   p_id UUID,
   p_titulo TEXT,
@@ -24,7 +29,7 @@ CREATE OR REPLACE FUNCTION public.save_recipe(
   p_descripcion TEXT,
   p_imagen_url TEXT,
   p_video_url TEXT,
-  p_tipo_comida TEXT[] DEFAULT '{}'
+  p_tipo_comida TEXT[]
 )
 RETURNS UUID
 LANGUAGE plpgsql

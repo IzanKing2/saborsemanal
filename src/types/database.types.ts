@@ -634,7 +634,7 @@ export type Database = {
               p_porciones: number
               p_publica: boolean
               p_tiempo_preparacion: number
-              p_tipo_comida?: string[]
+              p_tipo_comida: string[]
               p_titulo: string
               p_video_url: string
             }
