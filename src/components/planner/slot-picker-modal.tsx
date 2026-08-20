@@ -2,21 +2,25 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { MealType, WeekDay } from "@/lib/week";
 
-type PoolRecipe = {
+type PickableRecipe = {
   id: string;
   titulo: string;
   imagenUrl?: string | null;
   etiqueta?: string;
 };
 
+const MAX_RESULTS = 20;
+
 type SlotPickerModalProps = {
   day: WeekDay;
   meal: MealType;
-  pool: PoolRecipe[];
+  recipes: PickableRecipe[];
   currentRecipeId?: string;
+  usageCounts?: Map<string, number>;
   onAssign: (recipeId: string) => void;
   onRemove: () => void;
   onClose: () => void;
@@ -25,8 +29,9 @@ type SlotPickerModalProps = {
 export function SlotPickerModal({
   day,
   meal,
-  pool,
+  recipes,
   currentRecipeId,
+  usageCounts,
   onAssign,
   onRemove,
   onClose,
@@ -41,16 +46,17 @@ export function SlotPickerModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const filteredPool = useMemo(() => {
+  const filteredRecipes = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("es");
-    return normalizedQuery
-      ? pool.filter((recipe) =>
+    const matches = normalizedQuery
+      ? recipes.filter((recipe) =>
           recipe.titulo.toLocaleLowerCase("es").includes(normalizedQuery),
         )
-      : pool;
-  }, [pool, query]);
+      : recipes;
+    return matches.slice(0, MAX_RESULTS);
+  }, [recipes, query]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
@@ -70,13 +76,14 @@ export function SlotPickerModal({
           {day} · {meal}
         </h2>
         <p className="mt-1 text-sm text-stone-500">
-          Elige una receta de tu menú para este hueco.
+          Busca y elige una receta para este hueco.
         </p>
 
         <input
+          autoFocus
           className="mt-4 w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar en tu menú..."
+          placeholder="Ej. tortilla, lentejas, pollo..."
           type="search"
           value={query}
         />
@@ -91,45 +98,52 @@ export function SlotPickerModal({
               Quitar receta de este hueco
             </button>
           )}
-          {filteredPool.map((recipe) => (
-            <button
-              className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left outline-none transition hover:border-emerald-700 hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-emerald-700"
-              key={recipe.id}
-              onClick={() => onAssign(recipe.id)}
-              type="button"
-            >
-              <span className="relative block size-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
-                {recipe.imagenUrl ? (
-                  <Image
-                    alt=""
-                    className="object-cover"
-                    fill
-                    sizes="44px"
-                    src={recipe.imagenUrl}
-                  />
-                ) : (
-                  <span className="flex h-full items-center justify-center text-[9px] font-bold text-stone-400">
-                    Sin foto
-                  </span>
-                )}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate font-semibold text-stone-900">
-                  {recipe.titulo}
+          {filteredRecipes.map((recipe) => {
+            const count = usageCounts?.get(recipe.id) ?? 0;
+            return (
+              <button
+                className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left outline-none transition hover:border-emerald-700 hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-emerald-700"
+                key={recipe.id}
+                onClick={() => onAssign(recipe.id)}
+                type="button"
+              >
+                <span className="relative block size-11 shrink-0 overflow-hidden rounded-lg bg-stone-100">
+                  {recipe.imagenUrl ? (
+                    <Image
+                      alt=""
+                      className="object-cover"
+                      fill
+                      sizes="44px"
+                      src={recipe.imagenUrl}
+                    />
+                  ) : (
+                    <span className="flex h-full items-center justify-center text-[9px] font-bold text-stone-400">
+                      Sin foto
+                    </span>
+                  )}
                 </span>
-                {recipe.etiqueta && (
-                  <span className="text-xs font-semibold text-emerald-700">
-                    {recipe.etiqueta}
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-stone-900">
+                    {recipe.titulo}
                   </span>
-                )}
-              </span>
-            </button>
-          ))}
-          {filteredPool.length === 0 && (
+                  {count > 0 ? (
+                    <span className="text-xs font-semibold text-emerald-700">
+                      En el menú{count > 1 ? ` ×${count}` : ""}
+                    </span>
+                  ) : (
+                    recipe.etiqueta && (
+                      <span className="text-xs font-semibold text-emerald-700">
+                        {recipe.etiqueta}
+                      </span>
+                    )
+                  )}
+                </span>
+              </button>
+            );
+          })}
+          {filteredRecipes.length === 0 && (
             <p className="rounded-xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-500">
-              No hay recetas en tu menú para este hueco.
-              <br />
-              Añade recetas desde la sección de arriba.
+              No se encontraron recetas.
             </p>
           )}
         </div>
@@ -144,6 +158,7 @@ export function SlotPickerModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

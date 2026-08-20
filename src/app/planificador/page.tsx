@@ -105,7 +105,6 @@ export default async function GuestPlannerPage({
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <WeeklyPlanner
           basePath="/planificador"
-          initialPool={[]}
           initialSlots={{}}
           key={week}
           mode="local"

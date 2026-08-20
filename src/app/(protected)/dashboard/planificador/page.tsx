@@ -99,13 +99,10 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
     })),
   }));
   const slots: PlannerSlots = {};
-  const pool: string[] = [];
   for (const row of menuRows ?? []) {
     if (isWeekDay(row.dia_semana ?? "") && isMealType(row.tipo_comida ?? "")) {
       slots[menuSlotKey(row.dia_semana as WeekDay, row.tipo_comida as MealType)] =
         row.receta_id;
-    } else if (row.dia_semana === null) {
-      pool.push(row.receta_id);
     }
   }
 
@@ -135,7 +132,6 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <WeeklyPlanner
           basePath="/dashboard/planificador"
-          initialPool={pool}
           initialSlots={slots}
           key={week}
           mode="cloud"
