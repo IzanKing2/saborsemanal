@@ -77,7 +77,7 @@ function FiltersForm({
           id={`${idPrefix}-recipe-query`}
           maxLength={120}
           name="q"
-          placeholder="Título o descripción"
+          placeholder="Título, descripción o autor"
           type="search"
         />
       </div>
