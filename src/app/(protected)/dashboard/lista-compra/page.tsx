@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { OfflineBanner } from "@/components/shopping/offline-banner";
 import {
   CloudShoppingList,
   ExtraShoppingList,
 } from "@/components/shopping/shopping-list";
+import { ShoppingListTools } from "@/components/shopping/shopping-list-tools";
 import type { ShoppingListItem } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/server";
 import { addWeeks, parseMonday } from "@/lib/week";
@@ -150,6 +152,13 @@ export default async function ShoppingListPage({
             Semana siguiente →
           </Link>
         </nav>
+        <OfflineBanner />
+        <div className="mb-6">
+          <ShoppingListTools
+            items={[...items, ...extraItems]}
+            title={`Lista de la compra – Semana del ${formatWeek(week)}`}
+          />
+        </div>
         <CloudShoppingList initialItems={items} key={week} week={week} />
         <ExtraShoppingList initialItems={extraItems} />
       </div>

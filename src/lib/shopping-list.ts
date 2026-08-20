@@ -80,3 +80,29 @@ export function formatShoppingQuantity(quantity: number) {
     maximumFractionDigits: 3,
   }).format(quantity);
 }
+
+export function formatShoppingListAsText(
+  items: ShoppingListItem[],
+  options?: { title?: string },
+) {
+  const lines: string[] = [];
+  if (options?.title) lines.push(options.title, "");
+
+  const groups = groupShoppingList(items);
+  if (groups.length === 0) {
+    lines.push("(Lista vacía)");
+  } else {
+    for (const [category, categoryItems] of groups) {
+      lines.push(category.toUpperCase());
+      for (const item of categoryItems) {
+        const mark = item.comprado ? "[x]" : "[ ]";
+        lines.push(
+          `${mark} ${item.nombre} — ${formatShoppingQuantity(item.cantidad)} ${item.unidad}`,
+        );
+      }
+      lines.push("");
+    }
+  }
+
+  return lines.join("\n").trimEnd();
+}
