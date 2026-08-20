@@ -14,8 +14,10 @@ import { saveRecipeAction } from "@/lib/actions/recetas";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   isValidVideoUrl,
+  MEAL_TYPES,
   RECIPE_UNITS,
   validateRecipe,
+  type MealType,
   type RecipeFormErrors,
   type RecipeUnit,
 } from "@/lib/recipes";
@@ -35,6 +37,7 @@ export type RecipeFormValue = {
   imagenPath: string | null;
   imagenUrl: string | null;
   videoUrl: string | null;
+  tipoComida: string[];
   tiempoPreparacion: number;
   porciones: number;
   ingredientes: Array<{
@@ -56,6 +59,7 @@ type IngredientRow = {
   key: string;
   ingredienteId: string | null;
   nombrePersonalizado: string;
+  catalogText: string;
   cantidad: string;
   unidad: RecipeUnit;
 };
@@ -86,6 +90,11 @@ export function RecipeForm({
   const [title, setTitle] = useState(initialRecipe.titulo);
   const [description, setDescription] = useState(initialRecipe.descripcion);
   const [videoUrl, setVideoUrl] = useState(initialRecipe.videoUrl ?? "");
+  const [mealTypes, setMealTypes] = useState<MealType[]>(
+    initialRecipe.tipoComida.filter((value): value is MealType =>
+      (MEAL_TYPES as readonly string[]).includes(value),
+    ),
+  );
   const [preparationTime, setPreparationTime] = useState(
     String(initialRecipe.tiempoPreparacion),
   );
@@ -101,6 +110,9 @@ export function RecipeForm({
       key: `ingredient-${index}`,
       ingredienteId: ingredient.ingredienteId,
       nombrePersonalizado: ingredient.nombrePersonalizado,
+      catalogText:
+        ingredientOptions.find((option) => option.id === ingredient.ingredienteId)
+          ?.nombre ?? "",
       cantidad: String(ingredient.cantidad),
       unidad: ingredient.unidad,
     })),
@@ -145,6 +157,14 @@ export function RecipeForm({
     });
   }
 
+  function toggleMealType(value: MealType) {
+    setMealTypes((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
+  }
+
   function updateIngredient(key: string, patch: Partial<IngredientRow>) {
     setIngredients((current) =>
       current.map((ingredient) =>
@@ -174,7 +194,7 @@ export function RecipeForm({
     });
 
     if (videoUrl.trim() && !isValidVideoUrl(videoUrl.trim())) {
-      validationErrors.video = "Introduce un enlace HTTPS válido.";
+      validationErrors.video = "Introduce un enlace de YouTube válido.";
     }
 
     if (imageFile) {
@@ -250,6 +270,7 @@ export function RecipeForm({
       formData.set("accion", action);
       if (imagePath) formData.set("imagen_url", imagePath);
       formData.set("video_url", videoUrl.trim());
+      formData.set("tipo_comida", JSON.stringify(mealTypes));
 
       const result = await saveRecipeAction(formData);
       if (!result.ok) {
@@ -396,6 +417,39 @@ export function RecipeForm({
             />
           </div>
 
+          <fieldset className="mt-1">
+            <legend className="mb-1 block text-sm font-medium text-stone-700">
+              Tipo de comida
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {MEAL_TYPES.map((option) => {
+                const checked = mealTypes.includes(option);
+                return (
+                  <label
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                      checked
+                        ? "border-emerald-700 bg-emerald-100 text-emerald-900"
+                        : "border-stone-300 bg-white text-stone-600 hover:border-emerald-700"
+                    }`}
+                    key={option}
+                  >
+                    <input
+                      checked={checked}
+                      className="sr-only"
+                      onChange={() => toggleMealType(option)}
+                      type="checkbox"
+                      value={option}
+                    />
+                    {option}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-stone-500">
+              Opcional. Marca los momentos del día para los que encaja esta receta.
+            </p>
+          </fieldset>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
@@ -412,6 +466,7 @@ export function RecipeForm({
                 max={1440}
                 min={1}
                 onChange={(event) => setPreparationTime(event.target.value)}
+                onFocus={(event) => event.target.select()}
                 required
                 type="number"
                 value={preparationTime}
@@ -435,6 +490,7 @@ export function RecipeForm({
                 max={100}
                 min={1}
                 onChange={(event) => setServings(event.target.value)}
+                onFocus={(event) => event.target.select()}
                 required
                 type="number"
                 value={servings}
@@ -512,7 +568,7 @@ export function RecipeForm({
             className="mb-1 block text-sm font-medium text-stone-700"
             htmlFor="recipe-video-url"
           >
-            Vídeo o guía de preparación
+            Vídeo de YouTube
           </label>
           <input
             aria-describedby={errors.video ? "recipe-video-url-error" : undefined}
@@ -526,7 +582,7 @@ export function RecipeForm({
             value={videoUrl}
           />
           <p className="mt-2 text-xs text-stone-500">
-            Opcional. Añade un enlace HTTPS de YouTube u otra guía útil.
+            Opcional. Añade un enlace de YouTube con la guía de preparación.
           </p>
           <FieldError id="recipe-video-url-error" message={errors.video} />
         </div>
@@ -644,6 +700,7 @@ export function RecipeForm({
                   key: newKey(),
                   ingredienteId: ingredientOptions.length > 0 ? "" : null,
                   nombrePersonalizado: "",
+                  catalogText: "",
                   cantidad: "1",
                   unidad: "unidad",
                 },
@@ -654,6 +711,14 @@ export function RecipeForm({
             Añadir ingrediente
           </button>
         </div>
+
+        <datalist id="ingredient-catalog-options">
+          {ingredientOptions.map((option) => (
+            <option key={option.id} value={option.nombre}>
+              {option.categoriaNombre ? `${option.nombre} · ${option.categoriaNombre}` : option.nombre}
+            </option>
+          ))}
+        </datalist>
 
         {ingredientOptions.length === 0 && (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -683,7 +748,7 @@ export function RecipeForm({
                       ingredient.key,
                       event.target.value === "custom"
                         ? { ingredienteId: null, nombrePersonalizado: "" }
-                        : { ingredienteId: "", nombrePersonalizado: "" },
+                        : { ingredienteId: "", nombrePersonalizado: "", catalogText: "" },
                     )
                   }
                   value={ingredient.ingredienteId === null ? "custom" : "catalog"}
@@ -736,33 +801,34 @@ export function RecipeForm({
                     >
                       Ingrediente de la lista maestra {index + 1}
                     </label>
-                    <select
+                    <input
                       aria-describedby={
                         errors.ingredientes
                           ? "recipe-ingredients-error"
                           : undefined
                       }
                       aria-invalid={Boolean(errors.ingredientes)}
+                      autoComplete="off"
                       className={inputClass}
                       id={`ingredient-option-${ingredient.key}`}
-                      onChange={(event) =>
+                      list="ingredient-catalog-options"
+                      onChange={(event) => {
+                        const text = event.target.value;
+                        const match = ingredientOptions.find(
+                          (option) =>
+                            option.nombre.toLocaleLowerCase("es") ===
+                            text.trim().toLocaleLowerCase("es"),
+                        );
                         updateIngredient(ingredient.key, {
-                          ingredienteId: event.target.value,
-                        })
-                      }
+                          catalogText: text,
+                          ingredienteId: match ? match.id : "",
+                        });
+                      }}
+                      placeholder="Escribe para buscar..."
                       required
-                      value={ingredient.ingredienteId}
-                    >
-                      <option value="">Selecciona...</option>
-                      {ingredientOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.nombre}
-                          {option.categoriaNombre
-                            ? ` · ${option.categoriaNombre}`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
+                      type="text"
+                      value={ingredient.catalogText}
+                    />
                   </>
                 )}
               </div>

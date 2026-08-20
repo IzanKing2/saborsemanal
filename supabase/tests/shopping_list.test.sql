@@ -107,16 +107,18 @@ INSERT INTO public.receta_ingredientes (
     'g'
   );
 
-INSERT INTO public.menus_semanales (id, usuario_id, semana_inicio)
+INSERT INTO public.menus_semanales (id, usuario_id, grupo_id, semana_inicio)
 VALUES
   (
     '50000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000001',
+    (SELECT grupo_id FROM public.grupo_miembros WHERE usuario_id = '10000000-0000-4000-8000-000000000001'),
     '2026-07-27'
   ),
   (
     '50000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000001',
+    (SELECT grupo_id FROM public.grupo_miembros WHERE usuario_id = '10000000-0000-4000-8000-000000000001'),
     '2026-08-03'
   );
 
@@ -307,7 +309,7 @@ SELECT throws_ok(
     (SELECT id FROM owned_shopping_item)
   ),
   '42501',
-  'Shopping item is not owned by this user',
+  'Shopping item is not part of your group',
   'another user cannot update an owned item'
 );
 

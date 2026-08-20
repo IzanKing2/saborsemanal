@@ -19,12 +19,15 @@ export function toIsoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+export function mondayOf(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00.000Z`);
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - day + 1);
+  return toIsoDate(date);
+}
+
 export function getCurrentMonday() {
-  const today = new Date();
-  const day = today.getUTCDay() || 7;
-  today.setUTCDate(today.getUTCDate() - day + 1);
-  today.setUTCHours(0, 0, 0, 0);
-  return toIsoDate(today);
+  return mondayOf(toIsoDate(new Date()));
 }
 
 export function parseMonday(value: string | undefined) {
@@ -60,4 +63,12 @@ export function isMealType(value: string): value is MealType {
 
 export function menuSlotKey(day: WeekDay, meal: MealType) {
   return `${day}|${meal}`;
+}
+
+export function formatWeekDay(week: string, dayIndex: number) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(addDays(week, dayIndex));
 }

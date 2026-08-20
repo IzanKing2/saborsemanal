@@ -7,8 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -43,6 +65,93 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      favoritos: {
+        Row: {
+          created_at: string
+          receta_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          receta_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          receta_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favoritos_receta_id_fkey"
+            columns: ["receta_id"]
+            isOneToOne: false
+            referencedRelation: "recetas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupo_miembros: {
+        Row: {
+          grupo_id: string
+          joined_at: string
+          rol: string
+          usuario_id: string
+        }
+        Insert: {
+          grupo_id: string
+          joined_at?: string
+          rol?: string
+          usuario_id: string
+        }
+        Update: {
+          grupo_id?: string
+          joined_at?: string
+          rol?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_miembros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Update: {
+          created_at?: string
           id?: string
           nombre?: string
         }
@@ -149,26 +258,66 @@ export type Database = {
       menus_semanales: {
         Row: {
           created_at: string | null
+          grupo_id: string
           id: string
           semana_inicio: string
           usuario_id: string
         }
         Insert: {
           created_at?: string | null
+          grupo_id: string
           id?: string
           semana_inicio?: string
           usuario_id: string
         }
         Update: {
           created_at?: string | null
+          grupo_id?: string
           id?: string
           semana_inicio?: string
           usuario_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "menus_semanales_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "menus_semanales_usuario_id_fkey"
             columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_allergens: {
+        Row: {
+          allergen_id: string
+          user_id: string
+        }
+        Insert: {
+          allergen_id: string
+          user_id: string
+        }
+        Update: {
+          allergen_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_allergens_allergen_id_fkey"
+            columns: ["allergen_id"]
+            isOneToOne: false
+            referencedRelation: "alergenos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_allergens_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -210,36 +359,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      profile_allergens: {
-        Row: {
-          allergen_id: string
-          user_id: string
-        }
-        Insert: {
-          allergen_id: string
-          user_id: string
-        }
-        Update: {
-          allergen_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_allergens_allergen_id_fkey"
-            columns: ["allergen_id"]
-            isOneToOne: false
-            referencedRelation: "alergenos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profile_allergens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       receta_ingredientes: {
         Row: {
@@ -295,6 +414,7 @@ export type Database = {
           porciones: number
           publica: boolean
           tiempo_preparacion: number
+          tipo_comida: string[]
           titulo: string
           updated_at: string
           video_url: string | null
@@ -310,6 +430,7 @@ export type Database = {
           porciones?: number
           publica?: boolean
           tiempo_preparacion?: number
+          tipo_comida?: string[]
           titulo: string
           updated_at?: string
           video_url?: string | null
@@ -325,6 +446,7 @@ export type Database = {
           porciones?: number
           publica?: boolean
           tiempo_preparacion?: number
+          tipo_comida?: string[]
           titulo?: string
           updated_at?: string
           video_url?: string | null
@@ -335,6 +457,57 @@ export type Database = {
             columns: ["creador_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_list_extra: {
+        Row: {
+          cantidad: number
+          comprado: boolean
+          created_at: string
+          grupo_id: string
+          id: string
+          ingrediente_id: string | null
+          nombre_personalizado: string | null
+          unidad: string
+          usuario_id: string
+        }
+        Insert: {
+          cantidad: number
+          comprado?: boolean
+          created_at?: string
+          grupo_id: string
+          id?: string
+          ingrediente_id?: string | null
+          nombre_personalizado?: string | null
+          unidad: string
+          usuario_id: string
+        }
+        Update: {
+          cantidad?: number
+          comprado?: boolean
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          ingrediente_id?: string | null
+          nombre_personalizado?: string | null
+          unidad?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_extra_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_extra_ingrediente_id_fkey"
+            columns: ["ingrediente_id"]
+            isOneToOne: false
+            referencedRelation: "ingredientes"
             referencedColumns: ["id"]
           },
         ]
@@ -397,135 +570,101 @@ export type Database = {
           },
         ]
       }
-      shopping_list_extra: {
-        Row: {
-          cantidad: number
-          comprado: boolean
-          created_at: string
-          id: string
-          ingrediente_id: string | null
-          nombre_personalizado: string | null
-          unidad: string
-          usuario_id: string
-        }
-        Insert: {
-          cantidad: number
-          comprado?: boolean
-          created_at?: string
-          id?: string
-          ingrediente_id?: string | null
-          nombre_personalizado?: string | null
-          unidad: string
-          usuario_id: string
-        }
-        Update: {
-          cantidad?: number
-          comprado?: boolean
-          created_at?: string
-          id?: string
-          ingrediente_id?: string | null
-          nombre_personalizado?: string | null
-          unidad?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shopping_list_extra_ingrediente_id_fkey"
-            columns: ["ingrediente_id"]
-            isOneToOne: false
-            referencedRelation: "ingredientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shopping_list_extra_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      favoritos: {
-        Row: {
-          created_at: string
-          receta_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          receta_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          receta_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "favoritos_receta_id_fkey"
-            columns: ["receta_id"]
-            isOneToOne: false
-            referencedRelation: "recetas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "favoritos_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      admin_set_profile_access: {
-        Args: { p_banned: boolean; p_role: string; p_user_id: string }
-        Returns: string
-      }
+      add_group_member: { Args: { p_email: string }; Returns: string }
       add_menu_recipe: {
-        Args: {
-          p_recipe_id: string
-          p_week: string
-        }
+        Args: { p_recipe_id: string; p_week: string }
         Returns: string
       }
       add_recipe_to_shopping_list: {
         Args: { p_receta_id: string }
-        Returns: Database["public"]["Tables"]["shopping_list_extra"]["Row"][]
+        Returns: {
+          cantidad: number
+          comprado: boolean
+          created_at: string
+          grupo_id: string
+          id: string
+          ingrediente_id: string | null
+          nombre_personalizado: string | null
+          unidad: string
+          usuario_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "shopping_list_extra"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_set_profile_access: {
+        Args: { p_banned: boolean; p_role: string; p_user_id: string }
+        Returns: string
       }
       clear_shopping_list: { Args: { p_week: string }; Returns: undefined }
       count_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
           p_max_time?: number
+          p_meal_types?: string[]
           p_query?: string
         }
         Returns: number
       }
       delete_ingredient: { Args: { p_id: string }; Returns: undefined }
-      delete_user_account: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
+      delete_user_account: { Args: { p_user_id: string }; Returns: boolean }
       get_public_recipe_authors: {
         Args: { p_recipe_ids: string[] }
         Returns: {
-          avatar_path: string | null
-          display_name: string | null
+          avatar_path: string
+          display_name: string
           recipe_id: string
         }[]
       }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      list_group_members: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          display_name: string
+          email: string
+          es_yo: boolean
+          rol: string
+          usuario_id: string
+        }[]
+      }
+      my_grupo_id: { Args: never; Returns: string }
       regenerate_shopping_list: {
         Args: { p_week: string }
-        Returns: Database["public"]["Tables"]["shopping_list_items"]["Row"][]
+        Returns: {
+          cantidad: number
+          comprado: boolean
+          created_at: string
+          id: string
+          ingrediente_id: string | null
+          menu_id: string
+          nombre_personalizado: string | null
+          unidad: string
+          usuario_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "shopping_list_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
+      remove_extra_item: { Args: { p_item_id: string }; Returns: string }
+      remove_group_member: { Args: { p_target_id: string }; Returns: string }
+      remove_menu_recipe: {
+        Args: { p_recipe_id: string; p_week: string }
+        Returns: string
+      }
+      remove_shopping_item: { Args: { p_item_id: string }; Returns: string }
       save_ingredient: {
         Args: {
           p_alergeno_ids: string[]
@@ -533,21 +672,6 @@ export type Database = {
           p_id?: string
           p_nombre: string
         }
-        Returns: string
-      }
-      remove_menu_recipe: {
-        Args: {
-          p_recipe_id: string
-          p_week: string
-        }
-        Returns: string
-      }
-      remove_extra_item: {
-        Args: { p_item_id: string }
-        Returns: string
-      }
-      remove_shopping_item: {
-        Args: { p_item_id: string }
         Returns: string
       }
       save_menu_slot: {
@@ -559,21 +683,52 @@ export type Database = {
         }
         Returns: string
       }
-      save_recipe: {
-        Args: {
-          p_descripcion?: string | null
-          p_id: string
-          p_imagen_url?: string | null
-          p_ingredientes: Json
-          p_instrucciones: string[]
-          p_porciones: number
-          p_publica: boolean
-          p_tiempo_preparacion: number
-          p_titulo: string
-          p_video_url?: string | null
-        }
-        Returns: string
-      }
+      save_recipe:
+        | {
+            Args: {
+              p_descripcion?: string
+              p_id: string
+              p_imagen_url?: string
+              p_ingredientes: Json
+              p_instrucciones: string[]
+              p_porciones: number
+              p_publica: boolean
+              p_tiempo_preparacion: number
+              p_titulo: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_descripcion: string
+              p_id: string
+              p_imagen_url: string
+              p_ingredientes: Json
+              p_instrucciones: string[]
+              p_porciones: number
+              p_publica: boolean
+              p_tiempo_preparacion: number
+              p_titulo: string
+              p_video_url: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_descripcion: string
+              p_id: string
+              p_imagen_url: string
+              p_ingredientes: Json
+              p_instrucciones: string[]
+              p_porciones: number
+              p_publica: boolean
+              p_tiempo_preparacion: number
+              p_tipo_comida: string[]
+              p_titulo: string
+              p_video_url: string
+            }
+            Returns: string
+          }
       search_admin_recetas: {
         Args: {
           p_aprobada?: boolean
@@ -584,9 +739,9 @@ export type Database = {
         }
         Returns: {
           aprobada: boolean
-          autor_email: string | null
+          autor_email: string
           created_at: string
-          descripcion: string | null
+          descripcion: string
           id: string
           porciones: number
           publica: boolean
@@ -600,6 +755,7 @@ export type Database = {
           p_allergen_ids?: string[]
           p_limit?: number
           p_max_time?: number
+          p_meal_types?: string[]
           p_offset?: number
           p_query?: string
         }
@@ -610,6 +766,7 @@ export type Database = {
           imagen_url: string
           porciones: number
           tiempo_preparacion: number
+          tipo_comida: string[]
           titulo: string
           total_count: number
         }[]
@@ -622,30 +779,24 @@ export type Database = {
         Args: { p_item_id: string; p_purchased: boolean }
         Returns: string
       }
-      toggle_favorite: {
-        Args: { p_receta_id: string }
+      storage_avatar_is_public: {
+        Args: { object_name: string }
         Returns: boolean
       }
       storage_recipe_is_public: {
         Args: { object_name: string }
         Returns: boolean
       }
-      storage_avatar_is_public: {
-        Args: { object_name: string }
-        Returns: boolean
-      }
+      toggle_favorite: { Args: { p_receta_id: string }; Returns: boolean }
       update_my_profile: {
         Args: {
           p_allergen_ids?: string[]
-          p_avatar_path: string | null
+          p_avatar_path: string
           p_display_name: string
         }
         Returns: string
       }
-      valid_recipe_instructions: {
-        Args: { value: string[] }
-        Returns: boolean
-      }
+      valid_recipe_instructions: { Args: { value: string[] }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -774,7 +925,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+

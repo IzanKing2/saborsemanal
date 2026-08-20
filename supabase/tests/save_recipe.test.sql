@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(30);
+SELECT plan(39);
 
 INSERT INTO auth.users (id, email) VALUES
   ('80000000-0000-4000-8000-000000000001', 'save-owner@example.com'),
@@ -191,6 +191,114 @@ SELECT is(
   (SELECT aprobada FROM public.recetas WHERE id = '80000000-0000-4000-8000-000000000011'),
   true,
   'updating a published recipe keeps it approved'
+);
+
+SELECT lives_ok(
+  $$SELECT public.save_recipe(
+    '80000000-0000-4000-8000-000000000020',
+    'Receta con vídeo',
+    ARRAY['Preparar'],
+    10,
+    2,
+    false,
+    '[{"ingrediente_id": "80000000-0000-4000-8000-000000000004", "cantidad": 100, "unidad": "g"}]'::JSONB,
+    NULL,
+    NULL,
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  )$$,
+  'a valid YouTube video URL is accepted'
+);
+
+SELECT is(
+  (SELECT video_url FROM public.recetas WHERE id = '80000000-0000-4000-8000-000000000020'),
+  'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  'the video URL is stored as-is'
+);
+
+SELECT throws_ok(
+  $$SELECT public.save_recipe(
+    '80000000-0000-4000-8000-000000000020',
+    'Receta con vídeo',
+    ARRAY['Preparar'],
+    10,
+    2,
+    false,
+    '[{"ingrediente_id": "80000000-0000-4000-8000-000000000004", "cantidad": 100, "unidad": "g"}]'::JSONB,
+    NULL,
+    NULL,
+    'https://vimeo.com/76979871'
+  )$$,
+  '22023',
+  'Recipe video URL must be a YouTube link',
+  'a non-YouTube video URL is rejected'
+);
+
+SELECT lives_ok(
+  $$SELECT public.save_recipe(
+    '80000000-0000-4000-8000-000000000021',
+    'Receta con tipo de comida',
+    ARRAY['Preparar'],
+    10,
+    2,
+    true,
+    '[{"ingrediente_id": "80000000-0000-4000-8000-000000000004", "cantidad": 100, "unidad": "g"}]'::JSONB,
+    NULL,
+    NULL,
+    NULL,
+    ARRAY['Almuerzo', 'Almuerzo', 'Cena']
+  )$$,
+  'a valid meal type array is accepted'
+);
+
+SELECT is(
+  (SELECT cardinality(tipo_comida) FROM public.recetas WHERE id = '80000000-0000-4000-8000-000000000021'),
+  2,
+  'duplicate meal type values are deduplicated'
+);
+
+SELECT throws_ok(
+  $$SELECT public.save_recipe(
+    '80000000-0000-4000-8000-000000000022',
+    'Receta con tipo inválido',
+    ARRAY['Preparar'],
+    10,
+    2,
+    false,
+    '[{"ingrediente_id": "80000000-0000-4000-8000-000000000004", "cantidad": 100, "unidad": "g"}]'::JSONB,
+    NULL,
+    NULL,
+    NULL,
+    ARRAY['Brunch']
+  )$$,
+  '22023',
+  'Recipe meal type is invalid',
+  'an unsupported meal type value is rejected'
+);
+
+SELECT is(
+  (
+    SELECT count(*)::INT
+    FROM public.search_public_recipes(p_meal_types => ARRAY['Almuerzo'])
+    WHERE id = '80000000-0000-4000-8000-000000000021'
+  ),
+  1,
+  'search_public_recipes matches a recipe with an overlapping meal type'
+);
+
+SELECT is(
+  (
+    SELECT count(*)::INT
+    FROM public.search_public_recipes(p_meal_types => ARRAY['Otro'])
+    WHERE id = '80000000-0000-4000-8000-000000000021'
+  ),
+  0,
+  'search_public_recipes excludes a recipe without a matching meal type'
+);
+
+SELECT is(
+  (SELECT public.count_public_recipes(p_meal_types => ARRAY['Cena'])),
+  1::BIGINT,
+  'count_public_recipes counts recipes with an overlapping meal type'
 );
 
 SELECT throws_ok(

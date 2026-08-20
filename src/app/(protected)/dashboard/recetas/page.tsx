@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { DeleteRecipeForm } from "@/components/recipes/delete-recipe-form";
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { createClient } from "@/lib/supabase/server";
@@ -107,7 +108,13 @@ export default async function RecipesDashboardPage() {
                       <span>{recipe.tiempo_preparacion} min</span>
                       <span>{recipe.porciones} porciones</span>
                     </div>
-                    <div className="mt-5 flex items-start justify-between gap-4">
+                    <div className="mt-4">
+                      <AddToMenuButton
+                        recipeId={recipe.id}
+                        recipeTitle={recipe.titulo}
+                      />
+                    </div>
+                    <div className="mt-4 flex items-start justify-between gap-4">
                       <Link
                         className="text-sm font-bold text-emerald-700 hover:underline"
                         href={`/dashboard/recetas/${recipe.id}/editar`}

@@ -2,12 +2,25 @@
 
 import Image from "next/image";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
-import { MEAL_TYPES, WEEK_DAYS, type MealType, type WeekDay } from "@/lib/week";
+import {
+  MEAL_TYPES,
+  WEEK_DAYS,
+  formatWeekDay,
+  getCurrentMonday,
+  menuSlotKey,
+  mondayOf,
+  type MealType,
+  type WeekDay,
+} from "@/lib/week";
 
 type RecipeSlotModalProps = {
   recipeTitle: string;
   imageUrl?: string | null;
+  occupied?: Partial<Record<string, string>>;
+  week: string;
+  onWeekChange: (week: string) => void;
   onCancel: () => void;
   onConfirm: (day: WeekDay, meal: MealType) => void;
 };
@@ -15,9 +28,13 @@ type RecipeSlotModalProps = {
 export function RecipeSlotModal({
   recipeTitle,
   imageUrl,
+  occupied,
+  week,
+  onWeekChange,
   onCancel,
   onConfirm,
 }: RecipeSlotModalProps) {
+  const isCurrentWeek = week === getCurrentMonday();
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onCancel();
@@ -26,7 +43,7 @@ export function RecipeSlotModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onCancel]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onCancel}
@@ -66,10 +83,44 @@ export function RecipeSlotModal({
           </p>
         </div>
 
-        <p className="mt-5 text-sm font-medium text-stone-700">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-stone-700">
+            Semana del {formatWeekDay(week, 0)} al {formatWeekDay(week, 6)}
+            {isCurrentWeek && (
+              <span className="ml-2 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-950">
+                Actual
+              </span>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <label className="sr-only" htmlFor="recipe-slot-week-picker">
+              Elegir semana
+            </label>
+            <input
+              className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
+              id="recipe-slot-week-picker"
+              onChange={(event) => {
+                if (event.target.value) onWeekChange(mondayOf(event.target.value));
+              }}
+              type="date"
+              value={week}
+            />
+            {!isCurrentWeek && (
+              <button
+                className="text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
+                onClick={() => onWeekChange(getCurrentMonday())}
+                type="button"
+              >
+                Semana actual
+              </button>
+            )}
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm font-medium text-stone-700">
           Elige día y comida
         </p>
-        <div className="mt-3 grid grid-cols-4 gap-1.5 overflow-hidden rounded-xl border border-stone-200">
+        <div className="mt-3 grid grid-cols-5 gap-1.5 overflow-hidden rounded-xl border border-stone-200">
           <div className="bg-stone-100" />
           {MEAL_TYPES.map((meal) => (
             <p
@@ -84,16 +135,28 @@ export function RecipeSlotModal({
               <p className="flex items-center bg-stone-100 px-1 py-2 text-xs font-bold text-stone-600">
                 {day}
               </p>
-              {MEAL_TYPES.map((meal) => (
-                <button
-                  className="rounded-md px-1 py-2 text-center text-xs font-semibold text-stone-700 outline-none transition hover:bg-emerald-700 hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-700"
-                  key={meal}
-                  onClick={() => onConfirm(day, meal)}
-                  type="button"
-                >
-                  ＋
-                </button>
-              ))}
+              {MEAL_TYPES.map((meal) => {
+                const takenBy = occupied?.[menuSlotKey(day, meal)];
+                return (
+                  <button
+                    className={`rounded-md px-1 py-2 text-center text-xs font-semibold outline-none transition hover:bg-emerald-700 hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                      takenBy
+                        ? "bg-amber-50 text-amber-800"
+                        : "text-stone-700"
+                    }`}
+                    key={meal}
+                    onClick={() => onConfirm(day, meal)}
+                    title={takenBy ? `Ya tiene: ${takenBy}` : undefined}
+                    type="button"
+                  >
+                    {takenBy ? (
+                      <span className="block truncate">{takenBy}</span>
+                    ) : (
+                      "＋"
+                    )}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -108,6 +171,7 @@ export function RecipeSlotModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

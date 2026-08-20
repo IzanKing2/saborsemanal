@@ -1,5 +1,9 @@
-const CACHE_NAME = "saborsemanal-public-v1";
+const CACHE_NAME = "saborsemanal-public-v2";
 const PUBLIC_SHELL = ["/", "/recetas", "/planificador"];
+// Requires auth, so it's never pre-cached at install time (that would just
+// cache a login redirect) — only cached at runtime, after a real visit
+// while online, so the last-seen list is available offline at the store.
+const OFFLINE_CAPABLE_PAGE = "/dashboard/lista-compra";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PUBLIC_SHELL)));
@@ -24,7 +28,9 @@ self.addEventListener("fetch", (event) => {
     url.pathname === "/" ||
     url.pathname === "/recetas" ||
     url.pathname === "/planificador";
-  if (request.mode === "navigate" && isPublicPage) {
+  const isOfflineCapablePage = url.pathname === OFFLINE_CAPABLE_PAGE;
+
+  if (request.mode === "navigate" && (isPublicPage || isOfflineCapablePage)) {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -32,7 +38,11 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match(request).then((response) => response || caches.match("/"))),
+        .catch(() =>
+          caches
+            .match(request)
+            .then((response) => response || (isOfflineCapablePage ? undefined : caches.match("/"))),
+        ),
     );
   }
 

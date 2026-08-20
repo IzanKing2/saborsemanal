@@ -7,10 +7,12 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import {
+  isMealType,
   isUuid,
   isValidVideoUrl,
   RECIPE_UNITS,
   validateRecipe,
+  type MealType,
   type RecipeIngredientInput,
 } from "@/lib/recipes";
 import type { Database, Json } from "@/types/database.types";
@@ -49,6 +51,18 @@ function parseInstructions(value: string): string[] {
     return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
       ? parsed.map((item) => item.trim())
       : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseMealTypes(value: string): MealType[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === "string")) {
+      return [];
+    }
+    return [...new Set(parsed.filter(isMealType))];
   } catch {
     return [];
   }
@@ -99,6 +113,7 @@ export async function saveRecipeAction(
   const videoUrl = getText(formData, "video_url");
   const instructions = parseInstructions(getText(formData, "instrucciones"));
   const ingredients = parseIngredients(getText(formData, "ingredientes"));
+  const mealTypes = parseMealTypes(getText(formData, "tipo_comida"));
   const preparationTime = getInteger(formData, "tiempo_preparacion");
   const servings = getInteger(formData, "porciones");
   const shouldPublish = getText(formData, "accion") === "publicar";
@@ -112,7 +127,7 @@ export async function saveRecipeAction(
   });
 
   if (videoUrl && !isValidVideoUrl(videoUrl)) {
-    errors.video = "Introduce un enlace HTTPS válido.";
+    errors.video = "Introduce un enlace de YouTube válido.";
   }
 
   if (!isUuid(id) || Object.keys(errors).length > 0) {
@@ -139,7 +154,12 @@ export async function saveRecipeAction(
     return { ok: false, message: "La ruta de la imagen no es válida." };
   }
 
-  const args: SaveRecipeArgs = {
+  // Postgres cannot statically distinguish "no default" from "nullable" for a
+  // plain TEXT parameter, so the generated Args type marks these as required
+  // non-null strings even though the RPC treats an explicit NULL differently
+  // from an empty string (NULL skips validation; "" fails it). The cast below
+  // preserves that runtime distinction instead of coercing to "".
+  const args = {
     p_id: id,
     p_titulo: title,
     p_instrucciones: instructions,
@@ -155,10 +175,11 @@ export async function saveRecipeAction(
       cantidad: ingredient.cantidad,
       unidad: ingredient.unidad,
     })) as Json,
-  };
-  args.p_descripcion = description || null;
-  args.p_imagen_url = imagePath || null;
-  args.p_video_url = videoUrl || null;
+    p_descripcion: description || null,
+    p_imagen_url: imagePath || null,
+    p_video_url: videoUrl || null,
+    p_tipo_comida: mealTypes,
+  } as unknown as SaveRecipeArgs;
 
   const { data, error } = await supabase.rpc("save_recipe", args);
 
@@ -205,7 +226,9 @@ export async function duplicateRecipeAction(
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recetas")
-    .select("titulo, descripcion, instrucciones, tiempo_preparacion, porciones, video_url")
+    .select(
+      "titulo, descripcion, instrucciones, tiempo_preparacion, porciones, video_url, tipo_comida",
+    )
     .eq("id", id)
     .eq("publica", true)
     .eq("aprobada", true)
@@ -229,7 +252,9 @@ export async function duplicateRecipeAction(
     unidad: ingredient.unidad as RecipeIngredientInput["unidad"],
   }));
 
-  const args: SaveRecipeArgs = {
+  // See the comment in saveRecipeAction: these fields must stay nullable at
+  // runtime even though the generated Args type requires non-null strings.
+  const args = {
     p_id: randomUUID(),
     p_titulo: recipe.titulo,
     p_instrucciones: recipe.instrucciones,
@@ -245,10 +270,11 @@ export async function duplicateRecipeAction(
       cantidad: ingredient.cantidad,
       unidad: ingredient.unidad,
     })) as Json,
-  };
-  args.p_descripcion = recipe.descripcion;
-  args.p_imagen_url = null;
-  args.p_video_url = recipe.video_url;
+    p_descripcion: recipe.descripcion,
+    p_imagen_url: null,
+    p_video_url: recipe.video_url,
+    p_tipo_comida: recipe.tipo_comida,
+  } as unknown as SaveRecipeArgs;
 
   const { data: newRecipeId, error } = await supabase.rpc("save_recipe", args);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 
 import {
   regenerateShoppingListAction,
@@ -10,12 +10,13 @@ import {
   setExtraItemPurchasedAction,
   setShoppingItemPurchasedAction,
 } from "@/lib/actions/lista-compra";
+import { dequeueChanges, enqueueChange } from "@/lib/offline-queue";
 import {
   formatShoppingQuantity,
   groupShoppingList,
   type ShoppingListItem,
 } from "@/lib/shopping-list";
-import { ShoppingListTools } from "@/components/shopping/shopping-list-tools";
+import { useOnlineStatus } from "@/lib/use-online-status";
 
 export function ShoppingListContent({
   items,
@@ -30,24 +31,55 @@ export function ShoppingListContent({
   onRemove?: (item: ShoppingListItem) => void;
   accent?: "stone" | "emerald";
 }) {
+  const purchasedCount = items.filter((item) => item.comprado).length;
+  const progress = items.length > 0 ? (purchasedCount / items.length) * 100 : 0;
+
   return (
     <div className="space-y-5">
-      {groupShoppingList(items).map(([category, categoryItems]) => (
+      {items.length > 0 && (
+        <div className="no-print rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
+          <div className="flex items-center justify-between text-sm font-bold text-stone-700">
+            <span>
+              {purchasedCount} de {items.length} comprados
+            </span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-100">
+            <div
+              className={`h-full rounded-full transition-all ${
+                accent === "emerald" ? "bg-emerald-600" : "bg-emerald-700"
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {groupShoppingList(items).map(([category, categoryItems]) => {
+        const sortedItems = [...categoryItems].sort(
+          (left, right) => Number(left.comprado) - Number(right.comprado),
+        );
+        const categoryPurchased = categoryItems.filter(
+          (item) => item.comprado,
+        ).length;
+        return (
         <section
           className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
           key={category}
         >
           <h3
-            className={`px-5 py-3 text-sm font-black uppercase tracking-[0.16em] ${
+            className={`flex items-center justify-between px-5 py-3 text-sm font-black uppercase tracking-[0.16em] ${
               accent === "emerald"
                 ? "bg-emerald-50 text-emerald-900"
                 : "bg-stone-100 text-stone-700"
             }`}
           >
-            {category}
+            <span>{category}</span>
+            <span className="text-xs font-bold normal-case tracking-normal text-stone-500">
+              {categoryPurchased}/{categoryItems.length}
+            </span>
           </h3>
           <ul className="divide-y divide-stone-100">
-            {categoryItems.map((item, index) => {
+            {sortedItems.map((item, index) => {
               const checkboxId = `cart-${accent}-${category}-${index}-${item.id}`.replace(
                 /[^a-zA-Z0-9_-]/g,
                 "-",
@@ -78,7 +110,7 @@ export function ShoppingListContent({
                   {onRemove && (
                     <button
                       aria-label={`Retirar ${item.nombre}`}
-                      className="shrink-0 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-bold text-stone-500 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="no-print shrink-0 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-bold text-stone-500 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={pendingIds.has(item.id)}
                       onClick={() => onRemove(item)}
                       type="button"
@@ -91,7 +123,8 @@ export function ShoppingListContent({
             })}
           </ul>
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -102,6 +135,7 @@ export function ExtraShoppingList({
   initialItems: ShoppingListItem[];
 }) {
   const router = useRouter();
+  const online = useOnlineStatus();
   const [items, setItems] = useState(initialItems);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
@@ -109,6 +143,26 @@ export function ExtraShoppingList({
   );
 
   useEffect(() => setItems(initialItems), [initialItems]);
+
+  const flushPending = useCallback(() => {
+    const queue = dequeueChanges("extra");
+    if (queue.length === 0) return;
+    startTransition(async () => {
+      for (const change of queue) {
+        if (change.type === "toggle") {
+          await setExtraItemPurchasedAction(change.itemId, change.purchased);
+        } else {
+          await removeExtraItemAction(change.itemId);
+        }
+      }
+      setMessage({ ok: true, text: "Cambios sincronizados." });
+      router.refresh();
+    });
+  }, [router]);
+
+  useEffect(() => {
+    if (online) flushPending();
+  }, [online, flushPending]);
 
   function toggleItem(item: ShoppingListItem, purchased: boolean) {
     setItems((current) =>
@@ -118,9 +172,23 @@ export function ExtraShoppingList({
           : candidate,
       ),
     );
-    setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
 
+    if (!online) {
+      enqueueChange({
+        kind: "extra",
+        type: "toggle",
+        itemId: item.id,
+        purchased,
+      });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: guardado en este dispositivo.",
+      });
+      return;
+    }
+
+    setPendingIds((current) => new Set(current).add(item.id));
     startTransition(async () => {
       const result = await setExtraItemPurchasedAction(item.id, purchased);
       if (!result.ok) {
@@ -140,9 +208,21 @@ export function ExtraShoppingList({
   }
 
   function removeItem(item: ShoppingListItem) {
-    setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
 
+    if (!online) {
+      setItems((current) =>
+        current.filter((candidate) => candidate.id !== item.id),
+      );
+      enqueueChange({ kind: "extra", type: "remove", itemId: item.id });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: quitado en este dispositivo.",
+      });
+      return;
+    }
+
+    setPendingIds((current) => new Set(current).add(item.id));
     startTransition(async () => {
       const result = await removeExtraItemAction(item.id);
       if (result.ok) {
@@ -213,6 +293,7 @@ export function CloudShoppingList({
   initialItems: ShoppingListItem[];
 }) {
   const router = useRouter();
+  const online = useOnlineStatus();
   const [items, setItems] = useState(initialItems);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [regenerating, setRegenerating] = useState(false);
@@ -221,6 +302,26 @@ export function CloudShoppingList({
   );
 
   useEffect(() => setItems(initialItems), [initialItems]);
+
+  const flushPending = useCallback(() => {
+    const queue = dequeueChanges("shopping");
+    if (queue.length === 0) return;
+    startTransition(async () => {
+      for (const change of queue) {
+        if (change.type === "toggle") {
+          await setShoppingItemPurchasedAction(change.itemId, change.purchased);
+        } else {
+          await removeShoppingItemAction(change.itemId);
+        }
+      }
+      setMessage({ ok: true, text: "Cambios sincronizados." });
+      router.refresh();
+    });
+  }, [router]);
+
+  useEffect(() => {
+    if (online) flushPending();
+  }, [online, flushPending]);
 
   function regenerate() {
     setRegenerating(true);
@@ -241,9 +342,23 @@ export function CloudShoppingList({
           : candidate,
       ),
     );
-    setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
 
+    if (!online) {
+      enqueueChange({
+        kind: "shopping",
+        type: "toggle",
+        itemId: item.id,
+        purchased,
+      });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: guardado en este dispositivo. Se sincronizará al recuperar cobertura.",
+      });
+      return;
+    }
+
+    setPendingIds((current) => new Set(current).add(item.id));
     startTransition(async () => {
       const result = await setShoppingItemPurchasedAction(item.id, purchased);
       if (!result.ok) {
@@ -263,9 +378,21 @@ export function CloudShoppingList({
   }
 
   function removeItem(item: ShoppingListItem) {
-    setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
 
+    if (!online) {
+      setItems((current) =>
+        current.filter((candidate) => candidate.id !== item.id),
+      );
+      enqueueChange({ kind: "shopping", type: "remove", itemId: item.id });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: quitado en este dispositivo. Se sincronizará al recuperar cobertura.",
+      });
+      return;
+    }
+
+    setPendingIds((current) => new Set(current).add(item.id));
     startTransition(async () => {
       const result = await removeShoppingItemAction(item.id);
       if (result.ok) {
@@ -289,14 +416,15 @@ export function CloudShoppingList({
         <div>
           <p className="font-bold text-stone-950">Lista derivada del menú</p>
           <p className="mt-1 text-sm text-stone-600">
-            Regenera después de cambiar una receta. Las unidades no se convierten.
+            {online
+              ? "Regenera después de cambiar una receta. Las unidades no se convierten."
+              : "Sin conexión: no se puede regenerar hasta recuperar cobertura."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ShoppingListTools />
           <button
-            className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
-            disabled={regenerating}
+            className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={regenerating || !online}
             onClick={regenerate}
             type="button"
           >

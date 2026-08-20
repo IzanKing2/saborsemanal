@@ -46,7 +46,7 @@ export async function updateProfileAction(input: {
 
     const { error } = await supabase.rpc("update_my_profile", {
       p_display_name: displayName,
-      p_avatar_path: input.avatarPath,
+      p_avatar_path: input.avatarPath ?? "",
       p_allergen_ids: allergenIds,
     });
     if (error) {

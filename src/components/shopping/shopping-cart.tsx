@@ -121,7 +121,6 @@ export function ShoppingCart({
       const { data: menu } = await supabase
         .from("menus_semanales")
         .select("id")
-        .eq("usuario_id", user.id)
         .eq("semana_inicio", week)
         .maybeSingle();
 
