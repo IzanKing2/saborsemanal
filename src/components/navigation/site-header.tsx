@@ -30,17 +30,19 @@ export async function SiteHeader() {
       className="sticky top-0 z-40 border-b border-emerald-900 bg-emerald-950/85 text-white backdrop-blur-md"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <Link className="text-lg font-black tracking-tight" href="/">
+        <Link className="shrink-0 text-lg font-black tracking-tight" href="/">
           Sabor<span className="text-amber-300">Semanal</span>
         </Link>
         <div className="hidden max-w-md flex-1 sm:block">
           <RecipeSearch />
         </div>
-        <div className="flex items-center gap-2 text-sm font-bold sm:gap-4">
-          <ShoppingCart loggedIn={Boolean(user)} />
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto text-sm font-bold [scrollbar-width:none] sm:flex-none sm:gap-4 [&::-webkit-scrollbar]:hidden">
+          <div className="shrink-0">
+            <ShoppingCart loggedIn={Boolean(user)} />
+          </div>
           <Link
             aria-label="Ver recetas públicas"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
             href="/recetas"
           >
             <svg
@@ -66,7 +68,7 @@ export async function SiteHeader() {
           </Link>
           <Link
             aria-label="Ir al planificador semanal"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
             href={user ? "/dashboard/planificador" : "/planificador"}
           >
             <svg
@@ -86,7 +88,7 @@ export async function SiteHeader() {
           {user && (
             <Link
               aria-label="Ver mis recetas favoritas"
-              className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
               href="/dashboard/favoritas"
             >
               <svg
@@ -109,7 +111,7 @@ export async function SiteHeader() {
           {user ? (
             <>
               <Link
-                className="flex items-center gap-2 rounded-full"
+                className="flex shrink-0 items-center gap-2 rounded-full"
                 href="/dashboard"
               >
                 <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-full bg-amber-300 font-black text-emerald-950">
@@ -129,7 +131,7 @@ export async function SiteHeader() {
                 </span>
                 <span className="hidden sm:block">Mi panel</span>
               </Link>
-              <form action={logoutAction}>
+              <form action={logoutAction} className="shrink-0">
                 <button
                   className="rounded-lg border border-emerald-700 px-3 py-2 text-xs"
                   type="submit"
@@ -140,11 +142,11 @@ export async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link className="text-emerald-100" href="/login">
+              <Link className="shrink-0 text-emerald-100" href="/login">
                 Entrar
               </Link>
               <Link
-                className="rounded-lg bg-amber-300 px-3 py-2 text-emerald-950"
+                className="shrink-0 rounded-lg bg-amber-300 px-3 py-2 text-emerald-950"
                 href="/register"
               >
                 <span className="sm:hidden">Crear</span>

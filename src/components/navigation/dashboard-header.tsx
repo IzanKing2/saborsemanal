@@ -52,10 +52,10 @@ export function DashboardHeader({
             )}
           </nav>
         </div>
-        <div className="order-2 ml-auto flex shrink-0 items-center gap-3 sm:order-3 sm:ml-0">
+        <div className="order-2 ml-auto flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:order-3 sm:ml-0 sm:shrink-0 sm:gap-3 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
             href="/recetas"
           >
             <svg
@@ -81,7 +81,7 @@ export function DashboardHeader({
           </Link>
           <Link
             aria-label="Ir al planificador semanal"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
             href="/dashboard/planificador"
           >
             <svg
@@ -100,7 +100,7 @@ export function DashboardHeader({
           </Link>
           <Link
             aria-label="Ver mis recetas favoritas"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
             href="/dashboard/favoritas"
           >
             <svg
@@ -119,10 +119,12 @@ export function DashboardHeader({
             </svg>
             <span className="hidden lg:inline">Favoritas</span>
           </Link>
-          <ShoppingCart loggedIn tone="dark" />
+          <div className="shrink-0">
+            <ShoppingCart loggedIn tone="dark" />
+          </div>
           <Link
             aria-label="Abrir mi cuenta"
-            className="flex items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+            className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
             href="/dashboard/cuenta"
           >
             <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-full bg-amber-300 font-black text-emerald-950">
@@ -142,8 +144,10 @@ export function DashboardHeader({
               {displayName}
             </span>
           </Link>
-          <DashboardNav isAdmin={isAdmin} logout={logoutAction} />
-          <form action={logoutAction} className="hidden sm:block">
+          <div className="shrink-0">
+            <DashboardNav isAdmin={isAdmin} logout={logoutAction} />
+          </div>
+          <form action={logoutAction} className="hidden shrink-0 sm:block">
             <button
               className="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-100 hover:border-emerald-500 hover:text-white"
               type="submit"

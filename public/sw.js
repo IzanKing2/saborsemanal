@@ -1,4 +1,4 @@
-const CACHE_NAME = "saborsemanal-public-v2";
+const CACHE_NAME = "saborsemanal-public-v3";
 const PUBLIC_SHELL = ["/", "/recetas", "/planificador"];
 // Requires auth, so it's never pre-cached at install time (that would just
 // cache a login redirect) — only cached at runtime, after a real visit
@@ -29,8 +29,21 @@ self.addEventListener("fetch", (event) => {
     url.pathname === "/recetas" ||
     url.pathname === "/planificador";
   const isOfflineCapablePage = url.pathname === OFFLINE_CAPABLE_PAGE;
+  // Next.js client-side transitions (clicking a Link) fetch an RSC/flight
+  // payload tagged with these headers instead of a full HTML document, and
+  // never trigger request.mode === "navigate". Reaching the shopping list
+  // through in-app navigation (the common case) would otherwise never warm
+  // the cache. We also intercept that plain document request (see the
+  // offline-banner warm-up fetch) as long as it isn't itself an RSC fetch,
+  // so a normal in-app visit caches the same full-page HTML a hard
+  // navigation/reload would need for the offline fallback below.
+  const isRscRequest =
+    request.headers.has("RSC") || request.headers.has("Next-Router-State-Tree");
 
-  if (request.mode === "navigate" && (isPublicPage || isOfflineCapablePage)) {
+  if (
+    (request.mode === "navigate" || (isOfflineCapablePage && !isRscRequest)) &&
+    (isPublicPage || isOfflineCapablePage)
+  ) {
     event.respondWith(
       fetch(request)
         .then((response) => {
