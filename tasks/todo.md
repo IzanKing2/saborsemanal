@@ -333,28 +333,37 @@ final, como en fases anteriores.
 - **Depende de**: nada nuevo (asume `family_groups` ya en local).
 - **Archivos**: `supabase/migrations/2026...grupo_invitaciones.sql`
 
-### Tarea 2 — RPCs de invitación (M)
-- [ ] `create_group_invitation(p_email)`, `list_group_invitations()`,
-      `list_pending_invitations_for_me()`,
+### Tarea 2 — RPCs de invitación (M) — ✅ hecha
+- [x] `create_group_invitation(p_email)`, `list_group_invitations()`,
+      `revoke_group_invitation(p_id)`, `list_pending_invitations_for_me()`,
       `accept_group_invitation(p_id)`, `decline_group_invitation(p_id)`.
 - **Criterios de aceptación**:
-  - [ ] Solo el admin del grupo puede crear/listar invitaciones salientes.
-  - [ ] Crear una invitación cuando ya hay una `pending` para el mismo
-        email la revoca y crea una nueva (no coexisten dos).
-  - [ ] `accept_group_invitation` solo funciona si `auth.uid()` tiene el
+  - [x] Solo el admin del grupo puede crear/listar invitaciones salientes
+        (verificado: usuario2 como "miembro" recibe 42501 al intentarlo).
+  - [x] Crear una invitación cuando ya hay una `pending` para el mismo
+        email la revoca y crea una nueva (no coexisten dos) — cubierto ya
+        en la Tarea 1, reutilizado aquí dentro de `create_group_invitation`.
+  - [x] `accept_group_invitation` solo funciona si `auth.uid()` tiene el
         mismo email que la invitación, está `pending` y no ha caducado
         (`expires_at > now()`); mueve al usuario al grupo igual que hace
-        hoy `add_group_member`.
-  - [ ] El tope de 8 miembros se respeta (cuenta miembros actuales, no
+        hoy `add_group_member`. Verificado también que una invitación
+        caducada (`expires_at` en el pasado) no se puede aceptar.
+  - [x] El tope de 8 miembros se respeta (cuenta miembros actuales, no
         invitaciones pendientes).
-- **Verify**: llamadas manuales a las RPC vía `psql`/Studio local con dos
-  usuarios semilla (`scripts/seed-usuarios.mjs`).
+  - [x] `decline_group_invitation` y `revoke_group_invitation` verificados
+        end-to-end.
+  - [x] Al aceptar, cualquier otra invitación pendiente al mismo email
+        (de otros grupos) se revoca automáticamente.
+- **Verify**: ciclo completo probado a mano vía `psql` con los 3 usuarios
+  semilla (`scripts/seed-usuarios.mjs`): crear → listar saliente/entrante
+  → aceptar → verificar `grupo_miembros` movido → rechazar → revocar →
+  permiso denegado a no-admin → caducidad.
 - **Depende de**: Tarea 1.
-- **Archivos**: nueva migración con las funciones.
+- **Archivos**: `supabase/migrations/20260821094108_grupo_invitaciones_rpc.sql`
 
 ### Checkpoint (Tareas 1-2)
-- [ ] `supabase db reset` limpio, ciclo completo de invitación
-      probable a mano por SQL (crear → aceptar → miembro añadido).
+- [x] `supabase db reset` limpio, ciclo completo de invitación probado a
+      mano por SQL (crear → aceptar → miembro añadido).
 
 ### Tarea 3 — Invitación por email a alguien sin cuenta (M)
 - [ ] Server action que, tras `create_group_invitation`, si el email NO
