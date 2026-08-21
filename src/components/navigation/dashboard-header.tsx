@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
-import { UserMenu } from "@/components/navigation/user-menu";
+import { accountMenuLinks, UserMenu } from "@/components/navigation/user-menu";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 
 type DashboardHeaderProps = {
@@ -15,23 +15,17 @@ export function DashboardHeader({
   avatarUrl,
   isAdmin,
 }: DashboardHeaderProps) {
-  const menuLinks = [
-    { label: "Favoritas", href: "/dashboard/favoritas" },
-    { label: "Mis recetas", href: "/dashboard/recetas" },
-    { label: "Mi grupo", href: "/dashboard/grupo" },
-    { label: "Mi cuenta", href: "/dashboard/cuenta" },
-    ...(isAdmin
-      ? [{ label: "Administración", href: "/admin", accent: true }]
-      : []),
-  ];
-
   return (
     <header className="sticky top-0 z-40 border-b border-emerald-900 bg-emerald-950/85 text-white shadow-lg shadow-emerald-950/10 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link className="shrink-0 text-lg font-black tracking-tight" href="/">
           Sabor<span className="text-amber-300">Semanal</span>
         </Link>
-        <div className="ml-auto flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
+        {/* pt-1.5 -my-1.5: the scroll container clips anything poking
+            outside its box, including the cart's badge (-top-1 -right-1);
+            padding gives it room without shifting the row's visible
+            position (offset back out by a matching negative margin). */}
+        <div className="-my-1.5 ml-auto flex min-w-0 items-center gap-2 overflow-x-auto py-1.5 [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
             className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
@@ -85,7 +79,7 @@ export function DashboardHeader({
           <UserMenu
             avatarUrl={avatarUrl}
             displayName={displayName}
-            links={menuLinks}
+            links={accountMenuLinks(isAdmin)}
             logout={logoutAction}
           />
         </div>

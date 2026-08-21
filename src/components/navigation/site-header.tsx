@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
 import { RecipeSearch } from "@/components/navigation/recipe-search";
-import { UserMenu } from "@/components/navigation/user-menu";
+import { accountMenuLinks, UserMenu } from "@/components/navigation/user-menu";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +15,7 @@ export async function SiteHeader() {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("display_name, avatar_path")
+        .select("display_name, avatar_path, role")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
@@ -36,7 +36,11 @@ export async function SiteHeader() {
         <div className="hidden max-w-md flex-1 sm:block">
           <RecipeSearch />
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto text-sm font-bold [scrollbar-width:none] sm:flex-none sm:gap-4 [&::-webkit-scrollbar]:hidden">
+        {/* pt-1.5 -my-1.5: the scroll container clips anything poking
+            outside its box, including the cart's badge (-top-1 -right-1);
+            padding gives it room without shifting the row's visible
+            position (offset back out by a matching negative margin). */}
+        <div className="-my-1.5 flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto py-1.5 text-sm font-bold [scrollbar-width:none] sm:flex-none sm:gap-4 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
             className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
@@ -91,10 +95,7 @@ export async function SiteHeader() {
             <UserMenu
               avatarUrl={avatarUrl}
               displayName={profile?.display_name ?? user.email ?? "U"}
-              links={[
-                { label: "Favoritas", href: "/dashboard/favoritas" },
-                { label: "Mi panel", href: "/dashboard" },
-              ]}
+              links={accountMenuLinks(profile?.role === "admin")}
               logout={logoutAction}
             />
           ) : (

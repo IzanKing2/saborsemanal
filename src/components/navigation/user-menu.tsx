@@ -5,7 +5,21 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-type MenuLink = { label: string; href: string; accent?: boolean };
+export type MenuLink = { label: string; href: string; accent?: boolean };
+
+// Same everywhere a signed-in user can be: it doesn't matter whether
+// they're on a public page or already inside the dashboard, every account
+// action should be one tap away.
+export function accountMenuLinks(isAdmin: boolean): MenuLink[] {
+  return [
+    { label: "Mi panel", href: "/dashboard" },
+    { label: "Favoritas", href: "/dashboard/favoritas" },
+    { label: "Mis recetas", href: "/dashboard/recetas" },
+    { label: "Mi grupo", href: "/dashboard/grupo" },
+    { label: "Mi cuenta", href: "/dashboard/cuenta" },
+    ...(isAdmin ? [{ label: "Administración", href: "/admin", accent: true }] : []),
+  ];
+}
 
 export function UserMenu({
   displayName,
@@ -31,15 +45,11 @@ export function UserMenu({
   }
 
   return (
-    <div className="relative shrink-0">
-      <button
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="Abrir menú de cuenta"
-        className="flex items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-        onClick={toggleOpen}
-        ref={buttonRef}
-        type="button"
+    <div className="flex shrink-0 items-center gap-1">
+      <Link
+        aria-label="Configurar mi cuenta"
+        className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        href="/dashboard/cuenta"
       >
         <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-full bg-amber-300 font-black text-emerald-950">
           {avatarUrl ? (
@@ -51,6 +61,32 @@ export function UserMenu({
         <span className="hidden max-w-32 truncate text-sm font-bold lg:block">
           {displayName}
         </span>
+      </Link>
+
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={open ? "Cerrar menú" : "Abrir menú"}
+        className="shrink-0 rounded-lg p-2 text-emerald-100 hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        onClick={toggleOpen}
+        ref={buttonRef}
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          {open ? (
+            <path d="M6 6l12 12M18 6L6 18" />
+          ) : (
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          )}
+        </svg>
       </button>
 
       {open &&
@@ -63,14 +99,11 @@ export function UserMenu({
               role="presentation"
             />
             <nav
-              aria-label="Menú de cuenta"
+              aria-label="Menú"
               className="fixed z-50 w-60 overflow-hidden rounded-xl border border-emerald-800 bg-emerald-950 text-sm font-bold shadow-xl"
               style={{ top: position.top, right: position.right }}
             >
               <div className="flex flex-col py-1">
-                <p className="truncate px-4 pb-2 pt-3 text-xs font-bold uppercase tracking-[0.14em] text-emerald-400">
-                  {displayName}
-                </p>
                 {links.map((link) => (
                   <Link
                     className={`px-4 py-3 hover:bg-emerald-900 hover:text-white ${
