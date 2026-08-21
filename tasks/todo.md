@@ -513,6 +513,41 @@ final, como en fases anteriores.
 - **Depende de**: nada nuevo.
 - **Archivos**: nueva migración (función), `src/app/recetas/page.tsx`.
 
+### Tarea extra — El admin puede eliminar el grupo (S) — ✅ hecha
+(Pedida por el usuario a mitad de la Tarea 4, no estaba en el plan
+original.)
+- [x] RPC `delete_group()`: solo el admin; mueve a TODOS los miembros
+      (incluido él mismo) a un grupo personal nuevo cada uno, como ya
+      hace `remove_group_member` para uno solo. El grupo viejo se deja
+      vacío en vez de borrarse (evitar el `ON DELETE CASCADE` que
+      arrastraría los menús/listas de la compra compartidos del
+      historial del grupo — "independiente" no implica "se destruyen
+      los datos").
+- [x] `deleteGroupAction`, sección "Zona peligrosa" en
+      `GroupMembersPanel` con `ConfirmDialog` (tono `danger`),
+      advertencia distinta según si hay otros miembros o no.
+- **Criterios de aceptación**:
+  - [x] Verificado a mano por SQL: admin con 2 miembros elimina el
+        grupo → ambos quedan cada uno en su propio grupo (`admin` del
+        suyo), el grupo viejo queda con 0 miembros.
+  - [x] Un miembro no-admin no puede eliminar el grupo (42501).
+  - [x] Las invitaciones salientes pendientes del grupo se revocan al
+        eliminarlo.
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios. RPC probada de punta a punta por SQL con usuarios semilla.
+  **Pendiente de tu parte**: probar el botón en el navegador (mismo
+  motivo que la Tarea 4).
+- **Nota**: para reconstruir tuve que parar el servidor de desarrollo
+  (`taskkill /F /IM node.exe`) por el problema conocido de `.next`
+  compartido — esto para **todos** los procesos `node.exe` de la
+  máquina, no solo el mío; si tenías tu propio `npm run dev` corriendo
+  en otra terminal, lo he cortado sin querer. Ya reinicié el mío en
+  `http://localhost:3000`.
+- **Archivos**: `supabase/migrations/20260821102559_grupo_delete.sql`,
+  `src/lib/actions/grupo.ts`,
+  `src/components/account/group-members-panel.tsx`,
+  `src/types/database.types.ts`.
+
 ### Checkpoint final (Fase 6)
 - [ ] Todos los criterios de aceptación cumplidos.
 - [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.

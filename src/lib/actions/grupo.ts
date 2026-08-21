@@ -172,3 +172,16 @@ export async function removeGroupMemberAction(
   revalidatePath("/dashboard/grupo");
   return { ok: true, message: "Miembro eliminado del grupo." };
 }
+
+export async function deleteGroupAction(): Promise<GroupActionState> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_group");
+
+  if (error) {
+    return { ok: false, message: mapError(error.code) };
+  }
+
+  revalidatePath("/dashboard/grupo");
+  revalidatePath("/dashboard");
+  return { ok: true, message: "Grupo eliminado. Cada miembro tiene ahora su propio grupo." };
+}

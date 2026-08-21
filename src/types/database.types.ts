@@ -689,6 +689,7 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: string
       }
+      delete_group: { Args: never; Returns: undefined }
       delete_ingredient: { Args: { p_id: string }; Returns: undefined }
       delete_user_account: { Args: { p_user_id: string }; Returns: boolean }
       get_public_recipe_authors: {

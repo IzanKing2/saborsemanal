@@ -1,14 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
+  deleteGroupAction,
   inviteGroupMemberAction,
   removeGroupMemberAction,
   revokeGroupInvitationAction,
   type GroupActionState,
 } from "@/lib/actions/grupo";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Member = {
   usuario_id: string;
@@ -88,10 +91,27 @@ export function GroupMembersPanel({
   members: Member[];
   invitations: Invitation[];
 }) {
+  const router = useRouter();
   const [inviteState, inviteAction] = useActionState(
     inviteGroupMemberAction,
     initialState,
   );
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function confirmDeleteGroup() {
+    setDeleting(true);
+    setDeleteError(null);
+    const result = await deleteGroupAction();
+    setDeleting(false);
+    if (!result.ok) {
+      setDeleteError(result.message);
+      return;
+    }
+    setDeleteOpen(false);
+    router.refresh();
+  }
 
   return (
     <div className="space-y-6">
@@ -174,6 +194,42 @@ export function GroupMembersPanel({
           )}
         </section>
       )}
+
+      {isAdmin && (
+        <section className="rounded-2xl border border-red-200 bg-red-50 p-5">
+          <h2 className="text-lg font-bold text-red-900">Zona peligrosa</h2>
+          <p className="mt-1 text-sm text-red-800">
+            Eliminar el grupo lo disuelve por completo: tú y el resto de
+            miembros volveréis a tener cada uno vuestro propio grupo
+            independiente. Esta acción no se puede deshacer.
+          </p>
+          {deleteError && (
+            <p className="mt-2 text-xs font-semibold text-red-700">{deleteError}</p>
+          )}
+          <button
+            className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100"
+            onClick={() => setDeleteOpen(true)}
+            type="button"
+          >
+            Eliminar grupo
+          </button>
+        </section>
+      )}
+
+      <ConfirmDialog
+        busy={deleting}
+        confirmLabel="Sí, eliminar grupo"
+        description={
+          members.length > 1
+            ? `Vas a eliminar el grupo. Los otros ${members.length - 1} miembro(s) dejarán de compartir menú, lista de la compra y recetas contigo: cada uno pasará a tener su propio grupo independiente. Esta acción no se puede deshacer.`
+            : "Vas a eliminar el grupo. Como todavía no tienes a nadie más, esto solo te deja con un grupo nuevo y vacío. Esta acción no se puede deshacer."
+        }
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => void confirmDeleteGroup()}
+        open={deleteOpen}
+        title="¿Eliminar el grupo?"
+        tone="danger"
+      />
     </div>
   );
 }
