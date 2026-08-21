@@ -5,6 +5,31 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.1.0] - 2026-08-21
+
+### Added
+- Grupos familiares: crear un grupo con nombre propio desde Mi cuenta,
+  invitar por email o WhatsApp (con caducidad de 24h), aceptar/rechazar
+  invitaciones entrantes, editar el nombre del grupo, eliminar el grupo
+  (todos los miembros vuelven a ser independientes), y confirmación antes
+  de quitar a alguien.
+- El menú semanal, la lista de la compra y las recetas se comparten con
+  todo el grupo; los filtros de alérgenos combinan los de todos los
+  miembros, no solo los de quien navega.
+- Indicador "Compartido con tu grupo" en lista de la compra y recetas.
+- Al cambiar la contraseña hay que repetirla, y se puede mostrar/ocultar
+  el texto mientras se escribe (login, registro y cambio de contraseña).
+- Aviso de "novedades" al entrar tras una actualización de la web.
+- Plantillas de email con la estética de SaborSemanal (invitación,
+  confirmación de cuenta, recuperar contraseña, cambio de email).
+
+### Fixed
+- Cabecera móvil: el carrito y el botón de salir ya no se salían de la
+  pantalla; el menú de cuenta (avatar + hamburguesa) ya no quedaba
+  recortado.
+- La lista de la compra ahora sí queda disponible sin conexión tras
+  visitarla navegando dentro de la app (no solo con recarga completa).
+
 ## [2.0.0] - 2026-08-20
 
 ### Added
