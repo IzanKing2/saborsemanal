@@ -1,4 +1,4 @@
-const CACHE_NAME = "saborsemanal-public-v4";
+const CACHE_NAME = "saborsemanal-public-v5";
 const PUBLIC_SHELL = ["/", "/recetas", "/planificador"];
 // Requires auth, so it's never pre-cached at install time (that would just
 // cache a login redirect) — only cached at runtime, after a real visit
@@ -47,8 +47,16 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
+          // clone() must run synchronously, before the original response's
+          // body is handed off below -- once that body starts being read,
+          // a clone deferred inside the async caches.open().then() chain
+          // would throw "body already used".
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          // Without waitUntil, the browser can kill this worker as soon as
+          // the response below is delivered to the page -- the dangling
+          // cache write would then silently never complete, and nothing
+          // ever actually got cached despite this code looking correct.
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
           return response;
         })
         .catch(() =>
@@ -71,7 +79,7 @@ self.addEventListener("fetch", (event) => {
         const network = fetch(request).then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
           }
           return response;
         });
