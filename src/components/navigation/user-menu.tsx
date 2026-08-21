@@ -104,7 +104,7 @@ export function UserMenu({
                 ))}
                 <form action={logout}>
                   <button
-                    className="w-full border-t border-emerald-800 px-4 py-3 text-left text-emerald-100 hover:bg-emerald-900 hover:text-white"
+                    className="w-full border-t border-emerald-800 px-4 py-3 text-left text-red-400 hover:bg-red-950 hover:text-red-300"
                     type="submit"
                   >
                     Salir

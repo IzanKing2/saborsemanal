@@ -107,14 +107,16 @@ export async function inviteGroupMemberAction(
 
   // Already has an account: no auth link needed -- their own email is
   // already verified, so they just see the pending invitation next time
-  // they're in the app (accept/decline banner). WhatsApp in that case is
-  // just a nudge pointing them at the app, not an auth link.
+  // they're in the app (accept/decline banner). The WhatsApp card page
+  // itself (/invitacion/[id]) figures out on load whether the visitor is
+  // already logged in as the invitee (auto-accepts) or needs to log in
+  // first -- one shareable link works for both.
   if (existingProfile) {
     if (method === "whatsapp") {
-      const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Entra en la app para aceptar la invitación: ${await siteOrigin()}/dashboard/grupo`;
+      const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Abre tu invitación aquí: ${await siteOrigin()}/invitacion/${invitation.id}`;
       return {
         ok: true,
-        message: "Esa persona ya tiene cuenta: comparte el enlace por WhatsApp.",
+        message: "Tarjeta de invitación lista: compártela por WhatsApp.",
         whatsappUrl: whatsappShareUrl(text),
       };
     }
@@ -126,26 +128,13 @@ export async function inviteGroupMemberAction(
   }
 
   if (method === "whatsapp") {
-    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: {
-        data: { pending_grupo_invitation_id: invitation.id },
-        redirectTo: `${await siteOrigin()}/invitacion`,
-      },
-    });
-
-    if (linkError || !linkData.properties?.action_link) {
-      return {
-        ok: false,
-        message: "No se pudo generar el enlace de invitación. Inténtalo de nuevo.",
-      };
-    }
-
-    const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Crea tu cuenta y únete aquí: ${linkData.properties.action_link}`;
+    // The actual Supabase magic link is generated on demand when they tap
+    // "Crear cuenta" on the card page, not embedded in the WhatsApp
+    // message itself -- keeps the shared link short and branded.
+    const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Abre tu invitación aquí: ${await siteOrigin()}/invitacion/${invitation.id}`;
     return {
       ok: true,
-      message: "Enlace de invitación listo: compártelo por WhatsApp. Caduca en 24 horas.",
+      message: "Tarjeta de invitación lista: compártela por WhatsApp. Caduca en 24 horas.",
       whatsappUrl: whatsappShareUrl(text),
     };
   }
@@ -169,6 +158,49 @@ export async function inviteGroupMemberAction(
     ok: true,
     message: "Invitación enviada por email. Caduca en 24 horas si no se acepta.",
   };
+}
+
+export type StartSignupResult = GroupActionState & { actionLink?: string };
+
+// Called from the /invitacion/[id] card page when the visitor has no
+// account yet: generates the real Supabase invite link on demand (rather
+// than embedding it in the WhatsApp message at creation time) and hands
+// it back so the client can navigate straight to it.
+export async function startInviteSignupAction(
+  invitationId: string,
+): Promise<StartSignupResult> {
+  if (!isUuid(invitationId)) {
+    return { ok: false, message: "Invitación no válida." };
+  }
+
+  const supabase = await createClient();
+  const { data: preview } = await supabase
+    .rpc("get_invitation_preview", { p_invitation_id: invitationId })
+    .maybeSingle();
+
+  if (
+    !preview ||
+    preview.status !== "pending" ||
+    new Date(preview.expires_at) < new Date()
+  ) {
+    return { ok: false, message: "Esta invitación ya no es válida." };
+  }
+
+  const admin = createAdminClient();
+  const { data: linkData, error } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email: preview.email,
+    options: {
+      data: { pending_grupo_invitation_id: invitationId },
+      redirectTo: `${await siteOrigin()}/invitacion`,
+    },
+  });
+
+  if (error || !linkData.properties?.action_link) {
+    return { ok: false, message: "No se pudo iniciar el registro. Inténtalo de nuevo." };
+  }
+
+  return { ok: true, message: "", actionLink: linkData.properties.action_link };
 }
 
 export async function acceptGroupInvitationAction(
