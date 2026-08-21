@@ -1,4 +1,4 @@
-const CACHE_NAME = "saborsemanal-public-v3";
+const CACHE_NAME = "saborsemanal-public-v4";
 const PUBLIC_SHELL = ["/", "/recetas", "/planificador"];
 // Requires auth, so it's never pre-cached at install time (that would just
 // cache a login redirect) — only cached at runtime, after a real visit
@@ -52,9 +52,15 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() =>
-          caches
-            .match(request)
-            .then((response) => response || (isOfflineCapablePage ? undefined : caches.match("/"))),
+          caches.match(request).then((response) => {
+            if (response) return response;
+            if (!isOfflineCapablePage) return caches.match("/");
+            // Exact week (query string) not cached -- fall back to whatever
+            // week of this page was last cached rather than showing
+            // nothing, since ignoring the query is strictly better than a
+            // hard failure while offline.
+            return caches.match(url.pathname, { ignoreSearch: true });
+          }),
         ),
     );
   }

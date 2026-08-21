@@ -14,12 +14,14 @@ import {
   setExtraItemPurchasedAction,
   setShoppingItemPurchasedAction,
 } from "@/lib/actions/lista-compra";
+import { dequeueChanges, enqueueChange } from "@/lib/offline-queue";
 import {
   consolidateShoppingList,
   type ShoppingListItem,
   type ShoppingRecipeIngredient,
 } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/client";
+import { useOnlineStatus } from "@/lib/use-online-status";
 import { getCurrentMonday } from "@/lib/week";
 
 type CartRow = ShoppingListItem & { removable: boolean };
@@ -29,6 +31,30 @@ type StoredPurchase = { cantidad: number; comprado: boolean };
 const purchasesKey = (week: string) => `saborsemanal:shopping:${week}`;
 const clearedKey = (week: string) => `saborsemanal:shopping:cleared:${week}`;
 const removedItemsKey = (week: string) => `saborsemanal:shopping:removed:${week}`;
+// Last-known snapshot of the signed-in cart, so the header widget has
+// something to show while offline instead of hanging on "Cargando..."
+// forever (unlike the anonymous/guest cart, it has no server-rendered
+// initial data to fall back on).
+const cloudCacheKey = (week: string) => `saborsemanal:shopping:cloud-cache:${week}`;
+
+function loadCachedCloudRows(week: string): CartRow[] {
+  try {
+    const raw = localStorage.getItem(cloudCacheKey(week));
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CartRow[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedCloudRows(week: string, rows: CartRow[]) {
+  try {
+    localStorage.setItem(cloudCacheKey(week), JSON.stringify(rows));
+  } catch {
+    // Best-effort cache; losing it just means no offline fallback.
+  }
+}
 
 type RemovedItems = { signature: string; ids: string[] };
 
@@ -91,6 +117,7 @@ export function ShoppingCart({
   loggedIn: boolean;
   tone?: "dark" | "light";
 }) {
+  const online = useOnlineStatus();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<CartRow[]>([]);
@@ -109,75 +136,97 @@ export function ShoppingCart({
     const supabase = createClient();
 
     if (loggedIn) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setRows([]);
+      if (!navigator.onLine) {
+        setRows(loadCachedCloudRows(week));
+        setMessage({
+          ok: true,
+          text: "Sin conexión: mostrando la última lista guardada en este dispositivo.",
+        });
         setLoading(false);
         return;
       }
 
-      const { data: menu } = await supabase
-        .from("menus_semanales")
-        .select("id")
-        .eq("semana_inicio", week)
-        .maybeSingle();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          setRows([]);
+          setLoading(false);
+          return;
+        }
 
-      const { data: menuItems, error: menuError } = menu
-        ? await supabase
-            .from("shopping_list_items")
-            .select(
-              `id,
-              ingrediente_id,
-              nombre_personalizado,
-              cantidad,
-              unidad,
-              comprado,
-              ingredientes (nombre, categorias_ingredientes (nombre))`,
-            )
-            .eq("menu_id", menu.id)
-            .order("created_at")
-        : { data: [], error: null };
-      const { data: extraRows, error: extraError } = await supabase
-        .from("shopping_list_extra")
-        .select(
-          `id,
-          ingrediente_id,
-          nombre_personalizado,
-          cantidad,
-          unidad,
-          comprado,
-          ingredientes (nombre, categorias_ingredientes (nombre))`,
-        )
-        .order("created_at");
+        const { data: menu } = await supabase
+          .from("menus_semanales")
+          .select("id")
+          .eq("semana_inicio", week)
+          .maybeSingle();
 
-      if (menuError || extraError) {
-        setRows([]);
-        setLoading(false);
-        return;
+        const { data: menuItems, error: menuError } = menu
+          ? await supabase
+              .from("shopping_list_items")
+              .select(
+                `id,
+                ingrediente_id,
+                nombre_personalizado,
+                cantidad,
+                unidad,
+                comprado,
+                ingredientes (nombre, categorias_ingredientes (nombre))`,
+              )
+              .eq("menu_id", menu.id)
+              .order("created_at")
+          : { data: [], error: null };
+        const { data: extraRows, error: extraError } = await supabase
+          .from("shopping_list_extra")
+          .select(
+            `id,
+            ingrediente_id,
+            nombre_personalizado,
+            cantidad,
+            unidad,
+            comprado,
+            ingredientes (nombre, categorias_ingredientes (nombre))`,
+          )
+          .order("created_at");
+
+        if (menuError || extraError) {
+          setRows([]);
+          setLoading(false);
+          return;
+        }
+
+        const cloudRows: CartRow[] = [
+          ...(menuItems ?? []).map((item) => ({
+            id: item.id,
+            nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+            categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+            cantidad: Number(item.cantidad),
+            unidad: item.unidad,
+            comprado: item.comprado,
+            removable: false,
+          })),
+          ...(extraRows ?? []).map((item) => ({
+            id: item.id,
+            nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+            categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+            cantidad: Number(item.cantidad),
+            unidad: item.unidad,
+            comprado: item.comprado,
+            removable: true,
+          })),
+        ];
+        setRows(cloudRows);
+        saveCachedCloudRows(week, cloudRows);
+      } catch {
+        // Network failed after navigator.onLine already looked true (e.g.
+        // connection dropped mid-request) -- fall back the same way.
+        setRows(loadCachedCloudRows(week));
+        setMessage({
+          ok: true,
+          text: "Sin conexión: mostrando la última lista guardada en este dispositivo.",
+        });
       }
-
-      setRows([
-        ...(menuItems ?? []).map((item) => ({
-          id: item.id,
-          nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
-          categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
-          cantidad: Number(item.cantidad),
-          unidad: item.unidad,
-          comprado: item.comprado,
-          removable: false,
-        })),
-        ...(extraRows ?? []).map((item) => ({
-          id: item.id,
-          nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
-          categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
-          cantidad: Number(item.cantidad),
-          unidad: item.unidad,
-          comprado: item.comprado,
-          removable: true,
-        })),
-      ]);
       setLoading(false);
       return;
     }
@@ -279,6 +328,29 @@ export function ShoppingCart({
   }, [load, loggedIn]);
 
   useEffect(() => {
+    if (!loggedIn || !online) return;
+    const pending = [...dequeueChanges("shopping"), ...dequeueChanges("extra")];
+    if (pending.length === 0) return;
+    startTransition(async () => {
+      for (const change of pending) {
+        const isExtra = change.kind === "extra";
+        if (change.type === "toggle") {
+          await (isExtra ? setExtraItemPurchasedAction : setShoppingItemPurchasedAction)(
+            change.itemId,
+            change.purchased,
+          );
+        } else {
+          await (isExtra ? removeExtraItemAction : removeShoppingItemAction)(
+            change.itemId,
+          );
+        }
+      }
+      setMessage({ ok: true, text: "Cambios sincronizados." });
+      load();
+    });
+  }, [loggedIn, online, load]);
+
+  useEffect(() => {
     if (!open) return;
     load();
     function handleKey(event: KeyboardEvent) {
@@ -321,6 +393,27 @@ export function ShoppingCart({
       return;
     }
 
+    if (!navigator.onLine) {
+      const week = getCurrentMonday();
+      saveCachedCloudRows(
+        week,
+        rows.map((candidate) =>
+          candidate.id === item.id ? { ...candidate, comprado: purchased } : candidate,
+        ),
+      );
+      enqueueChange({
+        kind: row.removable ? "extra" : "shopping",
+        type: "toggle",
+        itemId: item.id,
+        purchased,
+      });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: guardado en este dispositivo. Se sincronizará al recuperar cobertura.",
+      });
+      return;
+    }
+
     setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
     startTransition(async () => {
@@ -347,6 +440,28 @@ export function ShoppingCart({
     const row = item as CartRow;
     setPendingIds((current) => new Set(current).add(item.id));
     setMessage(null);
+
+    if (loggedIn && !navigator.onLine) {
+      const week = getCurrentMonday();
+      const nextRows = rows.filter((candidate) => candidate.id !== item.id);
+      saveCachedCloudRows(week, nextRows);
+      setRows(nextRows);
+      enqueueChange({
+        kind: row.removable ? "extra" : "shopping",
+        type: "remove",
+        itemId: item.id,
+      });
+      setMessage({
+        ok: true,
+        text: "Sin conexión: quitado en este dispositivo. Se sincronizará al recuperar cobertura.",
+      });
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
+      return;
+    }
 
     if (!loggedIn) {
       try {
@@ -599,7 +714,7 @@ export function ShoppingCart({
             <footer className="flex flex-col gap-3 border-t border-stone-200 bg-white px-5 py-4">
               <button
                 className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={clearing || rows.length === 0}
+                disabled={clearing || rows.length === 0 || (loggedIn && !online)}
                 onClick={() => setClearOpen(true)}
                 type="button"
               >
@@ -608,11 +723,11 @@ export function ShoppingCart({
               {loggedIn && (
                 <button
                   className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
-                  disabled={regenerating}
+                  disabled={regenerating || !online}
                   onClick={regenerate}
                   type="button"
                 >
-                  {regenerating ? "Regenerando..." : "Regenerar lista"}
+                  {regenerating ? "Regenerando..." : !online ? "Sin conexión" : "Regenerar lista"}
                 </button>
               )}
               <Link

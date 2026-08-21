@@ -32,6 +32,9 @@ export function ShoppingListTools({
 
     try {
       if (navigator.share) {
+        // Plain text (no url/files) is what lets the OS share sheet offer
+        // apps like Notes/Google Keep as a target, turning the list
+        // straight into a note there instead of just a file attachment.
         await navigator.share({ text, title });
         return;
       }
@@ -44,12 +47,29 @@ export function ShoppingListTools({
     }
   }
 
-  function exportAsText() {
+  async function exportAsText() {
     const text = formatShoppingListAsText(items, { title });
+    const filename = `${slugify(title)}.txt`;
+
+    // On phones, routing this through the native share sheet (when
+    // supported) lets the user pick "Guardar en Archivos", Notes, Drive,
+    // etc. -- a plain <a download> often just opens the file in a new tab
+    // on mobile browsers instead of actually downloading/saving it.
+    const file = new File([text], filename, { type: "text/plain" });
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        // Fall through to the plain download below.
+      }
+    }
+
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.download = `${slugify(title)}.txt`;
+    link.download = filename;
     link.href = url;
     document.body.appendChild(link);
     link.click();
@@ -69,7 +89,7 @@ export function ShoppingListTools({
         </button>
         <button
           className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50"
-          onClick={exportAsText}
+          onClick={() => void exportAsText()}
           type="button"
         >
           Exportar (.txt)

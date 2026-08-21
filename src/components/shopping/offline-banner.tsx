@@ -15,7 +15,12 @@ export function OfflineBanner() {
   // viewed while online, regardless of how the user got here.
   useEffect(() => {
     if (!online) return;
-    fetch(window.location.pathname, { cache: "reload" }).catch(() => {});
+    // Include the query string (?week=...): the real navigation the SW
+    // needs to match on offline always carries it, so caching the bare
+    // pathname here was a guaranteed cache miss.
+    fetch(window.location.pathname + window.location.search, {
+      cache: "reload",
+    }).catch(() => {});
   }, [online]);
 
   if (online) return null;
