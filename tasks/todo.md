@@ -365,34 +365,71 @@ final, como en fases anteriores.
 - [x] `supabase db reset` limpio, ciclo completo de invitación probado a
       mano por SQL (crear → aceptar → miembro añadido).
 
-### Tarea 3 — Invitación por email a alguien sin cuenta (M)
-- [ ] Server action que, tras `create_group_invitation`, si el email NO
-      pertenece a ningún `profiles` existente, llama a
-      `supabase.auth.admin.inviteUserByEmail(email, { data: { pending_grupo_invitation_id } })`
-      usando el cliente admin (`lib/supabase/admin.ts`).
-- [ ] Extender `handle_new_user()`: si `raw_user_meta_data` trae
-      `pending_grupo_invitation_id` y esa invitación sigue `pending` y
-      no ha caducado, unir al nuevo usuario a ese grupo (marcar la
-      invitación `accepted`) en vez de crear un grupo personal.
+### Tarea 3 — Invitación por email a alguien sin cuenta (M) — ✅ hecha
+- [x] `inviteGroupMemberAction` en `src/lib/actions/grupo.ts`: crea la
+      invitación vía `create_group_invitation`, comprueba con el cliente
+      admin si el email ya tiene `profiles`; si no, llama a
+      `admin.auth.admin.inviteUserByEmail(email, { data: { pending_grupo_invitation_id } })`.
+  - [x] `acceptGroupInvitationAction` / `declineGroupInvitationAction` /
+        `revokeGroupInvitationAction` añadidos como wrappers finos de las
+        RPCs de la Tarea 2 (los necesita ya esta tarea para el
+        "aceptar" tras confirmar; Tarea 5 los reutiliza para la
+        invitación entrante de usuarios existentes).
+  - [x] Página `/invitacion` + `InviteAcceptForm` (cliente): confirma la
+        sesión, acepta la invitación, y pide contraseña
+        (`setPasswordAfterInviteAction`, nuevo archivo
+        `src/lib/actions/invitacion.ts`).
+- **Cambio de diseño respecto al plan original**: NO hizo falta tocar
+  `handle_new_user()`. `admin.inviteUserByEmail()` usa el enlace de
+  verificación clásico de Supabase (flujo implícito), que entrega los
+  tokens de sesión en el **fragmento `#` de la URL**, no en query string
+  — se descubrió probando el email real en Mailpit. `/invitacion` los
+  lee en cliente (`window.location.hash`) y llama a
+  `supabase.auth.setSession(...)`, y entonces reutiliza directamente
+  `accept_group_invitation` (la misma RPC de la Tarea 2) para unirse al
+  grupo — exactamente en el momento de "confirmar", no antes. Esto es
+  más simple que tocar el trigger y reutiliza código ya probado.
 - **Criterios de aceptación**:
-  - [ ] Invitar a un email nuevo dispara el email de invitación de
-        Supabase (visible en Inbucket en local).
-  - [ ] Completar el registro desde ese enlace deja al usuario dentro
-        del grupo del invitador, no en uno propio.
-  - [ ] Si la invitación caducó antes de completar el registro, el
-        usuario nuevo cae en su grupo personal normal (comportamiento
-        actual, sin romper nada).
-- **Verify**: flujo manual completo en local con Inbucket
-  (`http://127.0.0.1:54324`).
+  - [x] Invitar a un email nuevo dispara el email de invitación de
+        Supabase (verificado en Mailpit: asunto "You've been invited").
+  - [x] Completar la invitación desde ese enlace deja al usuario dentro
+        del grupo del invitador, no en uno propio (verificado: el nuevo
+        usuario aparece en `grupo_miembros` con el `grupo_id` correcto
+        y rol `miembro`; la invitación queda `accepted`).
+  - [ ] Caso "invitación caducada antes de aceptar" — cubierto a nivel
+        de RPC (Tarea 2, ya probado), pendiente de un paso manual por
+        la UI real (ver nota de entorno).
+- **Verify**: flujo probado de punta a punta **por script**, no por
+  clic en el navegador — el entorno de automatización de este agente no
+  tiene acceso a `localhost` (limitación ya detectada en sesiones
+  anteriores). Se simuló exactamente lo que haría el navegador: 1) se
+  invitó a un email nuevo, 2) se leyó el email real desde la API de
+  Mailpit (`http://127.0.0.1:54324`) y se siguió el enlace de
+  verificación, 3) se tomaron los tokens del fragmento de la URL
+  resultante y se llamó a `setSession` + `accept_group_invitation` tal
+  como haría `InviteAcceptForm`, 4) se confirmó en la base de datos que
+  el usuario nuevo quedó en el grupo correcto. **Pendiente**: probar el
+  clic real en el navegador (el formulario de contraseña, mensajes de
+  error visuales, etc.) — el código es una traducción directa de lo ya
+  verificado, pero conviene que lo confirmes tú una vez en local.
+- **Nota para producción**: hay que añadir la URL de redirección
+  (`https://saborsemanal.vercel.app/invitacion`) a la lista blanca de
+  redirects de Supabase Auth (Dashboard → Authentication → URL
+  Configuration) antes de desplegar esta fase, si no
+  `inviteUserByEmail` caerá silenciosamente al `Site URL` por defecto.
 - **Depende de**: Tarea 2.
-- **Archivos**: `src/lib/actions/grupo.ts`, migración con el trigger
-  actualizado.
+- **Archivos**: `src/lib/actions/grupo.ts`, `src/lib/actions/invitacion.ts`,
+  `src/app/(auth)/invitacion/page.tsx`,
+  `src/components/auth/invite-accept-form.tsx`,
+  `src/types/database.types.ts` (regenerado desde el esquema local).
 
 ### Checkpoint (Tareas 1-3)
-- [ ] Ciclo de invitación completo funciona a nivel de datos/servidor
-      para ambos casos (con cuenta / sin cuenta), sin UI nueva todavía.
-- [ ] `npx tsc --noEmit` y `npm run lint` limpios.
-- [ ] Revisar con el usuario antes de seguir con la UI.
+- [x] Ciclo de invitación completo funciona a nivel de datos/servidor
+      para ambos casos (con cuenta / sin cuenta) — verificado por script
+      end-to-end para el caso sin cuenta; sin probar aún clic a clic en
+      un navegador real.
+- [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` limpios.
+- [ ] Revisar con el usuario antes de seguir con la UI (Tarea 4).
 
 ### Tarea 4 — UI: invitar y ver invitaciones salientes (M)
 - [ ] `GroupMembersPanel`: el formulario "Añadir miembro" pasa a

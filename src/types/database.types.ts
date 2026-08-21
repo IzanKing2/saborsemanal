@@ -103,6 +103,54 @@ export type Database = {
           },
         ]
       }
+      grupo_invitaciones: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          grupo_id: string
+          id: string
+          invited_by: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          grupo_id: string
+          id?: string
+          invited_by: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          grupo_id?: string
+          id?: string
+          invited_by?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_invitaciones_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_invitaciones_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grupo_miembros: {
         Row: {
           grupo_id: string
@@ -575,6 +623,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_group_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
       add_group_member: { Args: { p_email: string }; Returns: string }
       add_menu_recipe: {
         Args: { p_recipe_id: string; p_week: string }
@@ -614,6 +666,29 @@ export type Database = {
         }
         Returns: number
       }
+      create_group_invitation: {
+        Args: { p_email: string }
+        Returns: {
+          created_at: string
+          email: string
+          expires_at: string
+          grupo_id: string
+          id: string
+          invited_by: string
+          responded_at: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "grupo_invitaciones"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      decline_group_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
       delete_ingredient: { Args: { p_id: string }; Returns: undefined }
       delete_user_account: { Args: { p_user_id: string }; Returns: boolean }
       get_public_recipe_authors: {
@@ -626,6 +701,26 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_group_mate: { Args: { p_creador_id: string }; Returns: boolean }
+      list_group_invitations: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          expires_at: string
+          grupo_id: string
+          id: string
+          invited_by: string
+          responded_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "grupo_invitaciones"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_group_members: {
         Args: never
         Returns: {
@@ -635,6 +730,17 @@ export type Database = {
           es_yo: boolean
           rol: string
           usuario_id: string
+        }[]
+      }
+      list_pending_invitations_for_me: {
+        Args: never
+        Returns: {
+          created_at: string
+          expires_at: string
+          grupo_id: string
+          grupo_nombre: string
+          id: string
+          invited_by_nombre: string
         }[]
       }
       my_grupo_id: { Args: never; Returns: string }
@@ -665,6 +771,10 @@ export type Database = {
         Returns: string
       }
       remove_shopping_item: { Args: { p_item_id: string }; Returns: string }
+      revoke_group_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
       save_ingredient: {
         Args: {
           p_alergeno_ids: string[]
