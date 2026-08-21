@@ -298,3 +298,167 @@
   `localStorage`, al reconectar se sincroniza solo y el cambio queda
   confirmado en la base de datos (`comprado = true` verificado por
   consulta directa).
+
+---
+
+## Fase 6 — Grupos Familiares v2 (ver detalle en plan.md)
+
+**Bloqueador**: la base de grupos familiares no está desplegada en
+producción. Las Tareas 1-3 se prueban en local (`supabase db reset`); el
+despliegue a producción de TODO (base + invitaciones) se hace junto, al
+final, como en fases anteriores.
+
+### Tarea 1 — Esquema: tabla de invitaciones (S) — ✅ hecha
+- [x] Migración: `grupo_invitaciones` (columnas, check de `status`,
+      índice único parcial `WHERE status = 'pending'` sobre
+      `(grupo_id, email)`), sin acceso directo (`REVOKE ALL FROM PUBLIC,
+      anon, authenticated`) — todo el acceso pasa por RPCs en la Tarea 2.
+- **Criterios de aceptación**:
+  - [x] `supabase db reset` aplica la migración sin error.
+  - [x] No se puede insertar una segunda invitación `pending` para el
+        mismo `(grupo_id, email)` (constraint lo impide; verificado a
+        mano: revocar la anterior sí permite crear otra).
+  - [x] Verificado que `anon` no tiene acceso directo a la tabla (403
+        `permission denied` vía PostgREST).
+- **Nota de entorno**: el `service_role` local no tenía privilegios por
+  defecto sobre las tablas `public` (comparado y confirmado que en
+  producción sí los tiene) — probablemente deriva de una versión de la
+  CLI de Supabase distinta a cuando se creó el proyecto. Se corrigió con
+  `GRANT`s manuales en la sesión local (no en una migración, ya que en
+  producción no hace falta); si vuelve a pasar tras un `db reset`, hay
+  que repetir el `GRANT ALL ... TO service_role` a mano antes de usar
+  `scripts/seed-usuarios.mjs`.
+- **Verify**: `supabase db reset` limpio; inserción de prueba vía SQL
+  directo en Studio local.
+- **Depende de**: nada nuevo (asume `family_groups` ya en local).
+- **Archivos**: `supabase/migrations/2026...grupo_invitaciones.sql`
+
+### Tarea 2 — RPCs de invitación (M)
+- [ ] `create_group_invitation(p_email)`, `list_group_invitations()`,
+      `list_pending_invitations_for_me()`,
+      `accept_group_invitation(p_id)`, `decline_group_invitation(p_id)`.
+- **Criterios de aceptación**:
+  - [ ] Solo el admin del grupo puede crear/listar invitaciones salientes.
+  - [ ] Crear una invitación cuando ya hay una `pending` para el mismo
+        email la revoca y crea una nueva (no coexisten dos).
+  - [ ] `accept_group_invitation` solo funciona si `auth.uid()` tiene el
+        mismo email que la invitación, está `pending` y no ha caducado
+        (`expires_at > now()`); mueve al usuario al grupo igual que hace
+        hoy `add_group_member`.
+  - [ ] El tope de 8 miembros se respeta (cuenta miembros actuales, no
+        invitaciones pendientes).
+- **Verify**: llamadas manuales a las RPC vía `psql`/Studio local con dos
+  usuarios semilla (`scripts/seed-usuarios.mjs`).
+- **Depende de**: Tarea 1.
+- **Archivos**: nueva migración con las funciones.
+
+### Checkpoint (Tareas 1-2)
+- [ ] `supabase db reset` limpio, ciclo completo de invitación
+      probable a mano por SQL (crear → aceptar → miembro añadido).
+
+### Tarea 3 — Invitación por email a alguien sin cuenta (M)
+- [ ] Server action que, tras `create_group_invitation`, si el email NO
+      pertenece a ningún `profiles` existente, llama a
+      `supabase.auth.admin.inviteUserByEmail(email, { data: { pending_grupo_invitation_id } })`
+      usando el cliente admin (`lib/supabase/admin.ts`).
+- [ ] Extender `handle_new_user()`: si `raw_user_meta_data` trae
+      `pending_grupo_invitation_id` y esa invitación sigue `pending` y
+      no ha caducado, unir al nuevo usuario a ese grupo (marcar la
+      invitación `accepted`) en vez de crear un grupo personal.
+- **Criterios de aceptación**:
+  - [ ] Invitar a un email nuevo dispara el email de invitación de
+        Supabase (visible en Inbucket en local).
+  - [ ] Completar el registro desde ese enlace deja al usuario dentro
+        del grupo del invitador, no en uno propio.
+  - [ ] Si la invitación caducó antes de completar el registro, el
+        usuario nuevo cae en su grupo personal normal (comportamiento
+        actual, sin romper nada).
+- **Verify**: flujo manual completo en local con Inbucket
+  (`http://127.0.0.1:54324`).
+- **Depende de**: Tarea 2.
+- **Archivos**: `src/lib/actions/grupo.ts`, migración con el trigger
+  actualizado.
+
+### Checkpoint (Tareas 1-3)
+- [ ] Ciclo de invitación completo funciona a nivel de datos/servidor
+      para ambos casos (con cuenta / sin cuenta), sin UI nueva todavía.
+- [ ] `npx tsc --noEmit` y `npm run lint` limpios.
+- [ ] Revisar con el usuario antes de seguir con la UI.
+
+### Tarea 4 — UI: invitar y ver invitaciones salientes (M)
+- [ ] `GroupMembersPanel`: el formulario "Añadir miembro" pasa a
+      "Invitar" y llama a la nueva acción; añadir sección "Invitaciones
+      pendientes" (email, expira en Xh, botón revocar) usando
+      `list_group_invitations()`.
+- [ ] Mensajes distintos según el caso: "Invitación enviada por email,
+      expira en 24h" (cuenta nueva) vs "Invitación pendiente de
+      aceptar" (cuenta existente).
+- **Criterios de aceptación**:
+  - [ ] Crear invitación la muestra en la lista de pendientes al
+        instante (`revalidatePath`).
+  - [ ] Revocar quita la invitación de la lista.
+- **Verify**: manual en navegador; `npx tsc --noEmit` + `npm run lint`.
+- **Depende de**: Tarea 2.
+- **Archivos**: `src/components/account/group-members-panel.tsx`,
+  `src/lib/actions/grupo.ts`.
+
+### Tarea 5 — UI: invitación entrante (usuario con cuenta) (S)
+- [ ] Banner/tarjeta en `/dashboard` (y en `/dashboard/grupo`) para
+      quien tiene una invitación `pending` a su nombre, con
+      Aceptar/Rechazar (`accept_group_invitation` /
+      `decline_group_invitation`).
+- **Criterios de aceptación**:
+  - [ ] Solo aparece si `list_pending_invitations_for_me()` devuelve
+        algo.
+  - [ ] Aceptar mueve al usuario de grupo y el banner desaparece.
+- **Verify**: manual con dos usuarios semilla.
+- **Depende de**: Tarea 2.
+- **Archivos**: nuevo componente en `src/components/account/`.
+
+### Tarea 6 — Aviso "Aún no tienes grupo" (S)
+- [ ] En `/dashboard`, si el grupo del usuario tiene un solo miembro:
+      aviso "Aún no tienes grupo. Créalo y comparte con quien
+      quieras." con CTA a `/dashboard/grupo`.
+- **Criterios de aceptación**:
+  - [ ] No aparece si el grupo ya tiene más de un miembro.
+- **Verify**: manual, visual.
+- **Depende de**: nada nuevo (usa `list_group_members()` ya existente).
+- **Archivos**: página/layout del dashboard.
+
+### Checkpoint (Tareas 4-6)
+- [ ] Flujo de invitación completo y usable de punta a punta en local.
+- [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
+
+### Tarea 7 — Diferenciación visual: lista y recetas compartidas (M)
+- [ ] Indicador "Compartido con tu grupo (N)" en la cabecera de
+      `/dashboard/lista-compra` y `/dashboard/recetas` cuando el grupo
+      tiene más de un miembro.
+- **Criterios de aceptación**:
+  - [ ] No aparece cuando el grupo es solo el propio usuario.
+- **Verify**: manual, visual, con grupo de 2+ usuarios semilla.
+- **Depende de**: nada nuevo.
+- **Archivos**: `src/app/(protected)/dashboard/lista-compra/page.tsx`,
+  `src/app/(protected)/dashboard/recetas/page.tsx`.
+
+### Tarea 8 — Alérgenos combinados del grupo (M)
+- [ ] `list_group_allergen_ids()` (RPC) + `recetas/page.tsx` la usa en
+      vez de `profile_allergens` individual cuando se aplican
+      preferencias por defecto; nota visible en el bloque de filtros
+      ("Se aplican tus alergias y las de tu grupo").
+- **Criterios de aceptación**:
+  - [ ] Con dos miembros con alérgenos distintos, el catálogo por
+        defecto excluye recetas con cualquiera de los dos alérgenos.
+  - [ ] Al desactivar preferencias (`preferences=off`) deja de
+        aplicarse, igual que hoy con las individuales.
+- **Verify**: manual con dos usuarios semilla con alérgenos distintos
+  configurados.
+- **Depende de**: nada nuevo.
+- **Archivos**: nueva migración (función), `src/app/recetas/page.tsx`.
+
+### Checkpoint final (Fase 6)
+- [ ] Todos los criterios de aceptación cumplidos.
+- [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
+- [ ] Despliegue coordinado a producción: `family_groups` (deuda
+      pendiente) + toda esta fase, en un único `db push`/`apply_migration`,
+      verificado con las mismas queries de diagnóstico del incidente
+      anterior antes de darlo por bueno.

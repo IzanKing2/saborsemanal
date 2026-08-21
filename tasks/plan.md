@@ -106,3 +106,113 @@ vez de dos flujos distintos según de dónde vengas.
 - Fuera de alcance: no se toca el modelo de datos del pool
   (`menu_recetas` con `dia_semana IS NULL`), no se añade importación
   automática ni nada de Fase 3.
+
+---
+
+## Fase 6 — Grupos Familiares v2: Invitaciones y Diferenciación
+
+### Bloqueador previo (importante)
+
+La migración base de grupos familiares (`20260817110000_family_groups.sql`)
+**nunca llegó a producción** — se detectó y quedó documentado en un incidente
+anterior de esta misma release (ver commit `c02cdde`/incidente del
+21/08/2026). `/dashboard/grupo` está caído en producción ahora mismo porque
+`list_group_members()` y las tablas `grupos`/`grupo_miembros` no existen ahí,
+aunque en local sí (por eso "funciona bien" al probarlo). Este trabajo debe
+incluir desplegar esa base junto con todo lo nuevo de esta fase, en un único
+push coordinado — no tiene sentido lanzar invitaciones sobre una base que no
+existe en producción.
+
+### Estado actual (lo que ya hay)
+
+- Modelo single-tenant: cada usuario pertenece a un único grupo (el suyo
+  propio por defecto).
+- `add_group_member(p_email)`: añade **al instante**, sin invitación ni
+  confirmación — solo funciona si el email ya tiene cuenta y esa cuenta no
+  pertenece ya a un grupo con más gente.
+- `GroupMembersPanel` (`src/components/account/group-members-panel.tsx`):
+  lista de miembros + formulario "Añadir miembro" que llama directo a
+  `add_group_member`.
+- No existe ningún concepto de invitación, caducidad, ni email de
+  confirmación.
+- El filtrado de alérgenos (`recetas/page.tsx`) solo usa
+  `profile_allergens` del usuario individual — no se combina con la del
+  grupo.
+
+### Decisiones de arquitectura
+
+1. **Invitación a alguien SIN cuenta todavía**: email automático vía
+   `supabase.auth.admin.inviteUserByEmail()` (API admin de Supabase Auth),
+   reutilizando la infraestructura de email que ya usa el registro y la
+   recuperación de contraseña — sin servicios externos nuevos. **Decisión
+   confirmada con el usuario.** El email de invitación de Supabase incluye
+   un enlace que crea la cuenta; en el `handle_new_user()` (trigger ya
+   existente) se comprueba si hay una invitación de grupo pendiente
+   asociada a ese email y, si la hay, el usuario se une directamente a ese
+   grupo en vez de crear uno personal nuevo.
+2. **Invitación a alguien que YA tiene cuenta**: no se reenvía ningún email
+   (su email ya está verificado a nivel de cuenta). Se le muestra la
+   invitación pendiente dentro de la app (banner en `/dashboard` + en
+   `/dashboard/grupo`) con botones Aceptar/Rechazar. Aceptar en la propia
+   app cuenta como la "confirmación" que pidió el usuario — no hace falta
+   un segundo email.
+3. **Caducidad de 24h**: comprobación perezosa (`expires_at > now()` en
+   cada lectura), sin `pg_cron` ni jobs programados — mantiene el stack
+   simple. Solo puede haber una invitación `pending` a la vez por
+   (grupo, email); crear una nueva mientras hay una pendiente la
+   reemplaza (revoca la vieja, crea otra), tal como pidió el usuario
+   ("si no la acepta se deberá crear otra").
+4. **Alérgenos del grupo**: nueva función `list_group_allergen_ids()`
+   (SECURITY DEFINER, mismo patrón que `is_group_mate`) que devuelve la
+   unión de alérgenos de todos los miembros del grupo del que llama.
+   `recetas/page.tsx` la usa en vez de `profile_allergens` individual
+   cuando se aplican las preferencias por defecto (`preferences != off`).
+5. **Diferenciación visual**: cuando el grupo tiene más de 1 miembro, se
+   añade un indicador ("Compartido con tu grupo (N)") en la cabecera de la
+   lista de la compra y de "Mis recetas". Cuando el grupo tiene solo 1
+   miembro (el propio usuario), aparece el aviso "Aún no tienes grupo"
+   con CTA a `/dashboard/grupo`.
+
+### Modelo de datos nuevo
+
+```sql
+CREATE TABLE grupo_invitaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  grupo_id UUID NOT NULL REFERENCES grupos(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,              -- lower(btrim(...))
+  invited_by UUID NOT NULL REFERENCES profiles(id),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'accepted', 'declined', 'revoked')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '24 hours',
+  responded_at TIMESTAMPTZ
+);
+-- Índice único parcial: como mucho una invitación pending por grupo+email.
+```
+
+RPCs nuevas (`SECURITY DEFINER`, mismo patrón que las de grupos ya
+existentes):
+- `create_group_invitation(p_email TEXT)` — solo admin; revoca cualquier
+  pending anterior para ese email antes de crear la nueva.
+- `list_group_invitations()` — invitaciones salientes del grupo del admin.
+- `list_pending_invitations_for_me()` — invitaciones entrantes para el
+  email del usuario autenticado.
+- `accept_group_invitation(p_invitation_id UUID)` / `decline_group_invitation(p_invitation_id UUID)`.
+- `list_group_allergen_ids()`.
+
+### Riesgos
+
+| Riesgo | Impacto | Mitigación |
+|---|---|---|
+| Producción no tiene la base de grupos desplegada | Alto | Desplegar `family_groups` + esta migración juntas, verificado con las mismas queries de diagnóstico usadas en el incidente anterior |
+| Entrega de emails de invitación depende de la config SMTP de Supabase en producción | Medio | Verificar la plantilla de email "Invite user" en el dashboard de Supabase antes de probar en producción; en local se prueba con Inbucket |
+| Tope de 8 miembros por grupo ya existente en `add_group_member` | Bajo | Se mantiene igual; se aplica también al crear invitaciones (miembros actuales, no cuenta invitaciones pendientes) |
+| Confusión entre "email de invitación de Supabase" (cuenta nueva) y "aceptar en la app" (cuenta existente) | Medio | Mensajes distintos en la UI para cada caso, cubierto en Tarea 4 |
+
+### Fuera de alcance de esta fase
+
+- No se construye ningún sistema de roles más allá de admin/miembro ya
+  existente.
+- No se permite pertenecer a más de un grupo.
+- No se añade reenvío manual de email (revocar + crear de nuevo cubre el
+  caso "no le llegó").
