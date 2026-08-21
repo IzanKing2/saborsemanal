@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GroupMembersPanel } from "@/components/account/group-members-panel";
+import { GroupNameEditor } from "@/components/account/group-name-editor";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function GroupPage() {
@@ -47,9 +48,7 @@ export default async function GroupPage() {
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
             Grupo familiar
           </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            {grupo?.nombre ?? "Mi grupo"}
-          </h1>
+          <GroupNameEditor isAdmin={isAdmin} nombre={grupo?.nombre ?? "Mi grupo"} />
           <p className="mt-3 max-w-2xl text-emerald-100">
             Todos los miembros comparten el mismo menú semanal y la misma
             lista de la compra.

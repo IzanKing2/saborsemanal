@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
-import {
-  inviteGroupMemberAction,
-  renameGroupAction,
-  type GroupActionState,
-} from "@/lib/actions/grupo";
+import { renameGroupAction, type GroupActionState } from "@/lib/actions/grupo";
+import { InviteMemberForm } from "@/components/account/invite-member-form";
 
 const initialState: GroupActionState = { ok: false, message: "" };
 
@@ -33,7 +30,6 @@ export function GroupSetupCard({
   isAlone: boolean;
 }) {
   const [renameState, renameAction] = useActionState(renameGroupAction, initialState);
-  const [inviteState, inviteAction] = useActionState(inviteGroupMemberAction, initialState);
 
   if (!isAlone) {
     return (
@@ -88,26 +84,10 @@ export function GroupSetupCard({
       )}
 
       <div className="mt-5 border-t border-stone-100 pt-5">
-        <label className="text-sm font-bold text-stone-800" htmlFor="group-setup-invite">
-          Invitar a alguien
-        </label>
-        <form action={inviteAction} className="mt-2 flex flex-wrap gap-3" id="group-setup-invite">
-          <input
-            className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
-            name="email"
-            placeholder="email@ejemplo.com"
-            required
-            type="email"
-          />
-          <SubmitButton label="Invitar" pendingLabel="Invitando..." />
-        </form>
-        {inviteState.message && (
-          <p
-            className={`mt-2 text-xs ${inviteState.ok ? "text-emerald-700" : "text-red-600"}`}
-          >
-            {inviteState.message}
-          </p>
-        )}
+        <p className="text-sm font-bold text-stone-800">Invitar a alguien</p>
+        <div className="mt-2">
+          <InviteMemberForm idPrefix="group-setup" />
+        </div>
       </div>
 
       <Link

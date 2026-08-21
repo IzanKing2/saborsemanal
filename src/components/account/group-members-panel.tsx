@@ -1,17 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState } from "react";
 
 import {
   deleteGroupAction,
-  inviteGroupMemberAction,
   removeGroupMemberAction,
   revokeGroupInvitationAction,
   type GroupActionState,
 } from "@/lib/actions/grupo";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InviteMemberForm } from "@/components/account/invite-member-form";
 
 type Member = {
   usuario_id: string;
@@ -29,19 +28,6 @@ type Invitation = {
 };
 
 const initialState: GroupActionState = { ok: false, message: "" };
-
-function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-      disabled={pending}
-      type="submit"
-    >
-      {pending ? pendingLabel : label}
-    </button>
-  );
-}
 
 function hoursLeft(expiresAt: string) {
   const ms = new Date(expiresAt).getTime() - Date.now();
@@ -74,10 +60,6 @@ export function GroupMembersPanel({
   invitations: Invitation[];
 }) {
   const router = useRouter();
-  const [inviteState, inviteAction] = useActionState(
-    inviteGroupMemberAction,
-    initialState,
-  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -182,26 +164,13 @@ export function GroupMembersPanel({
           <h2 className="text-lg font-bold text-stone-950">Invitar a alguien</h2>
           <p className="mt-1 text-sm text-stone-600">
             Si ya tiene cuenta en SaborSemanal, verá la invitación pendiente
-            al entrar. Si no, le llega un email para crear su cuenta y
-            unirse directamente al grupo. La invitación caduca en 24 horas.
+            al entrar. Si no, puedes enviarle un email o compartir un enlace
+            por WhatsApp para que cree su cuenta. La invitación caduca en 24
+            horas.
           </p>
-          <form action={inviteAction} className="mt-4 flex flex-wrap gap-3">
-            <input
-              className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
-              name="email"
-              placeholder="email@ejemplo.com"
-              required
-              type="email"
-            />
-            <SubmitButton label="Invitar" pendingLabel="Invitando..." />
-          </form>
-          {inviteState.message && (
-            <p
-              className={`mt-2 text-xs ${inviteState.ok ? "text-emerald-700" : "text-red-600"}`}
-            >
-              {inviteState.message}
-            </p>
-          )}
+          <div className="mt-4">
+            <InviteMemberForm idPrefix="grupo-panel" />
+          </div>
         </section>
       )}
 

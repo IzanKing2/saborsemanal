@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SaborSemanal</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#f6f3ea; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f3ea; padding: 32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" style="max-width: 480px;" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background-color:#022c22; border-radius: 16px 16px 0 0; padding: 28px 32px; text-align:center;">
+                <span style="font-size: 20px; font-weight: 900; color:#ffffff;">Sabor<span style="color:#fcd34d;">Semanal</span></span>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color:#ffffff; border-radius: 0 0 16px 16px; padding: 36px 32px; border: 1px solid #e7e5e4; border-top: none;">
+                <p style="margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#b45309;">Te han invitado</p>
+                <h1 style="margin:0 0 16px; font-size:24px; line-height:1.25; font-weight:900; color:#1c1917;">Únete a un grupo en SaborSemanal</h1>
+                <p style="margin:0 0 28px; font-size:15px; line-height:1.6; color:#57534e;">Alguien te ha invitado a compartir su menú semanal, lista de la compra y recetas. Crea tu cuenta para unirte directamente a su grupo.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="border-radius: 10px; background-color:#fcd34d;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding: 13px 28px; font-size:14px; font-weight:800; color:#022c22; text-decoration:none;">Aceptar invitación</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:28px 0 0; font-size:12px; line-height:1.6; color:#a8a29e;">Si no esperabas esta invitación, puedes ignorar este email. Si el botón no funciona, copia y pega este enlace en tu navegador:<br /><a href="{{ .ConfirmationURL }}" style="color:#047857; word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 20px 8px; text-align:center;">
+                <p style="margin:0; font-size:12px; color:#a8a29e;">SaborSemanal · Planifica, compra y cocina sin improvisar</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

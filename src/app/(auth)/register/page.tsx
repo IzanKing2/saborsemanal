@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { PasswordInput } from "@/components/auth/password-input";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
@@ -52,8 +53,8 @@ export default function RegisterPage() {
       <form className="space-y-4" noValidate onSubmit={submit}>
         <div><label className="text-sm font-bold" htmlFor="display-name">Nombre visible</label><input className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="display-name" maxLength={60} onChange={(event) => setDisplayName(event.target.value)} required value={displayName} /></div>
         <div><label className="text-sm font-bold" htmlFor="email">Email</label><input autoComplete="email" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></div>
-        <div><label className="text-sm font-bold" htmlFor="password">Contraseña</label><input autoComplete="new-password" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /></div>
-        <div><label className="text-sm font-bold" htmlFor="confirmation">Repite la contraseña</label><input autoComplete="new-password" className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="confirmation" onChange={(event) => setConfirmation(event.target.value)} required type="password" value={confirmation} /></div>
+        <div><label className="text-sm font-bold" htmlFor="password">Contraseña</label><div className="mt-2"><PasswordInput autoComplete="new-password" id="password" onChange={setPassword} required value={password} /></div></div>
+        <div><label className="text-sm font-bold" htmlFor="confirmation">Repite la contraseña</label><div className="mt-2"><PasswordInput autoComplete="new-password" id="confirmation" onChange={setConfirmation} required value={confirmation} /></div></div>
         <button className="w-full rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50" disabled={pending || coolingDown} type="submit">{pending ? "Creando cuenta..." : coolingDown ? "Espera unos minutos..." : "Crear mi cuenta"}</button>
       </form>
       <p className="mt-6 text-center text-sm text-stone-600">¿Ya tienes cuenta? <Link className="font-bold text-emerald-700 hover:underline" href="/login">Inicia sesión</Link></p>

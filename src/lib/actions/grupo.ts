@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export type GroupActionState = {
   ok: boolean;
   message: string;
+  whatsappUrl?: string;
 };
 
 const initialErrorMessages: Record<string, string> = {
@@ -68,7 +69,11 @@ export async function renameGroupAction(
 
   revalidatePath("/dashboard/cuenta");
   revalidatePath("/dashboard/grupo");
-  return { ok: true, message: "Grupo creado." };
+  return { ok: true, message: "Nombre del grupo actualizado." };
+}
+
+function whatsappShareUrl(text: string) {
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
 export async function inviteGroupMemberAction(
@@ -76,6 +81,7 @@ export async function inviteGroupMemberAction(
   formData: FormData,
 ): Promise<GroupActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const method = String(formData.get("method") ?? "email");
   if (!email) {
     return { ok: false, message: "Introduce un email válido." };
   }
@@ -90,9 +96,6 @@ export async function inviteGroupMemberAction(
     return { ok: false, message: mapError(error?.code) };
   }
 
-  // Already has an account: no email needed -- their own email is already
-  // verified, so they just see the pending invitation next time they're in
-  // the app (Tarea 5) and accept it there.
   const admin = createAdminClient();
   const { data: existingProfile } = await admin
     .from("profiles")
@@ -102,11 +105,48 @@ export async function inviteGroupMemberAction(
 
   revalidatePath("/dashboard/grupo");
 
+  // Already has an account: no auth link needed -- their own email is
+  // already verified, so they just see the pending invitation next time
+  // they're in the app (accept/decline banner). WhatsApp in that case is
+  // just a nudge pointing them at the app, not an auth link.
   if (existingProfile) {
+    if (method === "whatsapp") {
+      const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Entra en la app para aceptar la invitación: ${await siteOrigin()}/dashboard/grupo`;
+      return {
+        ok: true,
+        message: "Esa persona ya tiene cuenta: comparte el enlace por WhatsApp.",
+        whatsappUrl: whatsappShareUrl(text),
+      };
+    }
     return {
       ok: true,
       message:
         "Esa persona ya tiene cuenta: verá la invitación pendiente la próxima vez que entre en SaborSemanal.",
+    };
+  }
+
+  if (method === "whatsapp") {
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        data: { pending_grupo_invitation_id: invitation.id },
+        redirectTo: `${await siteOrigin()}/invitacion`,
+      },
+    });
+
+    if (linkError || !linkData.properties?.action_link) {
+      return {
+        ok: false,
+        message: "No se pudo generar el enlace de invitación. Inténtalo de nuevo.",
+      };
+    }
+
+    const text = `¡Te he invitado a mi grupo en SaborSemanal! 🍳 Crea tu cuenta y únete aquí: ${linkData.properties.action_link}`;
+    return {
+      ok: true,
+      message: "Enlace de invitación listo: compártelo por WhatsApp. Caduca en 24 horas.",
+      whatsappUrl: whatsappShareUrl(text),
     };
   }
 

@@ -8,6 +8,7 @@ import {
   deleteAccountAction,
   updateProfileAction,
 } from "@/lib/actions/cuenta";
+import { PasswordInput } from "@/components/auth/password-input";
 import { createClient } from "@/lib/supabase/client";
 
 type Allergen = { id: string; nombre: string };
@@ -50,6 +51,7 @@ export function AccountSettings({
   const [newEmail, setNewEmail] = useState(email);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
   const [securityMessage, setSecurityMessage] = useState<{
     ok: boolean;
     text: string;
@@ -134,6 +136,14 @@ export function AccountSettings({
       setSavingSecurity(false);
       return;
     }
+    if (newPassword && newPassword !== newPasswordConfirmation) {
+      setSecurityMessage({
+        ok: false,
+        text: "Las contraseñas no coinciden.",
+      });
+      setSavingSecurity(false);
+      return;
+    }
     const supabase = createClient();
     let passwordUpdated = false;
     try {
@@ -170,6 +180,7 @@ export function AccountSettings({
       }
       setCurrentPassword("");
       setNewPassword("");
+      setNewPasswordConfirmation("");
       setSecurityMessage({
         ok: true,
         text:
@@ -266,8 +277,11 @@ export function AccountSettings({
           <div><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">Acceso</p><h2 className="mt-2 text-2xl font-black text-stone-950">Seguridad</h2></div>
           {securityMessage && <p className={messageClass(securityMessage.ok)} role={securityMessage.ok ? "status" : "alert"}>{securityMessage.text}</p>}
           <div><label className="text-sm font-bold" htmlFor="account-email">Email</label><input className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="account-email" onChange={(event) => setNewEmail(event.target.value)} required type="email" value={newEmail} /></div>
-          <div><label className="text-sm font-bold" htmlFor="current-password">Contraseña actual</label><input className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></div>
-          <div><label className="text-sm font-bold" htmlFor="new-password">Nueva contraseña <span className="font-normal text-stone-500">(opcional)</span></label><input className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" id="new-password" onChange={(event) => setNewPassword(event.target.value)} type="password" value={newPassword} /></div>
+          <div><label className="text-sm font-bold" htmlFor="current-password">Contraseña actual</label><div className="mt-2"><PasswordInput autoComplete="current-password" id="current-password" onChange={setCurrentPassword} required value={currentPassword} /></div></div>
+          <div><label className="text-sm font-bold" htmlFor="new-password">Nueva contraseña <span className="font-normal text-stone-500">(opcional)</span></label><div className="mt-2"><PasswordInput autoComplete="new-password" id="new-password" onChange={setNewPassword} value={newPassword} /></div></div>
+          {newPassword && (
+            <div><label className="text-sm font-bold" htmlFor="new-password-confirmation">Repite la nueva contraseña</label><div className="mt-2"><PasswordInput autoComplete="new-password" id="new-password-confirmation" onChange={setNewPasswordConfirmation} required value={newPasswordConfirmation} /></div></div>
+          )}
           <button className="rounded-xl border border-emerald-700 px-5 py-3 font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-60" disabled={savingSecurity} type="submit">{savingSecurity ? "Actualizando..." : "Actualizar acceso"}</button>
         </form>
 
