@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AccountSettings } from "@/components/account/account-settings";
+import { GroupSetupCard } from "@/components/account/group-setup-card";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,20 +16,27 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [profileResult, allergensResult, preferencesResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("email, display_name, avatar_path")
-      .eq("id", user.id)
-      .single(),
-    supabase.from("alergenos").select("id, nombre").order("nombre"),
-    supabase
-      .from("profile_allergens")
-      .select("allergen_id")
-      .eq("user_id", user.id),
-  ]);
+  const [profileResult, allergensResult, preferencesResult, groupResult, membersResult] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("email, display_name, avatar_path")
+        .eq("id", user.id)
+        .single(),
+      supabase.from("alergenos").select("id, nombre").order("nombre"),
+      supabase
+        .from("profile_allergens")
+        .select("allergen_id")
+        .eq("user_id", user.id),
+      supabase.from("grupos").select("nombre").maybeSingle(),
+      supabase.rpc("list_group_members"),
+    ]);
   const error =
-    profileResult.error ?? allergensResult.error ?? preferencesResult.error;
+    profileResult.error ??
+    allergensResult.error ??
+    preferencesResult.error ??
+    groupResult.error ??
+    membersResult.error;
   if (error) throw new Error(`No se pudo cargar la cuenta: ${error.message}`);
 
   const profile = profileResult.data;
@@ -48,7 +56,14 @@ export default async function AccountPage() {
           Gestiona cómo te ven en tus recetas, adapta el catálogo y protege tu
           acceso.
         </p>
-        <div className="mt-9">
+        <div className="mt-9 max-w-xl">
+          <GroupSetupCard
+            groupName={groupResult.data?.nombre ?? "Mi grupo"}
+            isAlone={(membersResult.data ?? []).length <= 1}
+          />
+        </div>
+
+        <div className="mt-6">
           <AccountSettings
             allergens={allergensResult.data ?? []}
             avatarPath={profile.avatar_path}

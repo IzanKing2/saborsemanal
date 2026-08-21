@@ -30,6 +30,47 @@ async function siteOrigin() {
   return `${protocol}://${host}`;
 }
 
+export async function renameGroupAction(
+  _previousState: GroupActionState,
+  formData: FormData,
+): Promise<GroupActionState> {
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  if (nombre.length < 2 || nombre.length > 60) {
+    return { ok: false, message: "El nombre debe tener entre 2 y 60 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Tu sesión ha caducado." };
+
+  // Relies on the existing grupos_update_admin RLS policy (admin +
+  // id = my_grupo_id()) -- no dedicated RPC needed for a plain rename.
+  const { data: membership } = await supabase
+    .from("grupo_miembros")
+    .select("grupo_id")
+    .eq("usuario_id", user.id)
+    .eq("rol", "admin")
+    .maybeSingle();
+  if (!membership) {
+    return { ok: false, message: "Solo el administrador del grupo puede renombrarlo." };
+  }
+
+  const { error } = await supabase
+    .from("grupos")
+    .update({ nombre })
+    .eq("id", membership.grupo_id);
+
+  if (error) {
+    return { ok: false, message: "No se pudo guardar el nombre del grupo." };
+  }
+
+  revalidatePath("/dashboard/cuenta");
+  revalidatePath("/dashboard/grupo");
+  return { ok: true, message: "Grupo creado." };
+}
+
 export async function inviteGroupMemberAction(
   _previousState: GroupActionState,
   formData: FormData,

@@ -28,7 +28,7 @@ export default async function DashboardPage() {
         {soloEnGrupo && (invitaciones ?? []).length === 0 && (
           <Link
             className="mt-8 flex flex-col gap-1 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 transition hover:bg-emerald-100 sm:flex-row sm:items-center sm:justify-between"
-            href="/dashboard/grupo"
+            href="/dashboard/cuenta"
           >
             <span>
               <span className="font-semibold text-emerald-900">

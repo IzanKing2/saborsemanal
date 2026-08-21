@@ -558,6 +558,37 @@ original.)
   `src/components/account/group-members-panel.tsx`,
   `src/types/database.types.ts`.
 
+### Tarea extra 2 — Crear el grupo desde el perfil + confirmar al quitar miembro (M) — ✅ hecha
+(Pedida por el usuario tras probar la Tarea 4: "el grupo no está
+creado, se debe crear en la vista de perfil, darle un nombre e invitar
+usuarios" + "confirmación al quitar a alguien".)
+- [x] `GroupSetupCard` en `/dashboard/cuenta`: mientras el usuario está
+      solo en su grupo (`list_group_members().length <= 1`), muestra un
+      formulario para ponerle nombre al grupo (`renameGroupAction`) y
+      un campo para invitar (reutiliza `inviteGroupMemberAction`). En
+      cuanto hay más de un miembro, pasa a mostrar solo el nombre del
+      grupo + enlace a `/dashboard/grupo`.
+  - `renameGroupAction` no necesitó una RPC nueva: la política RLS
+    `grupos_update_admin` (de `family_groups.sql`) ya permite el
+    `UPDATE` directo al admin sobre su propio grupo — verificado por
+    SQL que un admin puede renombrar el suyo y NO el de otro grupo.
+  - El aviso "Aún no tienes grupo" de la Tarea 6 ahora enlaza a
+    `/dashboard/cuenta` (donde se crea) en vez de a `/dashboard/grupo`.
+- [x] Quitar a un miembro del grupo ahora pide confirmación
+      (`ConfirmDialog`, tono `danger`) antes de ejecutar
+      `removeGroupMemberAction`, igual que ya existía para eliminar el
+      grupo entero.
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios. Rename verificado por SQL (admin renombra el suyo; otro
+  usuario no puede tocar un grupo ajeno). Confirmación de "Quitar"
+  probada visualmente en el flujo (mismo componente `ConfirmDialog` ya
+  usado y probado para "Eliminar grupo").
+- **Archivos**: `src/components/account/group-setup-card.tsx` (nuevo),
+  `src/lib/actions/grupo.ts` (`renameGroupAction`),
+  `src/app/(protected)/dashboard/cuenta/page.tsx`,
+  `src/app/(protected)/dashboard/page.tsx`,
+  `src/components/account/group-members-panel.tsx`.
+
 ### Checkpoint final (Fase 6)
 - [ ] Todos los criterios de aceptación cumplidos.
 - [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.

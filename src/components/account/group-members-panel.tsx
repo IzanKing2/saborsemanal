@@ -43,24 +43,6 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
   );
 }
 
-function RemoveMemberButton({ usuarioId }: { usuarioId: string }) {
-  const [state, formAction] = useActionState(removeGroupMemberAction, initialState);
-  return (
-    <form action={formAction}>
-      <input name="usuario_id" type="hidden" value={usuarioId} />
-      <button
-        className="text-xs font-bold text-red-700 hover:underline"
-        type="submit"
-      >
-        Quitar
-      </button>
-      {state.message && !state.ok && (
-        <p className="mt-1 text-xs text-red-600">{state.message}</p>
-      )}
-    </form>
-  );
-}
-
 function hoursLeft(expiresAt: string) {
   const ms = new Date(expiresAt).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (60 * 60 * 1000)));
@@ -99,6 +81,9 @@ export function GroupMembersPanel({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   async function confirmDeleteGroup() {
     setDeleting(true);
@@ -110,6 +95,22 @@ export function GroupMembersPanel({
       return;
     }
     setDeleteOpen(false);
+    router.refresh();
+  }
+
+  async function confirmRemoveMember() {
+    if (!removeTarget) return;
+    setRemoving(true);
+    setRemoveError(null);
+    const formData = new FormData();
+    formData.set("usuario_id", removeTarget.usuario_id);
+    const result = await removeGroupMemberAction(initialState, formData);
+    setRemoving(false);
+    if (!result.ok) {
+      setRemoveError(result.message);
+      return;
+    }
+    setRemoveTarget(null);
     router.refresh();
   }
 
@@ -138,7 +139,16 @@ export function GroupMembersPanel({
                 </p>
               </div>
               {isAdmin && !member.es_yo && (
-                <RemoveMemberButton usuarioId={member.usuario_id} />
+                <button
+                  className="text-xs font-bold text-red-700 hover:underline"
+                  onClick={() => {
+                    setRemoveError(null);
+                    setRemoveTarget(member);
+                  }}
+                  type="button"
+                >
+                  Quitar
+                </button>
               )}
             </li>
           ))}
@@ -228,6 +238,19 @@ export function GroupMembersPanel({
         onConfirm={() => void confirmDeleteGroup()}
         open={deleteOpen}
         title="¿Eliminar el grupo?"
+        tone="danger"
+      />
+
+      <ConfirmDialog
+        busy={removing}
+        confirmLabel="Sí, quitar"
+        description={`${removeTarget?.display_name ?? removeTarget?.email ?? "Esta persona"} dejará de compartir menú, lista de la compra y recetas contigo, y pasará a tener su propio grupo independiente.${
+          removeError ? ` ${removeError}` : ""
+        }`}
+        onCancel={() => setRemoveTarget(null)}
+        onConfirm={() => void confirmRemoveMember()}
+        open={removeTarget !== null}
+        title="¿Quitar a esta persona del grupo?"
         tone="danger"
       />
     </div>
