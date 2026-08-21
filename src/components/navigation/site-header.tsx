@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
 import { RecipeSearch } from "@/components/navigation/recipe-search";
+import { UserMenu } from "@/components/navigation/user-menu";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
@@ -37,9 +37,6 @@ export async function SiteHeader() {
           <RecipeSearch />
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto text-sm font-bold [scrollbar-width:none] sm:flex-none sm:gap-4 [&::-webkit-scrollbar]:hidden">
-          <div className="shrink-0">
-            <ShoppingCart loggedIn={Boolean(user)} />
-          </div>
           <Link
             aria-label="Ver recetas públicas"
             className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
@@ -85,61 +82,21 @@ export async function SiteHeader() {
             </svg>
             <span className="hidden sm:inline">Planificador</span>
           </Link>
-          {user && (
-            <Link
-              aria-label="Ver mis recetas favoritas"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
-              href="/dashboard/favoritas"
-            >
-              <svg
-                aria-hidden="true"
-                className="size-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M12 20.2s-7.5-4.6-9.7-9.1C.7 7.9 2.2 4.6 5.4 3.8c2-.5 3.9.3 5 1.9l1.6 2.2 1.6-2.2c1.1-1.6 3-2.4 5-1.9 3.2.8 4.7 4.1 3.1 7.3-2.2 4.5-9.7 9.1-9.7 9.1Z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="hidden sm:inline">Favoritas</span>
-            </Link>
-          )}
+          {/* Cart sits directly next to the account menu -- last icon
+              before the avatar (or before the auth links for guests). */}
+          <div className="shrink-0">
+            <ShoppingCart loggedIn={Boolean(user)} />
+          </div>
           {user ? (
-            <>
-              <Link
-                className="flex shrink-0 items-center gap-2 rounded-full"
-                href="/dashboard"
-              >
-                <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-full bg-amber-300 font-black text-emerald-950">
-                  {avatarUrl ? (
-                    <Image
-                      alt=""
-                      className="object-cover"
-                      fill
-                      sizes="36px"
-                      src={avatarUrl}
-                    />
-                  ) : (
-                    (profile?.display_name ?? user.email ?? "U")
-                      .slice(0, 1)
-                      .toUpperCase()
-                  )}
-                </span>
-                <span className="hidden sm:block">Mi panel</span>
-              </Link>
-              <form action={logoutAction} className="shrink-0">
-                <button
-                  className="rounded-lg border border-emerald-700 px-3 py-2 text-xs"
-                  type="submit"
-                >
-                  Salir
-                </button>
-              </form>
-            </>
+            <UserMenu
+              avatarUrl={avatarUrl}
+              displayName={profile?.display_name ?? user.email ?? "U"}
+              links={[
+                { label: "Favoritas", href: "/dashboard/favoritas" },
+                { label: "Mi panel", href: "/dashboard" },
+              ]}
+              logout={logoutAction}
+            />
           ) : (
             <>
               <Link className="shrink-0 text-emerald-100" href="/login">
