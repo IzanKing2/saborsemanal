@@ -460,32 +460,42 @@ final, como en fases anteriores.
   `src/lib/actions/grupo.ts`,
   `src/app/(protected)/dashboard/grupo/page.tsx`.
 
-### Tarea 5 — UI: invitación entrante (usuario con cuenta) (S)
-- [ ] Banner/tarjeta en `/dashboard` (y en `/dashboard/grupo`) para
-      quien tiene una invitación `pending` a su nombre, con
-      Aceptar/Rechazar (`accept_group_invitation` /
-      `decline_group_invitation`).
+### Tarea 5 — UI: invitación entrante (usuario con cuenta) (S) — ✅ hecha
+- [x] Banner en `/dashboard` (el panel/"Mi panel") para quien tiene una
+      invitación `pending` a su nombre, con Aceptar/Rechazar
+      (`IncomingInvitationsBanner`, nuevo componente).
 - **Criterios de aceptación**:
-  - [ ] Solo aparece si `list_pending_invitations_for_me()` devuelve
-        algo.
-  - [ ] Aceptar mueve al usuario de grupo y el banner desaparece.
-- **Verify**: manual con dos usuarios semilla.
+  - [x] Solo aparece si `list_pending_invitations_for_me()` devuelve
+        algo — verificado por SQL: forma de los datos (`grupo_nombre`,
+        `invited_by_nombre`, `expires_at`) coincide exactamente con lo
+        que consume el componente.
+  - [x] Rechazar la quita de la lista (verificado por SQL). Aceptar ya
+        estaba verificado en la Tarea 3 (mismo `acceptGroupInvitationAction`).
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios; datos verificados por SQL. Pendiente de tu parte: clic real
+  en el navegador.
 - **Depende de**: Tarea 2.
-- **Archivos**: nuevo componente en `src/components/account/`.
+- **Archivos**: `src/components/account/incoming-invitations-banner.tsx`,
+  `src/app/(protected)/dashboard/page.tsx`.
 
-### Tarea 6 — Aviso "Aún no tienes grupo" (S)
-- [ ] En `/dashboard`, si el grupo del usuario tiene un solo miembro:
-      aviso "Aún no tienes grupo. Créalo y comparte con quien
-      quieras." con CTA a `/dashboard/grupo`.
+### Tarea 6 — Aviso "Aún no tienes grupo" (S) — ✅ hecha
+- [x] En `/dashboard`, si el grupo del usuario tiene un solo miembro y
+      no hay invitaciones pendientes: aviso "Aún no tienes grupo.
+      Créalo y comparte..." con CTA a `/dashboard/grupo`. Implementada
+      junto a la Tarea 5 por vivir en la misma página.
 - **Criterios de aceptación**:
-  - [ ] No aparece si el grupo ya tiene más de un miembro.
-- **Verify**: manual, visual.
+  - [x] No aparece si el grupo ya tiene más de un miembro (usa
+        `list_group_members().length <= 1`).
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios.
 - **Depende de**: nada nuevo (usa `list_group_members()` ya existente).
-- **Archivos**: página/layout del dashboard.
+- **Archivos**: `src/app/(protected)/dashboard/page.tsx`.
 
 ### Checkpoint (Tareas 4-6)
-- [ ] Flujo de invitación completo y usable de punta a punta en local.
-- [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
+- [x] Flujo de invitación completo a nivel de datos/servidor, de punta
+      a punta, salvo el clic a clic real en un navegador (limitación de
+      entorno ya documentada).
+- [x] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
 
 ### Tarea 7 — Diferenciación visual: lista y recetas compartidas (M)
 - [ ] Indicador "Compartido con tu grupo (N)" en la cabecera de

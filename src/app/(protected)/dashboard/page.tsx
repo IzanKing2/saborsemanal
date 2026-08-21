@@ -1,6 +1,16 @@
 import Link from "next/link";
 
-export default function DashboardPage() {
+import { IncomingInvitationsBanner } from "@/components/account/incoming-invitations-banner";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const [{ data: invitaciones }, { data: miembros }] = await Promise.all([
+    supabase.rpc("list_pending_invitations_for_me"),
+    supabase.rpc("list_group_members"),
+  ]);
+  const soloEnGrupo = (miembros ?? []).length <= 1;
+
   return (
     <main className="min-h-screen bg-[#f6f3ea] px-4 py-12 text-stone-900 sm:px-6">
       <div className="mx-auto max-w-5xl">
@@ -12,6 +22,28 @@ export default function DashboardPage() {
           Organiza tus recetas y prepara el contenido que más adelante formará
           parte de tu menú semanal.
         </p>
+
+        <IncomingInvitationsBanner invitations={invitaciones ?? []} />
+
+        {soloEnGrupo && (invitaciones ?? []).length === 0 && (
+          <Link
+            className="mt-8 flex flex-col gap-1 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 transition hover:bg-emerald-100 sm:flex-row sm:items-center sm:justify-between"
+            href="/dashboard/grupo"
+          >
+            <span>
+              <span className="font-semibold text-emerald-900">
+                Aún no tienes grupo.
+              </span>{" "}
+              <span className="text-emerald-800">
+                Créalo y comparte menú, lista de la compra y recetas con
+                quien quieras.
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-bold text-emerald-700">
+              Crear mi grupo →
+            </span>
+          </Link>
+        )}
 
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <Link
