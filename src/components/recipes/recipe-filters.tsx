@@ -50,7 +50,7 @@ function FiltersForm({
       <input name="preferences" type="hidden" value="off" />
       {usingPreferences && (
         <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-800">
-          Aplicamos tus alérgenos guardados.
+          Aplicamos tus alérgenos guardados y los de tu grupo.
           <Link className="ml-1 font-bold underline" href={viewAllHref}>
             Ver todo
           </Link>

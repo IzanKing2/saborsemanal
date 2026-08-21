@@ -703,6 +703,7 @@ export type Database = {
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_group_mate: { Args: { p_creador_id: string }; Returns: boolean }
+      list_group_allergen_ids: { Args: never; Returns: string[] }
       list_group_invitations: {
         Args: never
         Returns: {

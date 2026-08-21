@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { SharedWithGroupBadge } from "@/components/account/shared-with-group-badge";
 import { OfflineBanner } from "@/components/shopping/offline-banner";
 import {
   CloudShoppingList,
@@ -38,6 +39,8 @@ export default async function ShoppingListPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const { data: miembros } = await supabase.rpc("list_group_members");
 
   const { data: menu, error: menuError } = await supabase
     .from("menus_semanales")
@@ -127,6 +130,9 @@ export default async function ShoppingListPage({
           <h1 className="mt-2 text-4xl font-black tracking-tight">
             Lista de la compra
           </h1>
+          <div>
+            <SharedWithGroupBadge memberCount={(miembros ?? []).length} />
+          </div>
           <p className="mt-3 max-w-2xl text-emerald-100">
             Cantidades consolidadas por ingrediente y unidad, sincronizadas con
             tu cuenta.

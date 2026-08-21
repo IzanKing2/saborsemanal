@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { DeleteRecipeForm } from "@/components/recipes/delete-recipe-form";
+import { SharedWithGroupBadge } from "@/components/account/shared-with-group-badge";
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,6 +20,8 @@ export default async function RecipesDashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const { data: miembros } = await supabase.rpc("list_group_members");
 
   const { data, error } = await supabase
     .from("recetas")
@@ -57,6 +60,9 @@ export default async function RecipesDashboardPage() {
             <h1 className="mt-2 text-4xl font-black tracking-tight">
               Mis recetas
             </h1>
+            <div>
+              <SharedWithGroupBadge memberCount={(miembros ?? []).length} />
+            </div>
           </div>
           <Link
             className="rounded-xl bg-amber-300 px-5 py-3 text-center text-sm font-bold text-emerald-950 transition hover:bg-amber-200"

@@ -196,12 +196,12 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Union of allergens across the whole group, not just the caller's own
+  // -- protects everyone the menu is shared with, not only whoever is
+  // browsing right now.
   const { data: preferenceRows, error: preferencesError } =
     user && !hasExplicitAllergens && !preferencesOff
-      ? await supabase
-          .from("profile_allergens")
-          .select("allergen_id")
-          .eq("user_id", user.id)
+      ? await supabase.rpc("list_group_allergen_ids")
       : { data: [], error: null };
   if (preferencesError) {
     throw new Error(
@@ -210,9 +210,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   }
 
   const validAllergenIds = new Set((allergens ?? []).map((item) => item.id));
-  const preferredAllergenIds = (preferenceRows ?? []).map(
-    (item) => item.allergen_id,
-  );
+  const preferredAllergenIds = preferenceRows ?? [];
   const activeAllergenIds = hasExplicitAllergens
     ? explicitAllergenIds
     : preferencesOff

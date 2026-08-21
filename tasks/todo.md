@@ -497,31 +497,47 @@ final, como en fases anteriores.
       entorno ya documentada).
 - [x] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
 
-### Tarea 7 — Diferenciación visual: lista y recetas compartidas (M)
-- [ ] Indicador "Compartido con tu grupo (N)" en la cabecera de
-      `/dashboard/lista-compra` y `/dashboard/recetas` cuando el grupo
-      tiene más de un miembro.
+### Tarea 7 — Diferenciación visual: lista y recetas compartidas (M) — ✅ hecha
+- [x] `SharedWithGroupBadge` (nuevo componente presentacional): "Compartido
+      con tu grupo (N)" en la cabecera de `/dashboard/lista-compra` y
+      `/dashboard/recetas` cuando el grupo tiene más de un miembro (usa
+      `list_group_members()`, ya existente).
 - **Criterios de aceptación**:
-  - [ ] No aparece cuando el grupo es solo el propio usuario.
-- **Verify**: manual, visual, con grupo de 2+ usuarios semilla.
+  - [x] No aparece cuando el grupo es solo el propio usuario (el
+        componente devuelve `null` si `memberCount <= 1`).
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios.
 - **Depende de**: nada nuevo.
-- **Archivos**: `src/app/(protected)/dashboard/lista-compra/page.tsx`,
+- **Archivos**: `src/components/account/shared-with-group-badge.tsx`
+  (nuevo), `src/app/(protected)/dashboard/lista-compra/page.tsx`,
   `src/app/(protected)/dashboard/recetas/page.tsx`.
 
-### Tarea 8 — Alérgenos combinados del grupo (M)
-- [ ] `list_group_allergen_ids()` (RPC) + `recetas/page.tsx` la usa en
-      vez de `profile_allergens` individual cuando se aplican
-      preferencias por defecto; nota visible en el bloque de filtros
-      ("Se aplican tus alergias y las de tu grupo").
+### Tarea 8 — Alérgenos combinados del grupo (M) — ✅ hecha
+- [x] `list_group_allergen_ids()` (RPC nueva) + `recetas/page.tsx` la usa
+      en vez de `profile_allergens` individual cuando se aplican
+      preferencias por defecto; nota actualizada en el bloque de filtros
+      ("Aplicamos tus alérgenos guardados y los de tu grupo").
 - **Criterios de aceptación**:
-  - [ ] Con dos miembros con alérgenos distintos, el catálogo por
-        defecto excluye recetas con cualquiera de los dos alérgenos.
-  - [ ] Al desactivar preferencias (`preferences=off`) deja de
-        aplicarse, igual que hoy con las individuales.
-- **Verify**: manual con dos usuarios semilla con alérgenos distintos
-  configurados.
+  - [x] Con dos miembros con alérgenos distintos, `list_group_allergen_ids()`
+        devuelve la unión — verificado por SQL: usuario1 con "Apio" +
+        usuario2 con "Huevo" en el mismo grupo → usuario1 ve ambos IDs.
+        El filtrado en `search_public_recipes`/`count_public_recipes`
+        que excluye por esos IDs ya estaba probado desde antes de esta
+        fase (sin cambios en esa lógica, solo en qué IDs se le pasan).
+  - [x] Al desactivar preferencias (`preferences=off`) deja de
+        aplicarse, sin cambios respecto al comportamiento anterior (la
+        condición `!preferencesOff` sigue igual).
+- **Nota de tipos**: la función devuelve `SETOF UUID`; PostgREST lo
+  serializa como un array plano de strings (`string[]`), no como
+  objetos `{list_group_allergen_ids: string}[]` — confirmado por el
+  generador de tipos de Supabase tras un primer intento equivocado.
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios. Unión de alérgenos verificada por SQL con dos usuarios
+  semilla.
 - **Depende de**: nada nuevo.
-- **Archivos**: nueva migración (función), `src/app/recetas/page.tsx`.
+- **Archivos**: `supabase/migrations/20260821120141_grupo_allergen_ids.sql`,
+  `src/app/recetas/page.tsx`, `src/components/recipes/recipe-filters.tsx`,
+  `src/types/database.types.ts`.
 
 ### Tarea extra — El admin puede eliminar el grupo (S) — ✅ hecha
 (Pedida por el usuario a mitad de la Tarea 4, no estaba en el plan
@@ -590,8 +606,10 @@ usuarios" + "confirmación al quitar a alguien".)
   `src/components/account/group-members-panel.tsx`.
 
 ### Checkpoint final (Fase 6)
-- [ ] Todos los criterios de aceptación cumplidos.
-- [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
+- [x] Todos los criterios de aceptación cumplidos a nivel de
+      datos/servidor; falta tu verificación a clic en el navegador de
+      las Tareas 4-8 (limitación de entorno ya documentada).
+- [x] `npx tsc --noEmit`, `npm run lint`, `npm run build` limpios.
 - [ ] Despliegue coordinado a producción: `family_groups` (deuda
       pendiente) + toda esta fase, en un único `db push`/`apply_migration`,
       verificado con las mismas queries de diagnóstico del incidente
