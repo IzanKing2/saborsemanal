@@ -13,7 +13,6 @@ export type GroupActionState = {
 };
 
 const initialErrorMessages: Record<string, string> = {
-  P0002: "No existe ningún usuario con ese email.",
   "42501": "No tienes permisos para esta acción.",
   "22023": "No se pudo completar la operación. Revisa los datos.",
 };
@@ -150,26 +149,6 @@ export async function revokeGroupInvitationAction(
 
   revalidatePath("/dashboard/grupo");
   return { ok: true, message: "Invitación revocada." };
-}
-
-export async function addGroupMemberAction(
-  _previousState: GroupActionState,
-  formData: FormData,
-): Promise<GroupActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  if (!email) {
-    return { ok: false, message: "Introduce un email válido." };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("add_group_member", { p_email: email });
-
-  if (error) {
-    return { ok: false, message: mapError(error.code) };
-  }
-
-  revalidatePath("/dashboard/grupo");
-  return { ok: true, message: "Miembro añadido a tu grupo." };
 }
 
 export async function removeGroupMemberAction(

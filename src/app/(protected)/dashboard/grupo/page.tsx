@@ -11,11 +11,13 @@ export default async function GroupPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: grupo, error: grupoError }, { data: miembros, error: miembrosError }] =
-    await Promise.all([
-      supabase.from("grupos").select("id, nombre").maybeSingle(),
-      supabase.rpc("list_group_members"),
-    ]);
+  const [
+    { data: grupo, error: grupoError },
+    { data: miembros, error: miembrosError },
+  ] = await Promise.all([
+    supabase.from("grupos").select("id, nombre").maybeSingle(),
+    supabase.rpc("list_group_members"),
+  ]);
 
   if (grupoError || miembrosError) {
     throw new Error(
@@ -24,6 +26,13 @@ export default async function GroupPage() {
   }
 
   const isAdmin = (miembros ?? []).some((m) => m.es_yo && m.rol === "admin");
+
+  const { data: invitaciones, error: invitacionesError } = isAdmin
+    ? await supabase.rpc("list_group_invitations")
+    : { data: [], error: null };
+  if (invitacionesError) {
+    throw new Error(`No se pudieron cargar las invitaciones: ${invitacionesError.message}`);
+  }
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
@@ -49,7 +58,11 @@ export default async function GroupPage() {
       </header>
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <GroupMembersPanel isAdmin={isAdmin} members={miembros ?? []} />
+        <GroupMembersPanel
+          invitations={invitaciones ?? []}
+          isAdmin={isAdmin}
+          members={miembros ?? []}
+        />
       </div>
     </main>
   );

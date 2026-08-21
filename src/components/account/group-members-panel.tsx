@@ -4,8 +4,9 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
-  addGroupMemberAction,
+  inviteGroupMemberAction,
   removeGroupMemberAction,
+  revokeGroupInvitationAction,
   type GroupActionState,
 } from "@/lib/actions/grupo";
 
@@ -15,6 +16,13 @@ type Member = {
   display_name: string | null;
   rol: string;
   es_yo: boolean;
+};
+
+type Invitation = {
+  id: string;
+  email: string;
+  created_at: string;
+  expires_at: string;
 };
 
 const initialState: GroupActionState = { ok: false, message: "" };
@@ -50,14 +58,40 @@ function RemoveMemberButton({ usuarioId }: { usuarioId: string }) {
   );
 }
 
+function hoursLeft(expiresAt: string) {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (60 * 60 * 1000)));
+}
+
+function RevokeInvitationButton({ invitationId }: { invitationId: string }) {
+  async function revoke() {
+    await revokeGroupInvitationAction(invitationId);
+  }
+  return (
+    <form action={revoke}>
+      <button
+        className="text-xs font-bold text-red-700 hover:underline"
+        type="submit"
+      >
+        Revocar
+      </button>
+    </form>
+  );
+}
+
 export function GroupMembersPanel({
   isAdmin,
   members,
+  invitations,
 }: {
   isAdmin: boolean;
   members: Member[];
+  invitations: Invitation[];
 }) {
-  const [addState, addAction] = useActionState(addGroupMemberAction, initialState);
+  const [inviteState, inviteAction] = useActionState(
+    inviteGroupMemberAction,
+    initialState,
+  );
 
   return (
     <div className="space-y-6">
@@ -91,14 +125,37 @@ export function GroupMembersPanel({
         </ul>
       </section>
 
+      {isAdmin && invitations.length > 0 && (
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-stone-950">Invitaciones pendientes</h2>
+          <ul className="mt-4 divide-y divide-stone-100">
+            {invitations.map((invitation) => (
+              <li
+                className="flex items-center justify-between gap-3 py-3"
+                key={invitation.id}
+              >
+                <div>
+                  <p className="font-semibold text-stone-900">{invitation.email}</p>
+                  <p className="text-xs text-stone-500">
+                    Expira en {hoursLeft(invitation.expires_at)} h
+                  </p>
+                </div>
+                <RevokeInvitationButton invitationId={invitation.id} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {isAdmin && (
         <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold text-stone-950">Añadir miembro</h2>
+          <h2 className="text-lg font-bold text-stone-950">Invitar a alguien</h2>
           <p className="mt-1 text-sm text-stone-600">
-            Debe tener ya una cuenta en SaborSemanal y no pertenecer a otro
-            grupo con más miembros.
+            Si ya tiene cuenta en SaborSemanal, verá la invitación pendiente
+            al entrar. Si no, le llega un email para crear su cuenta y
+            unirse directamente al grupo. La invitación caduca en 24 horas.
           </p>
-          <form action={addAction} className="mt-4 flex flex-wrap gap-3">
+          <form action={inviteAction} className="mt-4 flex flex-wrap gap-3">
             <input
               className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
               name="email"
@@ -106,13 +163,13 @@ export function GroupMembersPanel({
               required
               type="email"
             />
-            <SubmitButton label="Añadir" pendingLabel="Añadiendo..." />
+            <SubmitButton label="Invitar" pendingLabel="Invitando..." />
           </form>
-          {addState.message && (
+          {inviteState.message && (
             <p
-              className={`mt-2 text-xs ${addState.ok ? "text-emerald-700" : "text-red-600"}`}
+              className={`mt-2 text-xs ${inviteState.ok ? "text-emerald-700" : "text-red-600"}`}
             >
-              {addState.message}
+              {inviteState.message}
             </p>
           )}
         </section>

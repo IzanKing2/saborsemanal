@@ -431,22 +431,34 @@ final, como en fases anteriores.
 - [x] `npx tsc --noEmit`, `npm run lint` y `npm run build` limpios.
 - [ ] Revisar con el usuario antes de seguir con la UI (Tarea 4).
 
-### Tarea 4 — UI: invitar y ver invitaciones salientes (M)
-- [ ] `GroupMembersPanel`: el formulario "Añadir miembro" pasa a
-      "Invitar" y llama a la nueva acción; añadir sección "Invitaciones
-      pendientes" (email, expira en Xh, botón revocar) usando
-      `list_group_invitations()`.
-- [ ] Mensajes distintos según el caso: "Invitación enviada por email,
-      expira en 24h" (cuenta nueva) vs "Invitación pendiente de
-      aceptar" (cuenta existente).
+### Tarea 4 — UI: invitar y ver invitaciones salientes (M) — ✅ hecha
+- [x] `GroupMembersPanel`: el formulario "Añadir miembro" pasa a
+      "Invitar" y llama a `inviteGroupMemberAction`; nueva sección
+      "Invitaciones pendientes" (email, expira en Xh, botón revocar)
+      usando `list_group_invitations()`.
+- [x] Mensajes distintos según el caso: "Invitación enviada por email..."
+      (cuenta nueva) vs "Esa persona ya tiene cuenta: verá la
+      invitación pendiente..." (cuenta existente) — ya cubierto en
+      `inviteGroupMemberAction` (Tarea 3).
+- [x] `addGroupMemberAction` (instant-add) eliminada — sustituida por
+      completo por el flujo de invitación. La RPC `add_group_member` se
+      deja en el esquema sin usar (no se borra: no vale la pena una
+      migración solo para eso).
 - **Criterios de aceptación**:
-  - [ ] Crear invitación la muestra en la lista de pendientes al
-        instante (`revalidatePath`).
-  - [ ] Revocar quita la invitación de la lista.
-- **Verify**: manual en navegador; `npx tsc --noEmit` + `npm run lint`.
-- **Depende de**: Tarea 2.
+  - [x] Crear invitación la muestra en la lista de pendientes al
+        instante (`revalidatePath` en `inviteGroupMemberAction`).
+  - [x] Revocar quita la invitación de la lista (`revalidatePath` en
+        `revokeGroupInvitationAction`).
+- **Verify**: `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  limpios. Comprobación de humo con `curl` (la página responde 307 sin
+  sesión, sin errores de compilación/render). **Pendiente de tu parte**:
+  esta es la primera tarea con UI nueva — te toca probarla a clic en el
+  navegador (invitar, ver la invitación pendiente, revocarla) ya que mi
+  entorno no llega a `localhost`.
+- **Depende de**: Tarea 2, Tarea 3.
 - **Archivos**: `src/components/account/group-members-panel.tsx`,
-  `src/lib/actions/grupo.ts`.
+  `src/lib/actions/grupo.ts`,
+  `src/app/(protected)/dashboard/grupo/page.tsx`.
 
 ### Tarea 5 — UI: invitación entrante (usuario con cuenta) (S)
 - [ ] Banner/tarjeta en `/dashboard` (y en `/dashboard/grupo`) para
