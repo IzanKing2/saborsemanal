@@ -5,21 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-export type MenuLink = { label: string; href: string; accent?: boolean };
-
-// Same everywhere a signed-in user can be: it doesn't matter whether
-// they're on a public page or already inside the dashboard, every account
-// action should be one tap away.
-export function accountMenuLinks(isAdmin: boolean): MenuLink[] {
-  return [
-    { label: "Mi panel", href: "/dashboard" },
-    { label: "Favoritas", href: "/dashboard/favoritas" },
-    { label: "Mis recetas", href: "/dashboard/recetas" },
-    { label: "Mi grupo", href: "/dashboard/grupo" },
-    { label: "Mi cuenta", href: "/dashboard/cuenta" },
-    ...(isAdmin ? [{ label: "Administración", href: "/admin", accent: true }] : []),
-  ];
-}
+import type { MenuLink } from "@/components/navigation/account-menu-links";
 
 export function UserMenu({
   displayName,

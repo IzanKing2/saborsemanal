@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
-import { accountMenuLinks, UserMenu } from "@/components/navigation/user-menu";
+import { accountMenuLinks } from "@/components/navigation/account-menu-links";
+import { UserMenu } from "@/components/navigation/user-menu";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 
 type DashboardHeaderProps = {

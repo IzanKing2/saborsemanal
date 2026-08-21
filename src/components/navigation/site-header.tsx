@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/cuenta";
 import { RecipeSearch } from "@/components/navigation/recipe-search";
-import { accountMenuLinks, UserMenu } from "@/components/navigation/user-menu";
+import { accountMenuLinks } from "@/components/navigation/account-menu-links";
+import { UserMenu } from "@/components/navigation/user-menu";
 import { ShoppingCart } from "@/components/shopping/shopping-cart";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
