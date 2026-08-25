@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import { DashboardHeader } from "@/components/navigation/dashboard-header";
 import { getProfileAvatarUrl } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
@@ -34,6 +35,7 @@ export default async function DashboardLayout({
         isAdmin={profile?.role === "admin"}
       />
       {children}
+      <BottomNav loggedIn />
     </div>
   );
 }

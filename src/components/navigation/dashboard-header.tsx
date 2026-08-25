@@ -29,7 +29,7 @@ export function DashboardHeader({
         <div className="-my-1.5 ml-auto flex min-w-0 items-center gap-2 overflow-x-auto py-1.5 [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
-            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
             href="/recetas"
           >
             <svg
@@ -55,7 +55,7 @@ export function DashboardHeader({
           </Link>
           <Link
             aria-label="Ir al planificador semanal"
-            className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
             href="/dashboard/planificador"
           >
             <svg
@@ -72,9 +72,9 @@ export function DashboardHeader({
             </svg>
             <span className="hidden lg:inline">Planificador</span>
           </Link>
-          {/* Cart sits directly next to the account menu on every
-              breakpoint -- it's the last icon before the avatar. */}
-          <div className="shrink-0">
+          {/* Cart sits next to the account menu from `sm` up -- on phones
+              the bottom bar carries it instead. */}
+          <div className="hidden shrink-0 sm:block">
             <ShoppingCart loggedIn tone="dark" />
           </div>
           <UserMenu

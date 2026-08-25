@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getRecipeImageUrls } from "@/lib/recipe-images";
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
@@ -394,6 +395,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
             )}
           </div>
         </div>
+        <BottomNav loggedIn={Boolean(user)} />
       </main>
     );
   }
@@ -570,6 +572,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
           )}
         </section>
       </div>
+      <BottomNav loggedIn={Boolean(user)} />
     </main>
   );
 }

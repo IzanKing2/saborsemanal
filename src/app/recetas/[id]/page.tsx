@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getRecipeImageUrl } from "@/lib/recipe-images";
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
@@ -308,6 +309,7 @@ export default async function RecipeDetailPage({
         </div>
       </article>
       <div className="h-12" />
+      <BottomNav loggedIn={Boolean(user)} />
     </main>
   );
 }

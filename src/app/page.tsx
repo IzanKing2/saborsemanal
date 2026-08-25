@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { createClient } from "@/lib/supabase/server";
 
@@ -144,6 +145,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      <BottomNav loggedIn={Boolean(user)} />
     </main>
   );
 }

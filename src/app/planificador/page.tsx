@@ -5,6 +5,7 @@ import {
   WeeklyPlanner,
   type PlannerRecipe,
 } from "@/components/planner/weekly-planner";
+import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { getRecipeImageUrls } from "@/lib/recipe-images";
 import { createClient } from "@/lib/supabase/server";
@@ -112,6 +113,7 @@ export default async function GuestPlannerPage({
           week={week}
         />
       </div>
+      <BottomNav loggedIn={Boolean(user)} />
     </main>
   );
 }

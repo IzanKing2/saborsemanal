@@ -23,7 +23,7 @@ export function PwaInstall() {
   if (!prompt) return null;
 
   return (
-    <aside className="no-print fixed bottom-4 left-4 right-4 z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-emerald-950 p-4 text-white shadow-xl sm:left-auto">
+    <aside className="no-print fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)] left-4 right-4 z-40 sm:bottom-4 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-emerald-950 p-4 text-white shadow-xl sm:left-auto">
       <p className="flex-1 text-sm font-semibold">Instala SaborSemanal para usarla como una app.</p>
       <button
         className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-black text-emerald-950 hover:bg-amber-200"
