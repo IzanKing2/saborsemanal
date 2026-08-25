@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import type { MenuLink } from "@/components/navigation/account-menu-links";
+import { useMenuDismiss } from "@/lib/use-dialog-focus";
 
 export function UserMenu({
   displayName,
@@ -22,6 +23,8 @@ export function UserMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
 
+  useMenuDismiss(open, () => setOpen(false));
+
   function toggleOpen() {
     if (!open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -34,7 +37,7 @@ export function UserMenu({
     <div className="flex shrink-0 items-center gap-1">
       <Link
         aria-label="Configurar mi cuenta"
-        className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        className="flex shrink-0 items-center gap-2 rounded-full"
         href="/dashboard/cuenta"
       >
         <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-full bg-amber-300 font-black text-emerald-950">
@@ -53,7 +56,7 @@ export function UserMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={open ? "Cerrar menú" : "Abrir menú"}
-        className="shrink-0 rounded-lg p-2 text-emerald-100 hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        className="shrink-0 rounded-lg p-2 text-emerald-100 hover:bg-emerald-900 hover:text-white"
         onClick={toggleOpen}
         ref={buttonRef}
         type="button"

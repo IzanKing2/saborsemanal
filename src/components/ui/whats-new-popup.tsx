@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import {
   WHATS_NEW_ITEMS,
   WHATS_NEW_TITLE,
@@ -32,6 +33,7 @@ export function WhatsNewPopup() {
       // Nothing to persist to; the popup will just show again next visit.
     }
   }
+  const dialogRef = useDialogFocus<HTMLElement>(open, dismiss);
 
   if (!open) return null;
 
@@ -46,6 +48,7 @@ export function WhatsNewPopup() {
         aria-modal="true"
         className="w-full max-w-md overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
       >
         <div className="bg-emerald-950 px-6 py-5 text-white">

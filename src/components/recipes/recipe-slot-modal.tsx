@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -14,6 +13,7 @@ import {
   type MealType,
   type WeekDay,
 } from "@/lib/week";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 type RecipeSlotModalProps = {
   recipeTitle: string;
@@ -35,13 +35,7 @@ export function RecipeSlotModal({
   onConfirm,
 }: RecipeSlotModalProps) {
   const isCurrentWeek = week === getCurrentMonday();
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onCancel();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel]);
+  const dialogRef = useDialogFocus<HTMLDivElement>(true, onCancel);
 
   return createPortal(
     <div
@@ -54,6 +48,7 @@ export function RecipeSlotModal({
         aria-modal="true"
         className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
       >
         <h2
@@ -139,7 +134,7 @@ export function RecipeSlotModal({
                 const takenBy = occupied?.[menuSlotKey(day, meal)];
                 return (
                   <button
-                    className={`rounded-md px-1 py-2 text-center text-xs font-semibold outline-none transition hover:bg-emerald-700 hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                    className={`rounded-md px-1 py-2 text-center text-xs font-semibold transition hover:bg-emerald-700 hover:text-white ${
                       takenBy
                         ? "bg-amber-50 text-amber-800"
                         : "text-stone-700"

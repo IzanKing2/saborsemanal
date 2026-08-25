@@ -361,7 +361,7 @@ export function WeeklyPlanner({
                           ) : selectedRecipe ? (
                             <div className="relative rounded-xl border border-stone-200 bg-white p-2 shadow-sm transition hover:border-emerald-700">
                               <button
-                                className="flex w-full items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                                className="flex w-full items-center gap-2 text-left"
                                 disabled={slotPending}
                                 onClick={() => setEditingSlot({ day, meal })}
                                 type="button"
@@ -416,7 +416,7 @@ export function WeeklyPlanner({
                             </div>
                           ) : (
                             <button
-                              className="w-full rounded-xl border border-dashed border-stone-300 px-2 py-4 text-center text-xs font-bold text-stone-400 outline-none transition hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-700"
+                              className="w-full rounded-xl border border-dashed border-stone-300 px-2 py-4 text-center text-xs font-bold text-stone-400 transition hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
                               disabled={slotPending}
                               onClick={() => setEditingSlot({ day, meal })}
                               type="button"

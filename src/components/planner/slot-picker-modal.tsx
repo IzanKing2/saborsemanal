@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import type { MealType, WeekDay } from "@/lib/week";
 
 type PickableRecipe = {
@@ -38,13 +39,7 @@ export function SlotPickerModal({
 }: SlotPickerModalProps) {
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  const dialogRef = useDialogFocus<HTMLDivElement>(true, onClose);
 
   const filteredRecipes = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("es");
@@ -67,6 +62,7 @@ export function SlotPickerModal({
         aria-modal="true"
         className="flex max-h-[85vh] w-full max-w-md flex-col rounded-3xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
       >
         <h2
@@ -91,7 +87,7 @@ export function SlotPickerModal({
         <div className="mt-4 -mr-2 flex-1 space-y-2 overflow-y-auto pr-2">
           {currentRecipeId && (
             <button
-              className="flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left text-sm font-semibold text-red-700 outline-none transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-400"
+              className="flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left text-sm font-semibold text-red-700 transition hover:bg-red-100"
               onClick={onRemove}
               type="button"
             >
@@ -102,7 +98,7 @@ export function SlotPickerModal({
             const count = usageCounts?.get(recipe.id) ?? 0;
             return (
               <button
-                className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left outline-none transition hover:border-emerald-700 hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-emerald-700"
+                className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left transition hover:border-emerald-700 hover:bg-emerald-50"
                 key={recipe.id}
                 onClick={() => onAssign(recipe.id)}
                 type="button"
