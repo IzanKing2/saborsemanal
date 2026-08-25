@@ -151,10 +151,6 @@ El agente no dispone de evidencia directa de esa comprobación.
 - `recipe-slot-modal` sigue sin comprobación registrada: exige una receta
   publicada y el catálogo está vacío. Comparte hook y patrón con
   `slot-picker-modal`, que sí se verificó.
-- Cinco controles anulan el contorno global con `outline-none` y lo sustituyen
-  por un anillo de 2 px: `slot-picker-modal` (dos), `weekly-planner` (dos) y
-  `recipe-slot-modal` (uno). Es una degradación del mismo tipo que la corregida
-  en la sección 6, pero por otra vía, y queda fuera del alcance acordado.
 
 ### Deuda del contorno global, resuelta
 
@@ -164,8 +160,20 @@ segunda pasada, las dos de `user-menu` y las tres de `confirm-dialog`. En estas
 últimas el contorno del botón de confirmación pasa de rojo o esmeralda a ámbar,
 que es el color que `globals.css` fija para todo el proyecto.
 
+En una tercera pasada se retiraron también los cinco `outline-none` que
+acompañaban a un anillo de 2 px en `slot-picker-modal` (dos), `weekly-planner`
+(dos) y `recipe-slot-modal` (uno). Eran la misma degradación por otra vía: en
+lugar de reducir el contorno lo anulaban por completo.
+
+No se tocaron los dieciocho `outline-none` restantes, que acompañan a `focus:`
+(no `focus-visible:`) en campos de formulario. Ahí forman un estilo deliberado y
+consistente de borde esmeralda con anillo suave.
+
 Verificado sobre el CSS de producción: la regla `outline:3px solid #f59e0b`
-sigue presente y no queda ninguna utilidad que la sobrescriba.
+sigue presente y es la única aparición de `focus-visible` en la hoja. Verificado
+además en navegador sobre un botón del planificador: tabulando con teclado real
+da `outline: rgb(245, 158, 11) solid 3px` con desplazamiento de 3 px, y el
+`box-shadow` del antiguo anillo ha desaparecido.
 
 ### Nota de método
 

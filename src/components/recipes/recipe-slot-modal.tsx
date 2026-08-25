@@ -134,7 +134,7 @@ export function RecipeSlotModal({
                 const takenBy = occupied?.[menuSlotKey(day, meal)];
                 return (
                   <button
-                    className={`rounded-md px-1 py-2 text-center text-xs font-semibold outline-none transition hover:bg-emerald-700 hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                    className={`rounded-md px-1 py-2 text-center text-xs font-semibold transition hover:bg-emerald-700 hover:text-white ${
                       takenBy
                         ? "bg-amber-50 text-amber-800"
                         : "text-stone-700"

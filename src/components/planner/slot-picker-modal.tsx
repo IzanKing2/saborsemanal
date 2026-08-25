@@ -87,7 +87,7 @@ export function SlotPickerModal({
         <div className="mt-4 -mr-2 flex-1 space-y-2 overflow-y-auto pr-2">
           {currentRecipeId && (
             <button
-              className="flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left text-sm font-semibold text-red-700 outline-none transition hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-400"
+              className="flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left text-sm font-semibold text-red-700 transition hover:bg-red-100"
               onClick={onRemove}
               type="button"
             >
@@ -98,7 +98,7 @@ export function SlotPickerModal({
             const count = usageCounts?.get(recipe.id) ?? 0;
             return (
               <button
-                className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left outline-none transition hover:border-emerald-700 hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-emerald-700"
+                className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white px-3 py-3 text-left transition hover:border-emerald-700 hover:bg-emerald-50"
                 key={recipe.id}
                 onClick={() => onAssign(recipe.id)}
                 type="button"
