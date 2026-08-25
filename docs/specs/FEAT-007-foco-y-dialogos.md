@@ -151,8 +151,21 @@ El agente no dispone de evidencia directa de esa comprobación.
 - `recipe-slot-modal` sigue sin comprobación registrada: exige una receta
   publicada y el catálogo está vacío. Comparte hook y patrón con
   `slot-picker-modal`, que sí se verificó.
-- `user-menu` y `confirm-dialog` conservan utilidades `focus-visible:*` que
-  degradan el contorno global. No estaban en el alcance aprobado.
+- Cinco controles anulan el contorno global con `outline-none` y lo sustituyen
+  por un anillo de 2 px: `slot-picker-modal` (dos), `weekly-planner` (dos) y
+  `recipe-slot-modal` (uno). Es una degradación del mismo tipo que la corregida
+  en la sección 6, pero por otra vía, y queda fuera del alcance acordado.
+
+### Deuda del contorno global, resuelta
+
+Ya no queda ninguna utilidad `focus-visible:outline-*` en `src`. Se retiraron
+las de ambas cabeceras, las de la variante de icono del carrito y, en una
+segunda pasada, las dos de `user-menu` y las tres de `confirm-dialog`. En estas
+últimas el contorno del botón de confirmación pasa de rojo o esmeralda a ámbar,
+que es el color que `globals.css` fija para todo el proyecto.
+
+Verificado sobre el CSS de producción: la regla `outline:3px solid #f59e0b`
+sigue presente y no queda ninguna utilidad que la sobrescriba.
 
 ### Nota de método
 

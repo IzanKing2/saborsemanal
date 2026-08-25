@@ -39,8 +39,8 @@ export function ConfirmDialog({
 
   const confirmClass =
     tone === "danger"
-      ? "bg-red-700 text-white hover:bg-red-800 focus-visible:outline-red-700"
-      : "bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:outline-emerald-700";
+      ? "bg-red-700 text-white hover:bg-red-800"
+      : "bg-emerald-700 text-white hover:bg-emerald-800";
 
   return createPortal(
     <div
@@ -79,7 +79,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </button>
           <button
-            className={`rounded-xl px-4 py-2.5 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 ${confirmClass}`}
+            className={`rounded-xl px-4 py-2.5 text-sm font-bold disabled:cursor-wait disabled:opacity-60 ${confirmClass}`}
             disabled={busy}
             onClick={onConfirm}
             type="button"
