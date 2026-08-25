@@ -68,6 +68,28 @@ const inputClass =
   "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20";
 const errorInputClass = "border-red-500 focus:border-red-600 focus:ring-red-500/20";
 
+// Una fila solo se resume cuando tiene contenido suficiente para leerse. Las
+// vacías o a medias siguen abiertas: resumir "sin nombre" no ayudaría a nadie.
+function instructionIsComplete(row: InstructionRow) {
+  return row.value.trim().length >= 2;
+}
+
+function ingredientIsComplete(row: IngredientRow) {
+  const amount = Number(row.cantidad);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+  return row.ingredienteId === null
+    ? row.nombrePersonalizado.trim().length >= 2
+    : row.ingredienteId.length > 0;
+}
+
+function ingredientLabel(row: IngredientRow, options: IngredientOption[]) {
+  if (row.ingredienteId === null) return row.nombrePersonalizado.trim();
+  return (
+    options.find((option) => option.id === row.ingredienteId)?.nombre ??
+    row.catalogText.trim()
+  );
+}
+
 function newKey() {
   return crypto.randomUUID();
 }
@@ -122,6 +144,21 @@ export function RecipeForm({
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialRecipe.imagenUrl,
   );
+  // Filas abiertas para editar. Todo lo que esté completo y fuera de este
+  // conjunto se muestra como resumen, para que una receta larga no sea una
+  // pared de campos de texto.
+  const [editingKeys, setEditingKeys] = useState<ReadonlySet<string>>(
+    () =>
+      new Set([
+        ...instructions.filter((row) => !instructionIsComplete(row)).map((row) => row.key),
+        ...ingredients.filter((row) => !ingredientIsComplete(row)).map((row) => row.key),
+      ]),
+  );
+
+  // Solo la fila que se acaba de abrir recibe el foco. Las que nacen abiertas
+  // al cargar la página no deben robárselo.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+
   const [errors, setErrors] = useState<RecipeFormErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -138,6 +175,19 @@ export function RecipeForm({
     setImagePreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [imageFile, initialRecipe.imagenUrl, removeImage]);
+
+  function openRow(key: string) {
+    setEditingKeys((current) => new Set(current).add(key));
+    setFocusKey(key);
+  }
+
+  function closeRow(key: string) {
+    setEditingKeys((current) => {
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  }
 
   function updateInstruction(key: string, value: string) {
     setInstructions((current) =>
@@ -600,12 +650,11 @@ export function RecipeForm({
           </div>
           <button
             className="rounded-lg border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
-            onClick={() =>
-              setInstructions((current) => [
-                ...current,
-                { key: newKey(), value: "" },
-              ])
-            }
+            onClick={() => {
+              const key = newKey();
+              setInstructions((current) => [...current, { key, value: "" }]);
+              openRow(key);
+            }}
             type="button"
           >
             Añadir paso
@@ -613,67 +662,112 @@ export function RecipeForm({
         </div>
 
         <div className="mt-5 space-y-3">
-          {instructions.map((instruction, index) => (
-            <div
-              className="grid grid-cols-[2rem_1fr] gap-3 rounded-xl bg-stone-50 p-3"
-              key={instruction.key}
-            >
-              <span className="flex size-8 items-center justify-center rounded-full bg-emerald-900 text-sm font-bold text-white">
-                {index + 1}
-              </span>
-              <div>
-                <label className="sr-only" htmlFor={`instruction-${instruction.key}`}>
-                  Paso {index + 1}
-                </label>
-                <textarea
-                  aria-describedby={
-                    errors.instrucciones
-                      ? "recipe-instructions-error"
-                      : undefined
-                  }
-                  aria-invalid={Boolean(errors.instrucciones)}
-                  className={`${inputClass} min-h-20 resize-y`}
-                  id={`instruction-${instruction.key}`}
-                  maxLength={1000}
-                  onChange={(event) =>
-                    updateInstruction(instruction.key, event.target.value)
-                  }
-                  required
-                  value={instruction.value}
-                />
-                <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold">
-                  <button
-                    className="text-stone-600 disabled:opacity-30"
-                    disabled={index === 0}
-                    onClick={() => moveInstruction(index, -1)}
-                    type="button"
-                  >
-                    Subir
-                  </button>
-                  <button
-                    className="text-stone-600 disabled:opacity-30"
-                    disabled={index === instructions.length - 1}
-                    onClick={() => moveInstruction(index, 1)}
-                    type="button"
-                  >
-                    Bajar
-                  </button>
-                  <button
-                    className="text-red-700 disabled:opacity-30"
-                    disabled={instructions.length === 1}
-                    onClick={() =>
-                      setInstructions((current) =>
-                        current.filter((item) => item.key !== instruction.key),
-                      )
-                    }
-                    type="button"
-                  >
-                    Eliminar
-                  </button>
+          {instructions.map((instruction, index) => {
+            const editing =
+              editingKeys.has(instruction.key) ||
+              !instructionIsComplete(instruction);
+
+            return (
+              <div
+                className="grid grid-cols-[2rem_1fr] gap-3 rounded-xl bg-stone-50 p-3"
+                key={instruction.key}
+              >
+                <span className="flex size-8 items-center justify-center rounded-full bg-emerald-900 text-sm font-bold text-white">
+                  {index + 1}
+                </span>
+                <div>
+                  {editing ? (
+                    <>
+                      <label
+                        className="sr-only"
+                        htmlFor={`instruction-${instruction.key}`}
+                      >
+                        Paso {index + 1}
+                      </label>
+                      <textarea
+                        aria-describedby={
+                          errors.instrucciones
+                            ? "recipe-instructions-error"
+                            : undefined
+                        }
+                        aria-invalid={Boolean(errors.instrucciones)}
+                        autoFocus={focusKey === instruction.key}
+                        className={`${inputClass} min-h-20 resize-y`}
+                        id={`instruction-${instruction.key}`}
+                        maxLength={1000}
+                        onChange={(event) =>
+                          updateInstruction(instruction.key, event.target.value)
+                        }
+                        required
+                        value={instruction.value}
+                      />
+                    </>
+                  ) : (
+                    <p className="whitespace-pre-line py-1 text-sm leading-6 text-stone-800">
+                      {instruction.value}
+                    </p>
+                  )}
+
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold">
+                    {editing ? (
+                      <button
+                        aria-label={`Terminar de editar el paso ${index + 1}`}
+                        className="text-emerald-800 disabled:opacity-30"
+                        disabled={!instructionIsComplete(instruction)}
+                        onClick={() => closeRow(instruction.key)}
+                        type="button"
+                      >
+                        Listo
+                      </button>
+                    ) : (
+                      <button
+                        aria-label={`Editar el paso ${index + 1}`}
+                        className="text-emerald-800"
+                        onClick={() => openRow(instruction.key)}
+                        type="button"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    <button
+                      aria-label={`Subir el paso ${index + 1}`}
+                      className="text-stone-600 disabled:opacity-30"
+                      disabled={index === 0}
+                      onClick={() => moveInstruction(index, -1)}
+                      type="button"
+                    >
+                      Subir
+                    </button>
+                    <button
+                      aria-label={`Bajar el paso ${index + 1}`}
+                      className="text-stone-600 disabled:opacity-30"
+                      disabled={index === instructions.length - 1}
+                      onClick={() => moveInstruction(index, 1)}
+                      type="button"
+                    >
+                      Bajar
+                    </button>
+                    <button
+                      aria-label={`Eliminar el paso ${index + 1}`}
+                      className="text-red-700 disabled:opacity-30"
+                      disabled={instructions.length === 1}
+                      onClick={() => {
+                        closeRow(instruction.key);
+                        setInstructions((current) =>
+                          current.filter(
+                            (item) => item.key !== instruction.key,
+                          ),
+                        );
+                      }}
+                      type="button"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <FieldError
           id="recipe-instructions-error"
@@ -693,19 +787,21 @@ export function RecipeForm({
           </div>
           <button
             className="rounded-lg border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() =>
+            onClick={() => {
+              const key = newKey();
               setIngredients((current) => [
                 ...current,
                 {
-                  key: newKey(),
+                  key,
                   ingredienteId: ingredientOptions.length > 0 ? "" : null,
                   nombrePersonalizado: "",
                   catalogText: "",
                   cantidad: "1",
                   unidad: "unidad",
                 },
-              ])
-            }
+              ]);
+              openRow(key);
+            }}
             type="button"
           >
             Añadir ingrediente
@@ -728,7 +824,56 @@ export function RecipeForm({
         )}
 
         <div className="mt-5 space-y-3">
-          {ingredients.map((ingredient, index) => (
+          {ingredients.map((ingredient, index) => {
+            const editing =
+              editingKeys.has(ingredient.key) || !ingredientIsComplete(ingredient);
+
+            if (!editing) {
+              return (
+                <div
+                  className="flex items-center justify-between gap-4 rounded-xl bg-stone-50 p-3"
+                  key={ingredient.key}
+                >
+                  <p className="min-w-0 text-sm text-stone-800">
+                    <span className="font-bold">
+                      {ingredient.cantidad} {ingredient.unidad}
+                    </span>
+                    <span className="text-stone-500"> · </span>
+                    <span>{ingredientLabel(ingredient, ingredientOptions)}</span>
+                    {ingredient.ingredienteId === null && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        texto libre
+                      </span>
+                    )}
+                  </p>
+                  <div className="flex shrink-0 gap-3 text-xs font-semibold">
+                    <button
+                      aria-label={`Editar el ingrediente ${index + 1}`}
+                      className="text-emerald-800"
+                      onClick={() => openRow(ingredient.key)}
+                      type="button"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      aria-label={`Quitar el ingrediente ${index + 1}`}
+                      className="text-red-700"
+                      onClick={() => {
+                        closeRow(ingredient.key);
+                        setIngredients((current) =>
+                          current.filter((item) => item.key !== ingredient.key),
+                        );
+                      }}
+                      type="button"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
             <div
               className="grid gap-3 rounded-xl bg-stone-50 p-3 md:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] md:items-end"
               key={ingredient.key}
@@ -774,6 +919,7 @@ export function RecipeForm({
                           : undefined
                       }
                       aria-invalid={Boolean(errors.ingredientes)}
+                      autoFocus={focusKey === ingredient.key}
                       className={inputClass}
                       id={`ingredient-custom-${ingredient.key}`}
                       maxLength={100}
@@ -809,6 +955,7 @@ export function RecipeForm({
                       }
                       aria-invalid={Boolean(errors.ingredientes)}
                       autoComplete="off"
+                      autoFocus={focusKey === ingredient.key}
                       className={inputClass}
                       id={`ingredient-option-${ingredient.key}`}
                       list="ingredient-catalog-options"
@@ -886,19 +1033,33 @@ export function RecipeForm({
                   ))}
                 </select>
               </div>
-              <button
-                className="rounded-lg px-2 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
-                onClick={() =>
-                  setIngredients((current) =>
-                    current.filter((item) => item.key !== ingredient.key),
-                  )
-                }
-                type="button"
-              >
-                Quitar
-              </button>
+              <div className="flex gap-3 md:contents">
+                <button
+                  aria-label={`Terminar de editar el ingrediente ${index + 1}`}
+                  className="rounded-lg px-2 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-30"
+                  disabled={!ingredientIsComplete(ingredient)}
+                  onClick={() => closeRow(ingredient.key)}
+                  type="button"
+                >
+                  Listo
+                </button>
+                <button
+                  aria-label={`Quitar el ingrediente ${index + 1}`}
+                  className="rounded-lg px-2 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    closeRow(ingredient.key);
+                    setIngredients((current) =>
+                      current.filter((item) => item.key !== ingredient.key),
+                    );
+                  }}
+                  type="button"
+                >
+                  Quitar
+                </button>
+              </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <FieldError
           id="recipe-ingredients-error"
