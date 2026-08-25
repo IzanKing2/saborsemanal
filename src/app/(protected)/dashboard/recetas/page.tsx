@@ -121,12 +121,25 @@ export default async function RecipesDashboardPage() {
                       />
                     </div>
                     <div className="mt-4 flex items-start justify-between gap-4">
-                      <Link
-                        className="text-sm font-bold text-emerald-700 hover:underline"
-                        href={`/dashboard/recetas/${recipe.id}/editar`}
-                      >
-                        Editar receta
-                      </Link>
+                      {/* Ver y editar comparten grupo; borrar queda al otro
+                          extremo para que no se pulse por error. El detalle
+                          público ya deja al autor ver sus propios borradores. */}
+                      <div className="flex gap-4">
+                        <Link
+                          aria-label={`Ver ${recipe.titulo}`}
+                          className="text-sm font-bold text-emerald-700 hover:underline"
+                          href={`/recetas/${recipe.id}`}
+                        >
+                          Ver
+                        </Link>
+                        <Link
+                          aria-label={`Editar ${recipe.titulo}`}
+                          className="text-sm font-bold text-emerald-700 hover:underline"
+                          href={`/dashboard/recetas/${recipe.id}/editar`}
+                        >
+                          Editar
+                        </Link>
+                      </div>
                       <DeleteRecipeForm id={recipe.id} title={recipe.titulo} />
                     </div>
                   </div>
