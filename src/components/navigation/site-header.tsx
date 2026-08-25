@@ -44,7 +44,7 @@ export async function SiteHeader() {
         <div className="-my-1.5 flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto py-1.5 text-sm font-bold [scrollbar-width:none] sm:flex-none sm:gap-4 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
-            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white sm:flex sm:px-3"
             href="/recetas"
           >
             <svg
@@ -70,7 +70,7 @@ export async function SiteHeader() {
           </Link>
           <Link
             aria-label="Ir al planificador semanal"
-            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white sm:flex sm:px-3"
             href={user ? "/dashboard/planificador" : "/planificador"}
           >
             <svg

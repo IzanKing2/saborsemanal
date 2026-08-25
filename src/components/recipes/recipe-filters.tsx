@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 
 import { MEAL_TYPES } from "@/lib/recipes";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 type Allergen = {
   id: string;
@@ -174,16 +175,7 @@ export function RecipeFilters(props: RecipeFiltersProps) {
     props.filteredAllergenIds.length +
     props.mealTypes.length;
 
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [open]);
+  const dialogRef = useDialogFocus<HTMLElement>(open, () => setOpen(false));
 
   function submitMobileFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -232,6 +224,7 @@ export function RecipeFilters(props: RecipeFiltersProps) {
               aria-modal="true"
               className="ml-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-3xl bg-[#f6f3ea] shadow-2xl"
               onClick={(event) => event.stopPropagation()}
+              ref={dialogRef}
               role="dialog"
             >
               <header className="flex items-center justify-between border-b border-stone-200 bg-emerald-950 px-5 py-4 text-white">

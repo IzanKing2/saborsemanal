@@ -21,6 +21,7 @@ import {
   type ShoppingRecipeIngredient,
 } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/client";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { useOnlineStatus } from "@/lib/use-online-status";
 import { getCurrentMonday } from "@/lib/week";
 
@@ -355,12 +356,9 @@ export function ShoppingCart({
   useEffect(() => {
     if (!open) return;
     load();
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
   }, [open, load]);
+
+  const dialogRef = useDialogFocus<HTMLElement>(open, () => setOpen(false));
 
   function toggleItem(item: ShoppingListItem, purchased: boolean) {
     const row = item as CartRow;
@@ -626,7 +624,7 @@ export function ShoppingCart({
         <button
           aria-label="Abrir lista de la compra"
           aria-haspopup="dialog"
-          className="flex h-full w-full flex-col items-center justify-center gap-1 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-amber-300"
+          className="flex h-full w-full flex-col items-center justify-center gap-1 text-emerald-100 transition hover:bg-emerald-900 hover:text-white"
           onClick={() => setOpen(true)}
           type="button"
         >
@@ -640,10 +638,10 @@ export function ShoppingCart({
         <button
           aria-label="Abrir lista de la compra"
           aria-haspopup="dialog"
-          className={`relative rounded-lg p-2 transition focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          className={`relative rounded-lg p-2 transition ${
             dark
-              ? "text-emerald-100 hover:bg-emerald-900 focus-visible:outline-amber-300"
-              : "text-stone-600 hover:bg-stone-200/60 focus-visible:outline-emerald-700"
+              ? "text-emerald-100 hover:bg-emerald-900"
+              : "text-stone-600 hover:bg-stone-200/60"
           }`}
           onClick={() => setOpen(true)}
           type="button"
@@ -665,6 +663,7 @@ export function ShoppingCart({
               aria-modal="true"
               className="animate-cart-in absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[#f6f3ea] shadow-2xl"
               onClick={(event) => event.stopPropagation()}
+              ref={dialogRef}
               role="dialog"
             >
             <header className="flex items-center justify-between border-b border-stone-200 bg-emerald-950 px-5 py-4 text-white">

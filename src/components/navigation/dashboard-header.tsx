@@ -29,7 +29,7 @@ export function DashboardHeader({
         <div className="-my-1.5 ml-auto flex min-w-0 items-center gap-2 overflow-x-auto py-1.5 [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
           <Link
             aria-label="Ver recetas públicas"
-            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white sm:flex sm:px-3"
             href="/recetas"
           >
             <svg
@@ -55,7 +55,7 @@ export function DashboardHeader({
           </Link>
           <Link
             aria-label="Ir al planificador semanal"
-            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 sm:flex sm:px-3"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-emerald-100 transition hover:bg-emerald-900 hover:text-white sm:flex sm:px-3"
             href="/dashboard/planificador"
           >
             <svg

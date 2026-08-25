@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import type { MealType, WeekDay } from "@/lib/week";
 
 type PickableRecipe = {
@@ -38,13 +39,7 @@ export function SlotPickerModal({
 }: SlotPickerModalProps) {
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  const dialogRef = useDialogFocus<HTMLDivElement>(true, onClose);
 
   const filteredRecipes = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("es");
@@ -67,6 +62,7 @@ export function SlotPickerModal({
         aria-modal="true"
         className="flex max-h-[85vh] w-full max-w-md flex-col rounded-3xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
       >
         <h2

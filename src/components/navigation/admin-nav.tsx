@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useMenuDismiss } from "@/lib/use-dialog-focus";
+
 const adminLinks = [
   ["Catálogos", "/admin/ingredientes"],
   ["Moderación", "/admin/recetas"],
@@ -12,6 +14,8 @@ const adminLinks = [
 
 export function AdminNav({ logout }: { logout: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
+
+  useMenuDismiss(open, () => setOpen(false));
 
   return (
     <>

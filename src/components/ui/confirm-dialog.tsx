@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import { createPortal } from "react-dom";
+
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -28,16 +29,11 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !busy && dismissible) onCancel();
-    }
-
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [busy, dismissible, onCancel, open]);
+  // The hook reads this through a ref every time, so `busy` and `dismissible`
+  // are always the current ones -- a mid-operation dialog stays put.
+  const dialogRef = useDialogFocus<HTMLElement>(open, () => {
+    if (!busy && dismissible) onCancel();
+  });
 
   if (!open) return null;
 
@@ -55,15 +51,22 @@ export function ConfirmDialog({
       role="presentation"
     >
       <section
+        aria-labelledby="confirm-dialog-title"
         aria-modal="true"
         className="w-full max-w-md rounded-3xl border border-stone-200 bg-[#f6f3ea] p-6 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
         role="dialog"
       >
         <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
           Confirmación
         </p>
-        <h2 className="mt-2 text-2xl font-black text-stone-950">{title}</h2>
+        <h2
+          className="mt-2 text-2xl font-black text-stone-950"
+          id="confirm-dialog-title"
+        >
+          {title}
+        </h2>
         <p className="mt-3 text-sm leading-6 text-stone-600">{description}</p>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

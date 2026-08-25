@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import type { MenuLink } from "@/components/navigation/account-menu-links";
+import { useMenuDismiss } from "@/lib/use-dialog-focus";
 
 export function UserMenu({
   displayName,
@@ -21,6 +22,8 @@ export function UserMenu({
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
+
+  useMenuDismiss(open, () => setOpen(false));
 
   function toggleOpen() {
     if (!open && buttonRef.current) {
