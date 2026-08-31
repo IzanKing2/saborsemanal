@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { AddToMenuButton } from "@/components/recipes/add-to-menu-button";
 import { AddToShoppingButton } from "@/components/recipes/add-to-shopping-button";
+import { CookMode } from "@/components/recipes/cook-mode";
 import { CopyRecipeButton } from "@/components/recipes/copy-recipe-button";
 import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { RecipeServings } from "@/components/recipes/recipe-servings";
@@ -73,6 +74,17 @@ export default async function RecipeDetailPage({
   if (allergensError) {
     throw new Error(`No se pudieron cargar los alérgenos: ${allergensError.message}`);
   }
+
+  // Una sola lista de ingredientes para el escalado de porciones y el modo
+  // cocina: son los mismos datos y no deben poder divergir.
+  const recipeIngredients = (ingredientRows ?? []).map((ingredient) => ({
+    cantidad: Number(ingredient.cantidad),
+    nombre:
+      ingredient.ingredientes?.nombre ??
+      ingredient.nombre_personalizado ??
+      "Otros",
+    unidad: ingredient.unidad,
+  }));
 
   const allergens = [
     ...new Map(
@@ -150,6 +162,11 @@ export default async function RecipeDetailPage({
             <FavoriteButton initial={favorited} recipeId={recipe.id} />
           )}
           {user && <CopyRecipeButton id={recipe.id} />}
+          <CookMode
+            ingredientes={recipeIngredients}
+            pasos={recipe.instrucciones}
+            titulo={recipe.titulo}
+          />
         </div>
       </div>
 
@@ -222,14 +239,7 @@ export default async function RecipeDetailPage({
           <div>
             <RecipeServings
               baseServings={recipe.porciones}
-              ingredients={(ingredientRows ?? []).map((ingredient) => ({
-                cantidad: Number(ingredient.cantidad),
-                nombre:
-                  ingredient.ingredientes?.nombre ??
-                  ingredient.nombre_personalizado ??
-                  "Otros",
-                unidad: ingredient.unidad,
-              }))}
+              ingredients={recipeIngredients}
             />
 
             {allergens.length > 0 && (

@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(12);
+SELECT plan(14);
 
 INSERT INTO auth.users (id, email) VALUES
   ('10000000-0000-4000-8000-000000000001', 'shopping-owner@example.com'),
@@ -10,11 +10,22 @@ INSERT INTO public.categorias_ingredientes (id, nombre)
 VALUES ('20000000-0000-4000-8000-000000000001', 'Despensa');
 
 INSERT INTO public.ingredientes (id, nombre, categoria_id)
-VALUES (
-  '30000000-0000-4000-8000-000000000001',
-  'Harina',
-  '20000000-0000-4000-8000-000000000001'
-);
+VALUES
+  (
+    '30000000-0000-4000-8000-000000000001',
+    'Harina',
+    '20000000-0000-4000-8000-000000000001'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000002',
+    'Leche de prueba',
+    '20000000-0000-4000-8000-000000000001'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000003',
+    'Huevo de prueba',
+    '20000000-0000-4000-8000-000000000001'
+  );
 
 INSERT INTO public.recetas (
   id,
@@ -105,6 +116,36 @@ INSERT INTO public.receta_ingredientes (
     NULL,
     1000000,
     'g'
+  ),
+  -- Volumen en dos unidades distintas y una medida de cocina que no debe
+  -- mezclarse con la masa del mismo ingrediente.
+  (
+    '40000000-0000-4000-8000-000000000001',
+    '30000000-0000-4000-8000-000000000002',
+    NULL,
+    500,
+    'ml'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000002',
+    '30000000-0000-4000-8000-000000000002',
+    NULL,
+    1,
+    'l'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000001',
+    '30000000-0000-4000-8000-000000000003',
+    NULL,
+    2,
+    'unidad'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000002',
+    '30000000-0000-4000-8000-000000000003',
+    NULL,
+    30,
+    'g'
   );
 
 INSERT INTO public.menus_semanales (id, usuario_id, grupo_id, semana_inicio)
@@ -168,8 +209,8 @@ SELECT set_config(
 
 SELECT is(
   (SELECT count(*) FROM public.regenerate_shopping_list('2026-07-27')),
-  3::BIGINT,
-  'regeneration creates one row per source and unit'
+  5::BIGINT,
+  'regeneration creates one row per source and canonical unit'
 );
 
 SELECT is(
@@ -191,8 +232,19 @@ SELECT is(
       AND ingrediente_id = '30000000-0000-4000-8000-000000000001'
       AND unidad = 'g'
   ),
-  120::NUMERIC,
-  'recipes sharing a master ingredient consolidate into one row'
+  1120::NUMERIC,
+  'grams and kilos of the same ingredient consolidate into grams'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.shopping_list_items
+    WHERE menu_id = '50000000-0000-4000-8000-000000000001'
+      AND unidad IN ('kg', 'l')
+  ),
+  0::BIGINT,
+  'the list never stores the bigger unit of a convertible pair'
 );
 
 SELECT is(
@@ -200,11 +252,22 @@ SELECT is(
     SELECT cantidad
     FROM public.shopping_list_items
     WHERE menu_id = '50000000-0000-4000-8000-000000000001'
-      AND ingrediente_id = '30000000-0000-4000-8000-000000000001'
-      AND unidad = 'kg'
+      AND ingrediente_id = '30000000-0000-4000-8000-000000000002'
+      AND unidad = 'ml'
   ),
-  1::NUMERIC,
-  'different units remain separate'
+  1500::NUMERIC,
+  'millilitres and litres of the same ingredient consolidate into millilitres'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.shopping_list_items
+    WHERE menu_id = '50000000-0000-4000-8000-000000000001'
+      AND ingrediente_id = '30000000-0000-4000-8000-000000000003'
+  ),
+  2::BIGINT,
+  'cooking measures never merge with mass for the same ingredient'
 );
 
 SELECT is(

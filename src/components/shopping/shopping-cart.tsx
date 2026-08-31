@@ -17,6 +17,7 @@ import {
 import { dequeueChanges, enqueueChange } from "@/lib/offline-queue";
 import {
   consolidateShoppingList,
+  presentShoppingItem,
   storedSlotRecipeId,
   type ShoppingListItem,
   type ShoppingRecipeIngredient,
@@ -201,23 +202,33 @@ export function ShoppingCart({
           return;
         }
 
+        // La BD guarda gramos y mililitros; `presentShoppingItem` decide si se
+        // enseña en kilos o litros, igual que en la página de la lista.
         const cloudRows: CartRow[] = [
           ...(menuItems ?? []).map((item) => ({
-            id: item.id,
-            nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
-            categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
-            cantidad: Number(item.cantidad),
-            unidad: item.unidad,
-            comprado: item.comprado,
+            ...presentShoppingItem({
+              id: item.id,
+              nombre:
+                item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+              categoria:
+                item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+              cantidad: Number(item.cantidad),
+              unidad: item.unidad,
+              comprado: item.comprado,
+            }),
             removable: false,
           })),
           ...(extraRows ?? []).map((item) => ({
-            id: item.id,
-            nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
-            categoria: item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
-            cantidad: Number(item.cantidad),
-            unidad: item.unidad,
-            comprado: item.comprado,
+            ...presentShoppingItem({
+              id: item.id,
+              nombre:
+                item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
+              categoria:
+                item.ingredientes?.categorias_ingredientes?.nombre ?? "Otros",
+              cantidad: Number(item.cantidad),
+              unidad: item.unidad,
+              comprado: item.comprado,
+            }),
             removable: true,
           })),
         ];

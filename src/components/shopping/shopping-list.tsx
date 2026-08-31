@@ -389,7 +389,7 @@ export function CloudShoppingList({
           <p className="font-bold text-stone-950">Lista derivada del menú</p>
           <p className="mt-1 text-sm text-stone-600">
             {online
-              ? "Regenera después de cambiar una receta. Las unidades no se convierten."
+              ? "Regenera después de cambiar una receta. Sumamos gramos con kilos y mililitros con litros; las cucharadas y unidades se listan aparte porque dependen del ingrediente."
               : "Sin conexión: no se puede regenerar hasta recuperar cobertura."}
           </p>
         </div>

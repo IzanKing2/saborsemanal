@@ -1,3 +1,10 @@
+import {
+  canonicalUnit,
+  presentQuantity,
+  roundQuantity,
+  toCanonicalQuantity,
+} from "@/lib/units";
+
 export type ShoppingRecipeIngredient = {
   ingredienteId: string | null;
   nombre: string;
@@ -66,33 +73,51 @@ export function consolidateShoppingList(
       const sourceKey = ingredient.ingredienteId
         ? `master:${ingredient.ingredienteId}`
         : `custom:${normalizedName}`;
-      const id = `${sourceKey}:${ingredient.unidad}`;
+      // Se agrupa y se acumula en la unidad canónica, así "300 g" y "1 kg" del
+      // mismo ingrediente caen en la misma línea. La unidad de presentación se
+      // decide al final, ya con el total sumado.
+      const unidad = canonicalUnit(ingredient.unidad);
+      const id = `${sourceKey}:${unidad}`;
       const current = consolidated.get(id);
       // Redondeo a 3 decimales, como el RPC: escalar raciones puede producir
       // colas de coma flotante que no aportan nada en una lista de la compra.
-      const quantity = Math.round(ingredient.cantidad * factor * 1000) / 1000;
+      const quantity = roundQuantity(
+        toCanonicalQuantity(ingredient.cantidad, ingredient.unidad) * factor,
+      );
 
       if (current) {
-        current.cantidad = Math.round((current.cantidad + quantity) * 1000) / 1000;
+        current.cantidad = roundQuantity(current.cantidad + quantity);
       } else {
         consolidated.set(id, {
           id,
           nombre: ingredient.nombre.trim(),
           categoria: ingredient.categoria || "Otros",
           cantidad: quantity,
-          unidad: ingredient.unidad,
+          unidad,
           comprado: false,
         });
       }
     }
   }
 
-  return [...consolidated.values()].sort(
+  return [...consolidated.values()].map(presentShoppingItem).sort(
     (left, right) =>
       left.categoria.localeCompare(right.categoria, "es") ||
       left.nombre.localeCompare(right.nombre, "es") ||
       left.unidad.localeCompare(right.unidad, "es"),
   );
+}
+
+/**
+ * La base de datos guarda siempre la unidad canónica (g/ml); esta función
+ * decide cómo se enseña. Se aplica tanto a la lista del servidor como a la del
+ * modo invitado para que ambas muestren exactamente lo mismo.
+ */
+export function presentShoppingItem(item: ShoppingListItem): ShoppingListItem {
+  const presented = presentQuantity(item.cantidad, item.unidad);
+  return presented.unidad === item.unidad && presented.cantidad === item.cantidad
+    ? item
+    : { ...item, ...presented };
 }
 
 export function groupShoppingList(items: ShoppingListItem[]) {

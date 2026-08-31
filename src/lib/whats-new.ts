@@ -1,13 +1,21 @@
 // Bump this whenever there's a user-facing change worth announcing, and
 // update the items below to match. Comparing against the version stored in
 // localStorage is what decides whether WhatsNewPopup shows itself.
-export const WHATS_NEW_VERSION = "2026-08-25-recetas";
+export const WHATS_NEW_VERSION = "2026-08-31-planificador";
 
 export const WHATS_NEW_TITLE = "Novedades en SaborSemanal";
 
+/**
+ * Fecha (incluida) hasta la que se muestra el aviso. Pasada esa fecha deja de
+ * aparecer aunque el usuario no lo haya visto nunca: una novedad de hace
+ * semanas ya no es novedad, y así no hace falta acordarse de retirarlo a mano.
+ */
+export const WHATS_NEW_EXPIRES_ON = "2026-09-10";
+
 export const WHATS_NEW_ITEMS = [
-  "Nueva barra de navegación en el móvil: cambia entre Menú, Recetas y Compra con una mano.",
-  "Al crear o editar una receta, cada paso e ingrediente se resume de un vistazo; edítalo o quítalo cuando quieras.",
-  "Ya puedes ver tus propias recetas, incluidos los borradores, sin tener que entrar a editarlas.",
-  "Ajustar las porciones de una receta es más cómodo: borra el número y escribe el que quieras sin que se resista.",
+  "Modo cocina: abre una receta y sigue los pasos a pantalla completa, con la pantalla siempre encendida y los ingredientes a un toque.",
+  "Arrastra las comidas del planificador de un día a otro, duplícalas y ajusta las raciones de cada día por separado.",
+  "Marca una comida como sobras: se queda en el menú, pero sus ingredientes ya no se vuelven a sumar a la compra.",
+  "La lista de la compra suma gramos con kilos y mililitros con litros, y ajusta las cantidades a las raciones que hayas planificado.",
+  "Crear una receta es más rápido: añade ingredientes en una sola línea, encadena los pasos con Enter y el borrador se guarda solo.",
 ];

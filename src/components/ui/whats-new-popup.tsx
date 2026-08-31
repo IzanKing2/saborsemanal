@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import {
+  WHATS_NEW_EXPIRES_ON,
   WHATS_NEW_ITEMS,
   WHATS_NEW_TITLE,
   WHATS_NEW_VERSION,
@@ -12,10 +13,20 @@ import {
 
 const STORAGE_KEY = "saborsemanal:whats-new-seen";
 
+/**
+ * El aviso caduca al terminar el día indicado, en hora local del usuario: si
+ * fuese UTC, en España dejaría de verse a las 2 de la madrugada del último día.
+ */
+function hasExpired() {
+  const [year, month, day] = WHATS_NEW_EXPIRES_ON.split("-").map(Number);
+  return Date.now() > new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+}
+
 export function WhatsNewPopup() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (hasExpired()) return;
     try {
       const seen = localStorage.getItem(STORAGE_KEY);
       if (seen !== WHATS_NEW_VERSION) setOpen(true);

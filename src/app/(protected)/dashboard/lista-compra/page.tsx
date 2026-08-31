@@ -8,7 +8,7 @@ import {
   ExtraShoppingList,
 } from "@/components/shopping/shopping-list";
 import { ShoppingListTools } from "@/components/shopping/shopping-list-tools";
-import type { ShoppingListItem } from "@/lib/shopping-list";
+import { presentShoppingItem, type ShoppingListItem } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/server";
 import { addWeeks, parseMonday } from "@/lib/week";
 
@@ -82,7 +82,7 @@ export default async function ShoppingListPage({
     cantidad: Number(item.cantidad),
     unidad: item.unidad,
     comprado: item.comprado,
-  }));
+  })).map(presentShoppingItem);
 
   const { data: extraRows, error: extraError } = await supabase
     .from("shopping_list_extra")
@@ -112,7 +112,7 @@ export default async function ShoppingListPage({
     cantidad: Number(item.cantidad),
     unidad: item.unidad,
     comprado: item.comprado,
-  }));
+  })).map(presentShoppingItem);
 
   return (
     <main className="min-h-screen bg-[#f6f3ea] text-stone-900">
