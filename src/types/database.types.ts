@@ -267,22 +267,28 @@ export type Database = {
       menu_recetas: {
         Row: {
           dia_semana: string | null
+          es_sobra: boolean
           id: string
           menu_id: string
+          raciones: number | null
           receta_id: string
           tipo_comida: string | null
         }
         Insert: {
           dia_semana?: string | null
+          es_sobra?: boolean
           id?: string
           menu_id: string
+          raciones?: number | null
           receta_id: string
           tipo_comida?: string | null
         }
         Update: {
           dia_semana?: string | null
+          es_sobra?: boolean
           id?: string
           menu_id?: string
+          raciones?: number | null
           receta_id?: string
           tipo_comida?: string | null
         }
@@ -657,6 +663,10 @@ export type Database = {
         Returns: string
       }
       clear_shopping_list: { Args: { p_week: string }; Returns: undefined }
+      copy_menu_week: {
+        Args: { p_from_week: string; p_overwrite?: boolean; p_to_week: string }
+        Returns: number
+      }
       count_public_recipes: {
         Args: {
           p_allergen_ids?: string[]
@@ -756,6 +766,16 @@ export type Database = {
           invited_by_nombre: string
         }[]
       }
+      move_menu_slot: {
+        Args: {
+          p_from_day: string
+          p_from_meal: string
+          p_to_day: string
+          p_to_meal: string
+          p_week: string
+        }
+        Returns: string
+      }
       my_grupo_id: { Args: never; Returns: string }
       regenerate_shopping_list: {
         Args: { p_week: string }
@@ -800,7 +820,9 @@ export type Database = {
       save_menu_slot: {
         Args: {
           p_day: string
+          p_es_sobra?: boolean
           p_meal: string
+          p_raciones?: number
           p_recipe_id?: string
           p_week: string
         }

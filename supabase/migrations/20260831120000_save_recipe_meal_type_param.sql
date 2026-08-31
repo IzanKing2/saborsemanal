@@ -7,7 +7,10 @@
 -- overload be called with exactly 10 positional args, which Postgres cannot
 -- distinguish from the existing 10-arg save_recipe (ERROR: function ... is
 -- not unique). The application always sends all 11 arguments.
-CREATE FUNCTION public.save_recipe(
+-- CREATE OR REPLACE y no CREATE: en remoto esta firma no existía, pero el
+-- historial local ya la define en 20260817090100, así que un `db reset` local
+-- replaycaría ambas y un CREATE a secas fallaría por duplicado.
+CREATE OR REPLACE FUNCTION public.save_recipe(
   p_id UUID,
   p_titulo TEXT,
   p_instrucciones TEXT[],

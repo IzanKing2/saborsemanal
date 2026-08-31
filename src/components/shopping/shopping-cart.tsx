@@ -17,8 +17,10 @@ import {
 import { dequeueChanges, enqueueChange } from "@/lib/offline-queue";
 import {
   consolidateShoppingList,
+  storedSlotRecipeId,
   type ShoppingListItem,
   type ShoppingRecipeIngredient,
+  type StoredSlotValue,
 } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/client";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
@@ -242,7 +244,15 @@ export function ShoppingCart({
       const slots = parseObject(slotsRaw);
       const pool = parseList(poolRaw);
       const extraIds = parseList(extraRaw);
-      const recipeIds = [...new Set([...Object.values(slots), ...pool, ...extraIds])];
+      const recipeIds = [
+        ...new Set([
+          ...Object.values(slots)
+            .map((value) => storedSlotRecipeId(value as StoredSlotValue))
+            .filter((id): id is string => Boolean(id)),
+          ...pool,
+          ...extraIds,
+        ]),
+      ];
       if (recipeIds.length === 0) {
         localStorage.removeItem(clearedKey(week));
         setRows([]);
@@ -259,6 +269,7 @@ export function ShoppingCart({
         .from("recetas")
         .select(
           `id,
+          porciones,
           receta_ingredientes (
             cantidad,
             unidad,
@@ -276,9 +287,13 @@ export function ShoppingCart({
         return;
       }
 
-      const recipes: { id: string; ingredientes: ShoppingRecipeIngredient[] }[] =
-        (data ?? []).map((recipe) => ({
+      const recipes: {
+        id: string;
+        porciones: number;
+        ingredientes: ShoppingRecipeIngredient[];
+      }[] = (data ?? []).map((recipe) => ({
           id: recipe.id,
+          porciones: recipe.porciones,
           ingredientes: recipe.receta_ingredientes.map((item) => ({
             ingredienteId: item.ingrediente_id,
             nombre:

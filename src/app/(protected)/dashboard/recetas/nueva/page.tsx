@@ -43,14 +43,10 @@ export default async function NewRecipePage() {
     tipoComida: [],
     tiempoPreparacion: 30,
     porciones: 2,
-    ingredientes: [
-      {
-        ingredienteId: ingredientOptions.length > 0 ? "" : null,
-        nombrePersonalizado: "",
-        cantidad: 1,
-        unidad: "unidad",
-      },
-    ],
+    publicada: false,
+    // Sin filas de arranque: el editor siempre muestra una fila rápida vacía al
+    // final, así que una fila inicial solo añadiría ruido.
+    ingredientes: [],
   };
 
   return (

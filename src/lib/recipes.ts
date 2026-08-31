@@ -27,6 +27,45 @@ export type RecipeIngredientInput = {
   unidad: RecipeUnit;
 };
 
+export type IngredientOption = {
+  id: string;
+  nombre: string;
+  categoriaNombre: string | null;
+};
+
+/**
+ * The form asks the user for a single ingredient name and works out on its own
+ * whether that name belongs to the master catalog or is free text, so nobody
+ * has to learn how the ingredients are stored.
+ */
+export function findIngredientOption(
+  text: string,
+  options: IngredientOption[],
+): IngredientOption | null {
+  const needle = text.trim().toLocaleLowerCase("es");
+  if (!needle) return null;
+  return (
+    options.find(
+      (option) => option.nombre.toLocaleLowerCase("es") === needle,
+    ) ?? null
+  );
+}
+
+export function toIngredientInput(
+  text: string,
+  cantidad: string,
+  unidad: RecipeUnit,
+  options: IngredientOption[],
+): RecipeIngredientInput {
+  const match = findIngredientOption(text, options);
+  return {
+    ingredienteId: match?.id ?? null,
+    nombrePersonalizado: match ? "" : text.trim(),
+    cantidad: Number(cantidad),
+    unidad,
+  };
+}
+
 export type RecipeFormErrors = {
   titulo?: string;
   descripcion?: string;
@@ -161,4 +200,31 @@ export function validateRecipe(input: RecipeValidationInput): RecipeFormErrors {
   }
 
   return errors;
+}
+
+export type RecipeRequirement = {
+  key: "titulo" | "ingredientes" | "instrucciones" | "medidas";
+  label: string;
+  done: boolean;
+};
+
+/**
+ * What still has to be filled in before a recipe can be published, derived from
+ * `validateRecipe` so the progress hint and the blocking errors can never
+ * disagree.
+ */
+export function getRecipeRequirements(
+  input: RecipeValidationInput,
+): RecipeRequirement[] {
+  const errors = validateRecipe(input);
+  return [
+    { key: "titulo", label: "Título", done: !errors.titulo },
+    { key: "ingredientes", label: "Ingredientes", done: !errors.ingredientes },
+    { key: "instrucciones", label: "Preparación", done: !errors.instrucciones },
+    {
+      key: "medidas",
+      label: "Tiempo y porciones",
+      done: !errors.tiempo && !errors.porciones,
+    },
+  ];
 }

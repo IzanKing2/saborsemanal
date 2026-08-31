@@ -32,7 +32,7 @@ export default async function AdminEditRecipePage({
       supabase
         .from("recetas")
         .select(
-          "id, titulo, descripcion, instrucciones, imagen_url, video_url, tipo_comida, tiempo_preparacion, porciones",
+          "id, titulo, descripcion, instrucciones, imagen_url, video_url, tipo_comida, tiempo_preparacion, porciones, publica",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -72,6 +72,7 @@ export default async function AdminEditRecipePage({
     tipoComida: recipe.tipo_comida,
     tiempoPreparacion: recipe.tiempo_preparacion,
     porciones: recipe.porciones,
+    publicada: recipe.publica,
     ingredientes: (recipeIngredientsResult.data ?? []).map((ingredient) => ({
       ingredienteId: ingredient.ingrediente_id,
       nombrePersonalizado: ingredient.nombre_personalizado ?? "",

@@ -31,7 +31,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [recipesResult, menuResult] = await Promise.all([
+  const [recipesResult, menuResult, favoritesResult] = await Promise.all([
     supabase
       .from("recetas")
       .select(
@@ -40,6 +40,9 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
         imagen_url,
         creador_id,
         publica,
+        porciones,
+        tipo_comida,
+        tiempo_preparacion,
         receta_ingredientes (
           cantidad,
           unidad,
@@ -57,6 +60,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
       .select("id")
       .eq("semana_inicio", week)
       .maybeSingle(),
+    supabase.from("favoritos").select("receta_id").eq("user_id", user.id),
   ]);
 
   const queryError = recipesResult.error ?? menuResult.error;
@@ -72,17 +76,25 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const { data: menuRows, error: menuRowsError } = menuResult.data
     ? await supabase
         .from("menu_recetas")
-        .select("dia_semana, tipo_comida, receta_id")
+        .select("dia_semana, tipo_comida, receta_id, raciones, es_sobra")
         .eq("menu_id", menuResult.data.id)
     : { data: [], error: null };
   if (menuRowsError) {
     throw new Error(`No se pudo cargar el menú: ${menuRowsError.message}`);
   }
 
+  const favoriteIds = new Set(
+    (favoritesResult.data ?? []).map((row) => row.receta_id),
+  );
   const recipes: PlannerRecipe[] = (recipesResult.data ?? []).map((recipe) => ({
     id: recipe.id,
     titulo: recipe.titulo,
     imagenUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
+    porciones: recipe.porciones,
+    tipoComida: recipe.tipo_comida ?? [],
+    tiempoPreparacion: recipe.tiempo_preparacion,
+    esFavorita: favoriteIds.has(recipe.id),
+    esMia: recipe.creador_id === user.id,
     etiqueta:
       recipe.creador_id === user.id
         ? recipe.publica
@@ -101,8 +113,11 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
   const slots: PlannerSlots = {};
   for (const row of menuRows ?? []) {
     if (isWeekDay(row.dia_semana ?? "") && isMealType(row.tipo_comida ?? "")) {
-      slots[menuSlotKey(row.dia_semana as WeekDay, row.tipo_comida as MealType)] =
-        row.receta_id;
+      slots[menuSlotKey(row.dia_semana as WeekDay, row.tipo_comida as MealType)] = {
+        recipeId: row.receta_id,
+        raciones: row.raciones,
+        esSobra: row.es_sobra,
+      };
     }
   }
 
@@ -136,6 +151,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
           key={week}
           mode="cloud"
           recipes={recipes}
+          shoppingListHref="/dashboard/lista-compra"
           week={week}
         />
       </div>

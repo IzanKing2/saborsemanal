@@ -34,6 +34,9 @@ export default async function GuestPlannerPage({
         id,
         titulo,
         imagen_url,
+        porciones,
+        tipo_comida,
+        tiempo_preparacion,
         receta_ingredientes (
           cantidad,
           unidad,
@@ -63,6 +66,9 @@ export default async function GuestPlannerPage({
     id: recipe.id,
     titulo: recipe.titulo,
     imagenUrl: recipe.imagen_url ? imageUrls.get(recipe.imagen_url) ?? null : null,
+    porciones: recipe.porciones,
+    tipoComida: recipe.tipo_comida ?? [],
+    tiempoPreparacion: recipe.tiempo_preparacion,
     ingredientes: recipe.receta_ingredientes.map((item) => ({
       ingredienteId: item.ingrediente_id,
       nombre: item.ingredientes?.nombre ?? item.nombre_personalizado ?? "Otros",
