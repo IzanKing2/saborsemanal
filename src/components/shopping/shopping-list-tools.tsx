@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useToast } from "@/components/ui/toast";
 import { formatShoppingListAsText, type ShoppingListItem } from "@/lib/shopping-list";
 
 function slugify(value: string) {
@@ -22,11 +23,12 @@ export function ShoppingListTools({
   items: ShoppingListItem[];
   title?: string;
 }) {
-  const [message, setMessage] = useState<string | null>(null);
+  const showToast = useToast();
+  // Solo el texto de reserva sigue siendo inline: acompaña al cuadro que hay
+  // que copiar a mano, así que tiene que quedarse en pantalla.
   const [fallbackText, setFallbackText] = useState<string | null>(null);
 
   async function share() {
-    setMessage(null);
     setFallbackText(null);
     const text = formatShoppingListAsText(items, { title });
 
@@ -39,10 +41,13 @@ export function ShoppingListTools({
         return;
       }
       await navigator.clipboard.writeText(text);
-      setMessage("Lista copiada al portapapeles.");
+      showToast("✓ Lista copiada al portapapeles");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
-      setMessage("No se pudo compartir automáticamente. Copia el texto de aquí abajo:");
+      showToast(
+        "No se pudo compartir automáticamente. Copia el texto de aquí abajo.",
+        "error",
+      );
       setFallbackText(text);
     }
   }
@@ -101,9 +106,6 @@ export function ShoppingListTools({
         >
           Compartir
         </button>
-        {message && (
-          <span className="text-xs font-semibold text-emerald-800">{message}</span>
-        )}
       </div>
       {fallbackText && (
         <textarea

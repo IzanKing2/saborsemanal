@@ -10,6 +10,7 @@ import {
   setExtraItemPurchasedAction,
   setShoppingItemPurchasedAction,
 } from "@/lib/actions/lista-compra";
+import { useToast } from "@/components/ui/toast";
 import { dequeueChanges, enqueueChange } from "@/lib/offline-queue";
 import {
   formatShoppingQuantity,
@@ -138,9 +139,7 @@ export function ExtraShoppingList({
   const online = useOnlineStatus();
   const [items, setItems] = useState(initialItems);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
-    null,
-  );
+  const showToast = useToast();
 
   useEffect(() => setItems(initialItems), [initialItems]);
 
@@ -155,7 +154,7 @@ export function ExtraShoppingList({
           await removeExtraItemAction(change.itemId);
         }
       }
-      setMessage({ ok: true, text: "Cambios sincronizados." });
+      showToast("Cambios sincronizados.");
       router.refresh();
     });
   }, [router]);
@@ -172,7 +171,6 @@ export function ExtraShoppingList({
           : candidate,
       ),
     );
-    setMessage(null);
 
     if (!online) {
       enqueueChange({
@@ -181,10 +179,7 @@ export function ExtraShoppingList({
         itemId: item.id,
         purchased,
       });
-      setMessage({
-        ok: true,
-        text: "Sin conexión: guardado en este dispositivo.",
-      });
+      showToast("Sin conexión: guardado en este dispositivo.");
       return;
     }
 
@@ -198,7 +193,7 @@ export function ExtraShoppingList({
           ),
         );
       }
-      setMessage({ ok: result.ok, text: result.message });
+      showToast(result.message, result.ok ? "ok" : "error");
       setPendingIds((current) => {
         const next = new Set(current);
         next.delete(item.id);
@@ -208,17 +203,13 @@ export function ExtraShoppingList({
   }
 
   function removeItem(item: ShoppingListItem) {
-    setMessage(null);
 
     if (!online) {
       setItems((current) =>
         current.filter((candidate) => candidate.id !== item.id),
       );
       enqueueChange({ kind: "extra", type: "remove", itemId: item.id });
-      setMessage({
-        ok: true,
-        text: "Sin conexión: quitado en este dispositivo.",
-      });
+      showToast("Sin conexión: quitado en este dispositivo.");
       return;
     }
 
@@ -231,7 +222,7 @@ export function ExtraShoppingList({
         );
         router.refresh();
       }
-      setMessage({ ok: result.ok, text: result.message });
+      showToast(result.message, result.ok ? "ok" : "error");
       setPendingIds((current) => {
         const next = new Set(current);
         next.delete(item.id);
@@ -254,19 +245,6 @@ export function ExtraShoppingList({
           conservan hasta que las retires.
         </p>
       </div>
-
-      {message && (
-        <p
-          className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
-            message.ok
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-red-200 bg-red-50 text-red-700"
-          }`}
-          role={message.ok ? "status" : "alert"}
-        >
-          {message.text}
-        </p>
-      )}
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white/70 p-8 text-center text-sm text-stone-600">
@@ -297,9 +275,7 @@ export function CloudShoppingList({
   const [items, setItems] = useState(initialItems);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [regenerating, setRegenerating] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
-    null,
-  );
+  const showToast = useToast();
 
   useEffect(() => setItems(initialItems), [initialItems]);
 
@@ -314,7 +290,7 @@ export function CloudShoppingList({
           await removeShoppingItemAction(change.itemId);
         }
       }
-      setMessage({ ok: true, text: "Cambios sincronizados." });
+      showToast("Cambios sincronizados.");
       router.refresh();
     });
   }, [router]);
@@ -325,10 +301,10 @@ export function CloudShoppingList({
 
   function regenerate() {
     setRegenerating(true);
-    setMessage(null);
+    showToast("Regenerando la lista...", "pending");
     startTransition(async () => {
       const result = await regenerateShoppingListAction(week);
-      setMessage({ ok: result.ok, text: result.message });
+      showToast(result.message, result.ok ? "ok" : "error");
       if (result.ok) router.refresh();
       setRegenerating(false);
     });
@@ -342,7 +318,6 @@ export function CloudShoppingList({
           : candidate,
       ),
     );
-    setMessage(null);
 
     if (!online) {
       enqueueChange({
@@ -351,10 +326,9 @@ export function CloudShoppingList({
         itemId: item.id,
         purchased,
       });
-      setMessage({
-        ok: true,
-        text: "Sin conexión: guardado en este dispositivo. Se sincronizará al recuperar cobertura.",
-      });
+      showToast(
+        "Sin conexión: guardado aquí. Se sincronizará al recuperar cobertura.",
+      );
       return;
     }
 
@@ -368,7 +342,7 @@ export function CloudShoppingList({
           ),
         );
       }
-      setMessage({ ok: result.ok, text: result.message });
+      showToast(result.message, result.ok ? "ok" : "error");
       setPendingIds((current) => {
         const next = new Set(current);
         next.delete(item.id);
@@ -378,17 +352,15 @@ export function CloudShoppingList({
   }
 
   function removeItem(item: ShoppingListItem) {
-    setMessage(null);
 
     if (!online) {
       setItems((current) =>
         current.filter((candidate) => candidate.id !== item.id),
       );
       enqueueChange({ kind: "shopping", type: "remove", itemId: item.id });
-      setMessage({
-        ok: true,
-        text: "Sin conexión: quitado en este dispositivo. Se sincronizará al recuperar cobertura.",
-      });
+      showToast(
+        "Sin conexión: quitado aquí. Se sincronizará al recuperar cobertura.",
+      );
       return;
     }
 
@@ -401,7 +373,7 @@ export function CloudShoppingList({
         );
         router.refresh();
       }
-      setMessage({ ok: result.ok, text: result.message });
+      showToast(result.message, result.ok ? "ok" : "error");
       setPendingIds((current) => {
         const next = new Set(current);
         next.delete(item.id);
@@ -432,19 +404,6 @@ export function CloudShoppingList({
           </button>
         </div>
       </div>
-
-      {message && (
-        <p
-          className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
-            message.ok
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-red-200 bg-red-50 text-red-700"
-          }`}
-          role={message.ok ? "status" : "alert"}
-        >
-          {message.text}
-        </p>
-      )}
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white/70 p-10 text-center">

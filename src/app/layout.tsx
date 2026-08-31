@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { CustomCursor } from "@/components/ui/custom-cursor";
+import { ToastProvider } from "@/components/ui/toast";
 import { WhatsNewPopup } from "@/components/ui/whats-new-popup";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { PwaInstall } from "@/components/pwa/pwa-install";
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PwaRegister />
         <PwaInstall />
         <WhatsNewPopup />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

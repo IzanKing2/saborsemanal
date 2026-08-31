@@ -2,6 +2,7 @@
 
 import { startTransition, useState } from "react";
 
+import { useToast } from "@/components/ui/toast";
 import { addRecipeToShoppingListAction } from "@/lib/actions/lista-compra";
 
 export function AddToShoppingButton({
@@ -11,13 +12,14 @@ export function AddToShoppingButton({
   recipeId: string;
   guest?: boolean;
 }) {
-  const [state, setState] = useState<{ ok: boolean; message: string } | null>(
-    null,
-  );
+  const showToast = useToast();
+  // Solo hace falta recordar si ya se añadió: el botón pasa a confirmación
+  // permanente. Los errores son pasajeros y van por aviso flotante.
+  const [added, setAdded] = useState(false);
   const [pending, setPending] = useState(false);
 
   function handleAdd() {
-    if (pending || state?.ok) return;
+    if (pending || added) return;
 
     if (guest) {
       try {
@@ -39,25 +41,23 @@ export function AddToShoppingButton({
         if (!ids.includes(recipeId)) ids = [...ids, recipeId];
         window.localStorage.setItem(key, JSON.stringify(ids));
       } catch {
-        setState({
-          ok: false,
-          message: "El navegador no pudo guardar la receta.",
-        });
+        showToast("El navegador no pudo guardar la receta.", "error");
         return;
       }
-      setState({ ok: true, message: "Añadida a tu lista local." });
+      setAdded(true);
       return;
     }
 
     setPending(true);
     startTransition(async () => {
       const result = await addRecipeToShoppingListAction(recipeId);
-      setState(result);
+      if (result.ok) setAdded(true);
+      else showToast(result.message, "error");
       setPending(false);
     });
   }
 
-  if (state?.ok) {
+  if (added) {
     return (
       <p className="text-xs font-bold text-emerald-700">
         Añadida a la lista de la compra ✓
@@ -66,20 +66,13 @@ export function AddToShoppingButton({
   }
 
   return (
-    <div>
-      <button
-        className="inline-block rounded-full border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-900 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={pending}
-        onClick={handleAdd}
-        type="button"
-      >
-        {pending ? "Añadiendo..." : "Añadir a la lista"}
-      </button>
-      {state?.message && (
-        <p className="mt-2 text-xs text-red-600" role="alert">
-          {state.message}
-        </p>
-      )}
-    </div>
+    <button
+      className="inline-block rounded-full border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-900 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+      disabled={pending}
+      onClick={handleAdd}
+      type="button"
+    >
+      {pending ? "Añadiendo..." : "Añadir a la lista"}
+    </button>
   );
 }

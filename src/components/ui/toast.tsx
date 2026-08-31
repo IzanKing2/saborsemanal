@@ -1,50 +1,78 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 
 export type ToastTone = "ok" | "error" | "pending";
 
-export type ToastState = { id: number; text: string; tone: ToastTone } | null;
+type ToastState = { id: number; text: string; tone: ToastTone } | null;
+
+export type ShowToast = (text: string, tone?: ToastTone) => void;
 
 const DEFAULT_TIMEOUT_MS = 2600;
 
+const ToastContext = createContext<ShowToast | null>(null);
+
 /**
- * Avisos breves para acciones que se guardan solas. Van en un portal y en
- * posición fija: nunca empujan el contenido, así que el calendario no salta
- * cada vez que se guarda un cambio.
+ * Avisos breves para acciones que ya se han guardado. Hay un único proveedor en
+ * el layout y una sola ventana flotante: así una lista con veinte botones no
+ * monta veinte portales, y el aviso nunca empuja el contenido (posición fija),
+ * que es justo lo que hacía saltar las listas al marcar un elemento.
  */
-export function useToast(timeout = DEFAULT_TIMEOUT_MS) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextId = useRef(0);
 
-  const clearTimer = useCallback(() => {
+  const showToast = useCallback<ShowToast>((text, tone = "ok") => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
+
+    const id = ++nextId.current;
+    setToast({ id, text, tone });
+    // "Guardando..." no se descarta solo: lo sustituye el resultado.
+    if (tone !== "pending") {
+      timerRef.current = setTimeout(() => {
+        setToast((current) => (current?.id === id ? null : current));
+      }, DEFAULT_TIMEOUT_MS);
+    }
   }, []);
 
-  const showToast = useCallback(
-    (text: string, tone: ToastTone = "ok") => {
-      clearTimer();
-      const id = ++nextId.current;
-      setToast({ id, text, tone });
-      // "Guardando..." no se descarta solo: lo sustituye el resultado.
-      if (tone !== "pending") {
-        timerRef.current = setTimeout(() => {
-          setToast((current) => (current?.id === id ? null : current));
-        }, timeout);
-      }
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
     },
-    [clearTimer, timeout],
+    [],
   );
 
-  useEffect(() => clearTimer, [clearTimer]);
-
-  return { toast, showToast };
+  return (
+    <ToastContext.Provider value={showToast}>
+      {children}
+      <ToastViewport toast={toast} />
+    </ToastContext.Provider>
+  );
 }
 
-export function Toast({ toast }: { toast: ToastState }) {
+/**
+ * Devuelve la función para lanzar avisos. Fuera del proveedor no falla: se
+ * queda en un no-op, para que un componente pueda usarse aislado (tests,
+ * historias, una página sin layout) sin romperse.
+ */
+export function useToast(): ShowToast {
+  const showToast = useContext(ToastContext);
+  const fallback = useCallback<ShowToast>(() => {}, []);
+  return showToast ?? fallback;
+}
+
+function ToastViewport({ toast }: { toast: ToastState }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
@@ -64,7 +92,7 @@ export function Toast({ toast }: { toast: ToastState }) {
     >
       <p
         aria-live="polite"
-        className={`rounded-full border px-4 py-2 text-sm font-semibold shadow-lg transition-opacity duration-150 ${toneClass} ${
+        className={`max-w-[90vw] truncate rounded-full border px-4 py-2 text-sm font-semibold shadow-lg transition-opacity duration-150 sm:max-w-md ${toneClass} ${
           toast ? "opacity-100" : "opacity-0"
         }`}
         role="status"

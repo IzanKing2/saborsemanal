@@ -8,7 +8,7 @@ import { MealCard } from "@/components/planner/meal-card";
 import { SlotPickerModal } from "@/components/planner/slot-picker-modal";
 import { SlotTargetModal } from "@/components/planner/slot-target-modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Toast, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import {
   copyMenuWeekAction,
   moveMenuSlotAction,
@@ -71,7 +71,7 @@ export function WeeklyPlanner({
   shoppingListHref,
 }: WeeklyPlannerProps) {
   const router = useRouter();
-  const { toast, showToast } = useToast();
+  const showToast = useToast();
   const [slots, setSlots] = useState(initialSlots);
   const [editingSlot, setEditingSlot] = useState<SlotRef | null>(null);
   const [targetSlot, setTargetSlot] = useState<
@@ -637,8 +637,6 @@ export function WeeklyPlanner({
           </section>
         ))}
       </div>
-
-      <Toast toast={toast} />
 
       {editingSlot && (
         <SlotPickerModal
