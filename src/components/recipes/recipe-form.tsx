@@ -1072,7 +1072,11 @@ export function RecipeForm({
           className="rounded-xl border border-stone-300 px-5 py-3 text-sm font-bold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isPending}
           name="accion"
-          onClick={() => setPublishConfirmationOpen(true)}
+          onClick={() => {
+            startTransition(() => {
+              void persistRecipe("borrador");
+            });
+          }}
           type="button"
           value="borrador"
         >
